@@ -1,4 +1,4 @@
-# b2205946_luanvan_ct550
+# B2205946_DuongHuuLuan_LuanVanTotNghiep_CT550
 
 A new Flutter project.
 
