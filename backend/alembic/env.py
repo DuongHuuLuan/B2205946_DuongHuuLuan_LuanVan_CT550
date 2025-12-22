@@ -7,6 +7,8 @@ from alembic import context
 
 from app.db.base import Base
 from app.db.session import engine
+from app.models.user import User
+from app.models.profile import Profile
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -21,6 +23,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
+print("DEBUG: các bảng đã đăng ký trong Metadata là : ", Base.metadata.tables.keys())
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -52,7 +55,7 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-from app.core.config import DATABASE_URL
+from app.core.config import settings
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -61,7 +64,7 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.DATABASE_URL
 
     connectable = engine_from_config(
         # config.get_section(config.config_ini_section, {}),

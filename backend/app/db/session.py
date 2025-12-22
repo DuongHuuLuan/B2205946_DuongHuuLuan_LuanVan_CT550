@@ -1,22 +1,23 @@
-# from sqlalchemy import create_engine
-# from sqlalchemy.orm import sessionmaker
-
-# from app.core.config import settings
-
-# engine = create_engine(
-#     settings.SQLALCHMY_DATABASE_URI,connect_args= {"check_same_thread": False} if settings.SQLALCHMY_DATABASE_URI.startswith("sql") else {}
-# )
-
-# SessionLocal = sessionmaker(autocommit = False, autoflush =False, bind = engine)
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.core.config import DATABASE_URL
+from app.core.config import settings
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.DATABASE_URL, echo=True)
 
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
+
+
+def get_db():
+    """
+    Hàm  generator để tạo và đóng Session tự động.add()
+    Sẽ được dùng với Depends(get_db) trong các API
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
