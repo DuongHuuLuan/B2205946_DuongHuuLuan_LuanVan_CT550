@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
@@ -10,6 +10,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+#schema dùng để đổi mật khẩu
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str = Field(..., min_length=6)
 
 # schema dùng để trả về dữ liệu cho Frontend (Bảo mật, không trả về password)
 class UserOut(UserBase):

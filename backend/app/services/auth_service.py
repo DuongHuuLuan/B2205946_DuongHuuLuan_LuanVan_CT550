@@ -3,11 +3,11 @@ from fastapi import HTTPException, status
 from app.models.user import User
 from app.models.profile import Profile
 from app.core.security import get_password_hash, verify_password, created_access_token
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, PasswordChange
 
 class AuthService:
     @staticmethod
-    def register_user(db: Session, user_in: UserCreate):
+    def register_user(db: Session, user_in: UserCreate,  role: str = "user"):
         if db.query(User).filter(User.email == user_in.email).first():
             raise HTTPException(status_code=400, detail="Email đã tồn tại")
         
@@ -16,7 +16,7 @@ class AuthService:
             email = user_in.email,
             username = user_in.username,
             password = get_password_hash(user_in.password),
-            role ="user"
+            role = role
         )
         db.add(db_user)
         db.commit()
@@ -47,5 +47,20 @@ class AuthService:
             role=user.role.value # lấy chuỗi "admin" hoặc "user" từ Enum
         )
         return token
+    
+    @staticmethod
+    def change_password(db: Session, current_user: User, password: PasswordChange ):
+        if not verify_password(password.old_password, current_user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mật khẩu cũ không chính xác"
+            )
+        
+        current_user.password = get_password_hash(password.new_password)
+
+        db.add(current_user)
+        db.commit()
+        db.refresh(current_user)
+        return {"Message:": "Đổi mật khẩu thành công"}
 
 auth_service = AuthService()

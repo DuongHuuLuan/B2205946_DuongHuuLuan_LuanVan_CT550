@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserOut
+from app.schemas.user import UserCreate, UserOut, PasswordChange
 from app.services.auth_service import auth_service
 from app.api import deps
 from app.models.user import User
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 #schema dùng cho request đăng nhập
 class LoginRequest(BaseModel):
@@ -39,6 +39,17 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             detail=str(e)
         )
     
+@router.post("/change-password")
+def change_password(
+    password: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user) ## bắt buộc đăng nhập mới được đổi mật khẩu
+):
+    """"
+    API đổi mật khẩu cho người dùng đang đăng nhập
+    """
+    return auth_service.change_password(db, current_user, password)
+
 
 @router.get("/me", response_model=UserOut)
 def read_user_me(current_user: User = Depends(deps.get_current_user)):

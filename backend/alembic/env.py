@@ -7,8 +7,12 @@ from alembic import context
 
 from app.db.base import Base
 from app.db.session import engine
-from app.models.user import User
-from app.models.profile import Profile
+from app.models import *
+# from app.models.user import User
+# from app.models.profile import Profile
+# from app.models.category import Category
+# from app.models.product import Product
+# from app.models.image_url import ImageURL
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
