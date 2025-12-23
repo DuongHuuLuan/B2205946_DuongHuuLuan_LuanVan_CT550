@@ -2,16 +2,17 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from app.models.product import Product
 from app.models.category import Category
-from app.schemas.product import ProductCreated
+from app.schemas.product import ProductCreate
 
 class ProductService:
     @staticmethod
-    def create_product(db: Session, product_in: ProductCreated):
+    def create_product(db: Session, product_in: ProductCreate):
         category = db.query(Category).filter(Category.id == product_in.category_id).first()
         if not category:
             raise HTTPException(status_code=404, detail="Không tìm thấy danh mục này")
-        # product_in.model_dump sẽ lấy tất cả trường: name, description, unit, category_id
-        db_product = Product(**product_in.model_dump())
+        
+        product_data = product_in.model_dump(exclude={'image_urls'})
+        db_product = Product(**product_data)
         
         db.add(db_product)
         db.commit()
@@ -21,11 +22,11 @@ class ProductService:
 
     @staticmethod
     def getAll_product(db: Session):
-        return db.query(Product).all()
+        return db.query(Product).options(joinedload(Product.images)).all()
 
     @staticmethod
     def get_product_byID(db: Session, product_id: int):
-        product = db.query(Product).filter(Product.id == product_id).first()
+        product = db.query(Product).options(joinedload(Product.images)).filter(Product.id == product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
         return product 
@@ -39,12 +40,12 @@ class ProductService:
         return products
 
     @staticmethod
-    def update_product(db: Session, product_id: int, product_in: ProductCreated):
+    def update_product(db: Session, product_id: int, product_in: ProductCreate):
         db_product = db.query(Product).filter(Product.id == product_id).first()
         if not db_product:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
 
-        update_data = product_in.dict(exclude_unset=True)   ## chỉ lấy những trường có gửi dữ liệu
+        update_data = product_in.model_dump(exclude_unset=True, exclude={'image_urls'})   ## chỉ lấy những trường có gửi dữ liệu
         for key, value in update_data.items():
             setattr(db_product, key, value)
 
