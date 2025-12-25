@@ -20,4 +20,5 @@ class User(Base):
 
     
     profile = relationship("Profile", back_populates="user", uselist=False)
-
+    cart = relationship("Cart", back_populates="user", uselist = False)
+    orders = relationship("Order", back_populates="user")

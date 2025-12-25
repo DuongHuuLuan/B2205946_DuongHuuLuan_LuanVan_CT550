@@ -8,3 +8,6 @@ from app.models.color import Color
 from app.models.product_detail import ProductDetail
 from app.models.cart import Cart
 from app.models.cart_detail import CartDetail
+from app.models.order import OrderDetail, Order
+from app.models.delivery import DeliveryInfo
+from app.models.payment import PaymentMethod

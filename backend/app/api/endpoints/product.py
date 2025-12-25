@@ -64,8 +64,3 @@ def delete_product(product_id: int, db: Session = Depends(get_db), current_admin
     API xóa 1 sản phẩm theo Id
     """
     return ProductService.delete_product(db,product_id)
-
-
-@router.post("/add-to-cart")
-def add_to_cart(db: Session = Depends(get_db), current_user: User = Depends(require_user)):
-    return {"message": "Đã thêm vào giỏ hàng thành công"}

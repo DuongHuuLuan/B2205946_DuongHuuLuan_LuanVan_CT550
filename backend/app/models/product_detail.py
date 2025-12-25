@@ -11,6 +11,11 @@ class ProductDetail(Base):
     size_id = Column(Integer, ForeignKey("sizes.id"))
     stock_quantity = Column(Integer, default=0)
     price = Column(Integer, nullable=True)
+
+
     product = relationship("Product", back_populates="variants")
     color = relationship("Color", back_populates="product_details")
     size = relationship("Size", back_populates="product_details")
+
+    order_items = relationship("OrderDetail", back_populates="product_variant")
+    cart_items = relationship("CartDetail", back_populates="product_variant")
