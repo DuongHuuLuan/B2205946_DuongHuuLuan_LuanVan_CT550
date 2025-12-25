@@ -17,7 +17,7 @@ class OrderService:
         order_items_to_create = []
 
         for cart_item in cart.items:
-            variant = db.query(ProductDetail).filter(ProductDetail.id == cart_item.product_detail_id)
+            variant = db.query(ProductDetail).filter(ProductDetail.id == cart_item.product_detail_id).first()
 
             if not variant or variant.stock_quantity < cart_item.quantity:
                 raise HTTPException(
