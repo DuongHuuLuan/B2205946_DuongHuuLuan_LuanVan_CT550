@@ -6,3 +6,5 @@ from app.schemas.product import ProductBase, ProductCreate, ProductOut
 from app.schemas.variant import VariantCreate, VariantOut, ColorCreate, ColorOut, SizeCreate, SizeOut
 from app.schemas.cart import CartItemCreate,CartItemUpdate,CartItemOut,CartOut
 from app.schemas.order import OrderDetailOut, OrderCreate, OrderOut
+from app.schemas.discount import DiscountOut
+from app.schemas.evaluate import EvaluateCreate, EvaluateOut

@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import List, Optional
+from app.models.order import OrderStatus
 from app.schemas import *
 
 #schema cho delivery info
@@ -41,29 +42,38 @@ class OrderDetailOut(BaseModel):
     class Config:
         from_attributes = True
 
+    @model_validator(mode='before')
     @classmethod
-    def from_orm(cls, obj):
-        """Custom để lấy dữ liệu từ các bảng liên quan qua relationship"""
-        d = super().from_orm(obj)
-        variant = obj.product_variant
-        if variant:
-            #lấy tên từ product
-            if variant.product:
-                d.product_name = variant.product.name
-                #lấy ảnh đầu tiên từ danh sách ảnh của Product
-                if variant.product.images:
-                    d.image_url = variant.product.images[0].url
+    def get_related_data(cls, data):
+        variant = getattr(data, "product_variant", None)
+        result = data
+        if not isinstance(data, dict):
+            result = {col.name: getattr(data, col.name) for col in data.__table__.columns}
 
-            #lấy tên màu và size
+        if variant:
+            # 1. Lấy thông tin sản phẩm và ảnh
+            if variant.product:
+                result["product_name"] = variant.product.name
+                if variant.product.images:
+                    # Kiểm tra lại tên trường trong DB của bạn là .url hay .image_url
+                    result["image_url"] = variant.product.images[0].url
+            
+            # 2. Lấy thông tin màu sắc và kích thước
             if variant.color:
-                d.color_name = variant.color.name
+                result["color_name"] = variant.color.name
             if variant.size:
-                d.size_name = variant.size.name
-        return d
+                result["size_name"] = variant.size.size
+        
+        return result
 
 class OrderCreate(BaseModel):
     delivery_info_id: int
     payment_method_id: int
+    discount_code: Optional[str] = None
+
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus
+
 
 #schema cho Order
 class OrderOut(BaseModel):

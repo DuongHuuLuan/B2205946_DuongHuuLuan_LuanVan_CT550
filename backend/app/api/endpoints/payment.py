@@ -14,3 +14,7 @@ router = APIRouter(prefix="/payment", tags=["Payment Method"])
 @router.get("/", response_model=list[PaymentMethodOut])
 def get_payment_methods(db: Session = Depends(get_db)):
     return PaymentService.get_active_payments(db)
+
+# @router.post("/", response_model= PaymentMethodOut)
+# def seed_payment_method(db: Session = Depends(get_db)):
+#     return PaymentService.seed_payments(db)

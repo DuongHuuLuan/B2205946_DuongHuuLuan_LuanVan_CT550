@@ -28,6 +28,11 @@ class Order(Base):
     items = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     delivery_info = relationship("DeliveryInfo", back_populates="orders")
     payment_method = relationship("PaymentMethod", back_populates="orders")
+    applied_discounts = relationship(
+        "Discount", 
+        secondary="order_discounts", 
+        back_populates="orders"
+    )
 
 
 class OrderDetail(Base):

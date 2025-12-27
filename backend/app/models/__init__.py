@@ -11,3 +11,8 @@ from app.models.cart_detail import CartDetail
 from app.models.order import OrderDetail, Order
 from app.models.delivery import DeliveryInfo
 from app.models.payment import PaymentMethod
+from app.models.discount import Discount, OrderDiscount
+from app.models.evaluate import Evaluate
+from app.models.warehouse import Warehouse, WarehouseDetail
+from app.models.distributor import Distributor
+from app.models.receipt import Receipt, ReceiptDetail
