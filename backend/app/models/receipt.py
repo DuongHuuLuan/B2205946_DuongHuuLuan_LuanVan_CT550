@@ -15,7 +15,8 @@ class Receipt(Base):
     distributor_id = Column(Integer, ForeignKey("distributors.id"))
     status = Column(Enum(ReceiptStatus), default= ReceiptStatus.PENDING)
     created_at = Column(DateTime, server_default=func.now())
-
+    updated_at = Column(DateTime, onupdate= func.now())
+    
     details = relationship("ReceiptDetail", back_populates="receipt")
 
 

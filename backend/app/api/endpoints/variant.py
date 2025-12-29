@@ -45,7 +45,7 @@ def update_variant(
 ):
     return VariantService.update_variant(db, variant_id,new_quantity)
 
-@router.delete("/product-detail/{product_detail_id}")
+@router.delete("/product-detail/{product_detail_id}", status_code=status.HTTP_200_OK)
 def delete_variant(
     variant_id: int,
     db: Session = Depends(get_db),

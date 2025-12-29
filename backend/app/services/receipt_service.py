@@ -1,0 +1,54 @@
+from sqlalchemy.orm import Session
+from fastapi import HTTPException
+from app.models import *
+from app.models.receipt import ReceiptStatus
+from app.schemas import *
+
+class ReceiptService:
+
+    @staticmethod
+    def create_receipt(db: Session, receipt_in: ReceiptCreate):
+        db_receipt = Receipt(
+            warehouse_id = receipt_in.warehouse_id,
+            distributor_id = receipt_in.distributor_id,
+            status = ReceiptStatus.PENDING
+        )
+        db.add(db_receipt)
+        db.flush()
+
+        for item in receipt_in.details:
+            detail = ReceiptDetail(receipt_id = db_receipt.id,  **item.model_dump())
+            db.add(detail)
+
+        db.commit()
+        db.refresh(db_receipt)
+        return db_receipt
+    
+
+    @staticmethod
+    def confirm_receipt(db: Session, receipt_id: int):
+        """Chuyen trang thi sang COMPLETED va cong don kho"""
+        receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+        if not receipt or receipt.status == ReceiptStatus.COMPLETED:
+            raise HTTPException(status_code=400, detail="Invalid receipt or already completed")
+        
+        for item in receipt.details:
+
+            stock = db.query(WarehouseDetail).filter(
+                WarehouseDetail.warehouse_id == receipt.warehouse_id,
+                WarehouseDetail.product_detail_id == item.product_detail_id
+            ).first()
+
+            if stock:
+                stock.quantity += item.quantity
+            else:
+                new_stock = WarehouseDetail(
+                    warehouse_id = receipt.warehouse_id,
+                    product_detail_id = item.product_detail_id,
+                    quantity = item.quantity
+                )
+                db.add(new_stock)
+        
+        receipt.status = ReceiptStatus.COMPLETED
+        db.commit()
+        return receipt
