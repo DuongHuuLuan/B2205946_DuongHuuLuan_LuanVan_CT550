@@ -45,4 +45,26 @@ class AuthRepositoryImpl implements AuthRepository {
     final token = await _storage.getAccessToken();
     return token != null;
   }
+
+  @override
+  Future<User> getMe() async {
+    try {
+      final response = await _authApi.getMe();
+      // chuyển đổi User nhận được thành User domain model
+      return UserMapper.fromJson(response.data);
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    try {
+      await _storage.deleteAccessToken();
+
+      print("AuthRepository: Đã xóa token, người dùng đã đăng xuất.");
+    } catch (e) {
+      throw Exception("Lỗi khi đăng xuất , $e");
+    }
+  }
 }

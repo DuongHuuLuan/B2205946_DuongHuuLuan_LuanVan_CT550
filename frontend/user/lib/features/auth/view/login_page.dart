@@ -76,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                     if (value == null || value.isEmpty)
                       return "Vui lòng nhập mật khẩu";
                     if (value.length < 6) return "Mật khẩu phải từ 6 ký tự";
+                    return null;
                   },
                 ),
                 const SizedBox(height: 10),

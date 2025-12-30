@@ -21,4 +21,12 @@ class AuthApi {
   Future<Response> register(Map<String, dynamic> data) {
     return DioClient.instance.post("/auth/register", data: data);
   }
+
+  Future<Response> getMe() async {
+    try {
+      return await DioClient.instance.get("/auth/me");
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
 }

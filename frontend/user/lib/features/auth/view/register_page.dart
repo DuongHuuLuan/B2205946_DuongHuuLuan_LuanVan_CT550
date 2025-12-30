@@ -73,7 +73,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value!.isEmpty)
+                    if (value == null || value.isEmpty)
                       return "Vui lòng nhập email";
                     if (!value.contains("@")) return "Email không hợp lệ";
                     return null;
@@ -101,9 +101,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value!.isEmpty)
+                    if (value == null || value.isEmpty)
                       return "Vui lòng nhập mật khẩu";
                     if (value.length < 6) return "Mật khẩu phải từ 6 ký tự";
+                    return null;
                   },
                 ),
 
@@ -117,7 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value!.isEmpty)
+                    if (value == null || value.isEmpty)
                       return "Vui lòng nhập lại mật khẩu";
                     if (value != _passwordController.text)
                       return "Mật khẩu không khớp";

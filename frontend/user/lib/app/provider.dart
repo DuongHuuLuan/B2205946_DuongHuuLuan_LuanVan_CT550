@@ -7,13 +7,22 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_api.dart';
 import 'package:provider/single_child_widget.dart';
 
 final List<SingleChildWidget> Providers = [
-  ChangeNotifierProvider(create: (context) => AuthViewmodel()),
+  Provider(create: (_) => AuthApi()),
 
-  // khởi tạo LoginViewModel
-  ChangeNotifierProvider(
-    create: (_) => LoginViewModel(AuthRepositoryImpl(AuthApi())),
+  Provider<AuthRepositoryImpl>(
+    create: (context) => AuthRepositoryImpl(context.read<AuthApi>()),
   ),
+  // AuthViewModel
   ChangeNotifierProvider(
-    create: (_) => RegisterViewmodel(AuthRepositoryImpl(AuthApi())),
+    create: (context) => AuthViewmodel(context.read<AuthRepositoryImpl>()),
+  ),
+
+  // LoginViewModel
+  ChangeNotifierProvider(
+    create: (context) => LoginViewModel(context.read<AuthRepositoryImpl>()),
+  ),
+  //RegisterViewModel
+  ChangeNotifierProvider(
+    create: (context) => RegisterViewmodel(context.read<AuthRepositoryImpl>()),
   ),
 ];

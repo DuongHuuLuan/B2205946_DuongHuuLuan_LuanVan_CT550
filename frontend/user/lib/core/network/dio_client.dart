@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/network/auth_interceptor.dart';
-import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
+// import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
 
 class DioClient {
   static Dio? _dio;
