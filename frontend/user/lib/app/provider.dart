@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/viewmodels/login_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/viewmodels/register_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/viewmodels/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_repository_impl.dart';
@@ -11,5 +12,8 @@ final List<SingleChildWidget> Providers = [
   // khởi tạo LoginViewModel
   ChangeNotifierProvider(
     create: (_) => LoginViewModel(AuthRepositoryImpl(AuthApi())),
+  ),
+  ChangeNotifierProvider(
+    create: (_) => RegisterViewmodel(AuthRepositoryImpl(AuthApi())),
   ),
 ];

@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/view/login_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/view/register_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,10 +26,10 @@ class AppRouter {
     routes: [
       GoRoute(path: "/login", builder: (context, state) => const LoginPage()),
 
-      // GoRoute(
-      //   path: "/register",
-      //   builder: (context, state) => const RegisterPage(),
-      // ),
+      GoRoute(
+        path: "/register",
+        builder: (context, state) => const RegisterPage(),
+      ),
       GoRoute(
         path: "/",
         builder: (context, state) => const Scaffold(

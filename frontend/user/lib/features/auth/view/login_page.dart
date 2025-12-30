@@ -127,7 +127,13 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text("Đăng nhập", style: TextStyle(fontSize: 16)),
+                      : const Text(
+                          "Đăng nhập",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
 
                 const SizedBox(height: 16),
