@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import app.core.cloudinary
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import auth
 from app.api.endpoints import product

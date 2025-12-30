@@ -46,7 +46,17 @@ class AuthService:
             subject=user.id,
             role=user.role.value # lấy chuỗi "admin" hoặc "user" từ Enum
         )
-        return token
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": user
+            # "user": {
+            #     "id": user.id,
+            #     "email": user.email,
+            #     "username": user.username,
+            #     "role": user.role.value
+            # }
+        }
     
     @staticmethod
     def change_password(db: Session, current_user: User, password: PasswordChange ):

@@ -22,23 +22,26 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     """
     return auth_service.register_user(db, user_in)
 
-@router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/login/user")
+def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
-    Xác thực và cấp "chìa khóa" JWT TOken chứa Id và Role. 
+    API Đăng nhập dành riêng cho USER trả về token, và thông tin user 
     """
-    try:
-        token = auth_service.login_user(db, email= form_data.username, password=form_data.password)
-        return {
-            "access_token": token,
-            "token_type": "bearer"
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+    auth_result = auth_service.login_user(db,email=form_data.username,password=form_data.password)
+    if auth_result["user"].role != "user":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản này không có quyền truy cập ứng dụng")
+    return auth_result
+
+@router.post("/login/admin")
+def login_admin(form_data: OAuth2PasswordRequestForm = Depends(),db: Session = Depends(get_db)):
+    """ API đăng nhập dành riêng cho ADMIN"""
+    auth_result = auth_service.login_user(db, email=form_data.username,password=form_data.password)
+
+    if auth_result["user"].role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Bạn không có quyền truy cập trang quản trị")
     
+    return auth_result
+
 @router.post("/change-password")
 def change_password(
     password: PasswordChange,
