@@ -7,7 +7,11 @@ class AuthApi {
     try {
       return DioClient.instance.post(
         "/auth/login",
-        data: {"email": email, "password": password},
+        data: {"username": email, "password": password},
+        options: Options(
+          contentType: Headers
+              .formUrlEncodedContentType, // QUAN TRỌNG: Chuyển sang Form Data
+        ),
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
