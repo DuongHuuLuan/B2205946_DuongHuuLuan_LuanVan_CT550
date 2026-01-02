@@ -1,12 +1,12 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/user.dart';
-import 'package:b2205946_duonghuuluan_luanvan/core/storage/secure_storage.dart';
+// import 'package:b2205946_duonghuuluan_luanvan/core/storage/secure_storage.dart';
 
 class AuthViewmodel extends ChangeNotifier {
   User? _user;
   bool _isInitialized = false; // biển kiếm soát trạng thái nạp dữ liệu
-  final SecureStorage _storage = SecureStorage();
+  // final SecureStorage _storage = SecureStorage();
   final AuthRepository _repository;
 
   AuthViewmodel(this._repository) {

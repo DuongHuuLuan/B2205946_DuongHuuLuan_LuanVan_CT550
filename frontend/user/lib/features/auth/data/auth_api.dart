@@ -6,7 +6,7 @@ class AuthApi {
   Future<Response> login(String email, String password) {
     try {
       return DioClient.instance.post(
-        "/auth/login",
+        "/auth/login/user",
         data: {"username": email, "password": password},
         options: Options(
           contentType: Headers
