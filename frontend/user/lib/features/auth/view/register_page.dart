@@ -1,3 +1,5 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -57,101 +59,120 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final vm = context.read<RegisterViewmodel>();
     return Scaffold(
-      appBar: AppBar(title: Text("Đăng ký tài khoản")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return "Vui lòng nhập email";
-                    if (!value.contains("@")) return "Email không hợp lệ";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: "Tên người dùng",
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Vui lòng nhập tên người dùng" : null,
-                ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 24),
+          child: Column(
+            children: [
+              Text("TẠO TÀI KHOẢN", style: AppTextStyles.displayLarge),
+              const SizedBox(height: 20),
 
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: "Mật khẩu",
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return "Vui lòng nhập mật khẩu";
-                    if (value.length < 6) return "Mật khẩu phải từ 6 ký tự";
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: "Xác nhận mật khẩu",
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return "Vui lòng nhập lại mật khẩu";
-                    if (value != _passwordController.text)
-                      return "Mật khẩu không khớp";
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 30),
-                vm.isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: "Email",
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty)
+                              return "Vui lòng nhập email";
+                            if (!value.contains("@"))
+                              return "Email không hợp lệ";
+                            return null;
+                          },
                         ),
-                        child: Text(
-                          "Đăng ký",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            labelText: "Tên người dùng",
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) => value!.isEmpty
+                              ? "Vui lòng nhập tên người dùng"
+                              : null,
+                        ),
+
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
+                            labelText: "Mật khẩu",
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty)
+                              return "Vui lòng nhập mật khẩu";
+                            if (value.length < 6)
+                              return "Mật khẩu phải từ 6 ký tự";
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          decoration: const InputDecoration(
+                            labelText: "Xác nhận mật khẩu",
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty)
+                              return "Vui lòng nhập lại mật khẩu";
+                            if (value != _passwordController.text)
+                              return "Mật khẩu không khớp";
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 30),
+                        vm.isLoading
+                            ? const CircularProgressIndicator(
+                                color: AppColors.onPrimary,
+                              )
+                            : ElevatedButton(
+                                onPressed: _handleRegister,
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(double.infinity, 50),
+                                ),
+                                child: Text(
+                                  "ĐĂNG KÝ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+
+                        const SizedBox(height: 6),
+                        TextButton(
+                          onPressed: () {
+                            return context.go("/login");
+                          },
+                          child: Text(
+                            "Đã có tài khoản? Đăng nhập",
+                            style: AppTextStyles.titleLarge,
                           ),
                         ),
-                      ),
-
-                const SizedBox(height: 6),
-                TextButton(
-                  onPressed: () {
-                    return context.go("/login");
-                  },
-                  child: Text("Đã có tài khoản? Đăng nhập"),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

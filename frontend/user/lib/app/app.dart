@@ -17,6 +17,8 @@ class MyApp extends StatelessWidget {
       title: 'Helmet App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

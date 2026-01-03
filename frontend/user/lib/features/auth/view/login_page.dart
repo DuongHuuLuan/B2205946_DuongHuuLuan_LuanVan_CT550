@@ -1,3 +1,5 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -29,36 +31,31 @@ class _LoginPageState extends State<LoginPage> {
     final loginViewModel = context.watch<LoginViewModel>();
     final authState = context.read<AuthViewmodel>();
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Đăng nhập", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: false,
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
+              Text("Đăng nhập", style: AppTextStyles.displayLarge),
+              const SizedBox(height: 40),
               Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.lock_outline,
-                      size: 80,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Chào mừng trở lại",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      width: 200,
+                      height: 200,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface2,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border),
                       ),
+                      child: Image.asset('assets/images/logo.webp'),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 25),
 
                     TextFormField(
                       controller: _emailController,
@@ -136,16 +133,16 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: loginViewModel.isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.onPrimary,
                               ),
                             )
                           : const Text(
-                              "Đăng nhập",
+                              "GO!",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -155,11 +152,19 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 16),
 
-                    TextButton(
-                      onPressed: () {
-                        context.go("/register");
-                      },
-                      child: Text("Chưa có tài khoản? Đăng ký ngay"),
+                    OutlinedButton(
+                      onPressed: () => context.go("/register"),
+                      child: const SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          "TẠO TÀI KHOẢN",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

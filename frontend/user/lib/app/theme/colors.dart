@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const primary = Color(0xFF1E88E5);
-  static const secondary = Color(0xFFFFA000);
+  // Primary
+  static const primary = Color(0xFF0F1E31); // #0F1E31
+  static const secondary = Color(0xFFD4AF37); // Royal gold
 
-  static const background = Color(0xFFF5F5F5);
-  static const surface = Colors.white;
+  // Background / Surface (navy glossy)
+  static const background = Color(0xFF0A1524);
+  static const surface = Color(0xFF121F33);
+  static const surface2 = Color(0xFF162840);
 
-  static const textPrimary = Color(0xFF212121);
-  static const textSecondary = Color(0xFF757575);
+  // Text
+  static const textPrimary = Color(0xFFF2F6FF);
+  static const textSecondary = Color(0xFFB7C1D1);
 
-  static const error = Color(0xFFD32F2F);
-  static const success = Color(0xFF388E3C);
+  // Status
+  static const error = Color(0xFFFF4D4D);
+  static const success = Color(0xFF3DDC84);
+
+  // Border / Divider
+  static const border = Color(0xFF223B5C);
+  static const divider = Color(0xFF1B2E49);
+
+  // On colors
+  static const onPrimary = Colors.white;
+  static const onSecondary = Color(0xFF121218);
 }
