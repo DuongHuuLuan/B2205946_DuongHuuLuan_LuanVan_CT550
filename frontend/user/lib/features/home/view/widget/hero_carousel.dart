@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 
 class HeroCarousel extends StatefulWidget {
