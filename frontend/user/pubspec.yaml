@@ -25,3 +25,7 @@ flutter:
   assets:
     - .env
     - assets/images/logo.webp
+    - assets/images/banner1.webp
+    - assets/images/banner2.webp
+    - assets/images/banner3.webp
+    - assets/images/banner4.webp

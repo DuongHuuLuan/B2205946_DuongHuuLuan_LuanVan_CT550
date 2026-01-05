@@ -3,7 +3,7 @@ import 'package:b2205946_duonghuuluan_luanvan/app/theme/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/viewmodels/register_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/register_viewmodel.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});

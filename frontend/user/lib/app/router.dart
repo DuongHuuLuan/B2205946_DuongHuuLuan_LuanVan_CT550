@@ -1,8 +1,13 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/view/login_page.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/view/register_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/view/category_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/viewmodels/auth_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 
 class AppRouter {
   static GoRouter createRouter(AuthViewmodel authVM) {
@@ -42,26 +47,33 @@ class AppRouter {
           path: "/register",
           builder: (context, state) => const RegisterPage(),
         ),
+        GoRoute(path: "/", builder: (context, state) => const HomePage()),
+
         GoRoute(
-          path: "/",
+          path: "/splash",
           builder: (context, state) => Scaffold(
-            appBar: AppBar(
-              title: const Text("Home"),
-              actions: [
-                IconButton(
-                  onPressed: () async {
-                    await authVM.logout();
-                  },
-                  icon: const Icon(Icons.logout),
-                ),
-              ],
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.onPrimary),
             ),
           ),
         ),
+
         GoRoute(
-          path: "/splash",
-          builder: (context, state) =>
-              Scaffold(body: Center(child: CircularProgressIndicator())),
+          path: "/categories",
+          builder: (context, state) {
+            return const CategoryPage();
+          },
+        ),
+
+        GoRoute(
+          path: "/products",
+          builder: (context, state) => const ProductPage(),
+        ),
+        GoRoute(
+          path: "/products/:id",
+          builder: (context, state) {
+            return ProductDetailPage(productId: state.pathParameters["id"]!);
+          },
         ),
       ],
     );

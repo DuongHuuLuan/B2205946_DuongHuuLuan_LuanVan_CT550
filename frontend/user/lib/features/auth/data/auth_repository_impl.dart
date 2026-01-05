@@ -1,7 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/auth_repository.dart';
 import 'package:dio/dio.dart';
 import 'auth_api.dart';
-import 'models/user_mapper.dart';
+import 'model/user_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/user.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/storage/secure_storage.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
