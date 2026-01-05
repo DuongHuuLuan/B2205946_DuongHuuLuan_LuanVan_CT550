@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from typing import List
 
+import cloudinary.uploader
 from app.db.session import get_db
 from app.schemas.product import ProductCreate, ProductOut
 from app.services.product_service import ProductService
@@ -35,8 +36,8 @@ def create_product(
     """
 
     new_product = ProductService.create_product(db, product_in)
-    if product_in.image_urls:
-        ImageService.add_images(db,product_id=new_product.id, image_urls=product_in.image_urls)
+    if product_in.images:
+        ImageService.add_images(db,product_id=new_product.id, images=[img.model_dump() for img in product_in.images])
     
     # db.refresh(new_product)
     # return new_product
@@ -51,16 +52,50 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return ProductService.get_product_byID(db,product_id)
 
 
-@router.put("/{product_id}", response_model= ProductCreate)
+@router.put("/{product_id}", response_model= ProductOut)
 def update_product(product_id: int,product_in: ProductCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
     """
     API cập nhật sản phẩm
     """
-    return ProductService.update_product(db,product_id,product_in)
+    update_product =  ProductService.update_product(db,product_id,product_in)
+
+    if product_in.images is not None:
+        ImageService.deleteAll_image(db,product_id)
+        ImageService.add_images(db, product_id, images=[img.model_dump() for img in product_in.images])
+    
+    return ProductService.get_product_byID(db, product_id)
 
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 def delete_product(product_id: int, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
     """
     API xóa 1 sản phẩm theo Id
     """
+    ImageService.deleteAll_image(db, product_id)
     return ProductService.delete_product(db,product_id)
+
+
+@router.post("/{product_id}/images")
+def upload_product_images(
+    product_id: int,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin)
+):
+    if not files:
+        raise HTTPException(status_code=400, detail="Không có file nào")
+
+    uploaded = []
+    for f in files:
+        r = cloudinary.uploader.upload(f.file, folder="helmet_shop/products")
+        uploaded.append({"url": r["secure_url"], "public_id": r["public_id"]})
+
+    # lưu DB
+    db_images = ImageService.add_images(db, product_id, uploaded)
+
+    return {
+        "count": len(db_images),
+        "items": [
+            {"id": img.id, "url": img.url, "public_id": img.public_id}
+            for img in db_images
+        ],
+    }

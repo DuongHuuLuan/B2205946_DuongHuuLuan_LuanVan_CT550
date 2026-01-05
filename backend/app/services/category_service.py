@@ -18,6 +18,13 @@ class CategoryService:
     def getAll_categories(db: Session):
         return db.query(Category).all()
     
+
+    @staticmethod
+    def get_categories_id(db: Session, category_id: int):
+        category = db.query(Category).filter(Category.id == category_id).first()
+        return category
+    
+
     @staticmethod
     def update_category(db: Session, category_id: int, category_in: CategoryCreate):
         db_category = db.query(Category).filter(Category.id == category_id).first()

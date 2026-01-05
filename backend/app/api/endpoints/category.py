@@ -18,6 +18,11 @@ def getAll_category(db: Session = Depends(get_db)):
     """
     return CategoryService.getAll_categories(db)
 
+@router.get("/{category_id}", response_model=CategoryOut)
+def get_category_id(category_id: int ,db: Session = Depends(get_db)):
+    """API lấy một danh mục cụ thể"""
+    return CategoryService.get_categories_id(db,category_id)
+
 @router.post("/", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
 def create_category(category_in: CategoryCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
     """

@@ -11,7 +11,7 @@ class ProductService:
         if not category:
             raise HTTPException(status_code=404, detail="Không tìm thấy danh mục này")
         
-        product_data = product_in.model_dump(exclude={'image_urls'})
+        product_data = product_in.model_dump(exclude={'images'})
         db_product = Product(**product_data)
         
         db.add(db_product)
@@ -45,11 +45,11 @@ class ProductService:
         if not db_product:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
 
-        update_data = product_in.model_dump(exclude_unset=True, exclude={'image_urls'})   ## chỉ lấy những trường có gửi dữ liệu
+        update_data = product_in.model_dump(exclude_unset=True, exclude={'images'})   ## chỉ lấy những trường có gửi dữ liệu
         for key, value in update_data.items():
             setattr(db_product, key, value)
 
-        
+
         db.commit()
         db.refresh(db_product)
         return db_product

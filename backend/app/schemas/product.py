@@ -11,9 +11,12 @@ class ProductBase(BaseModel):
     unit: UnitEnum = UnitEnum.CHIEC
     category_id: int
 
+class ImageUloadPayload(BaseModel):
+    url: str
+    public_id: str
 
 class ProductCreate(ProductBase):
-    image_urls: List[str] =[]
+    images: List[ImageUloadPayload] =[]
 
 class ProductOut(ProductBase):
     id: int

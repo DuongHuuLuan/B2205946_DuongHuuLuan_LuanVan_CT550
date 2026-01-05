@@ -13,6 +13,7 @@ from app.api.endpoints import evaluate
 from app.api.endpoints import distributor
 from app.api.endpoints import warehouse
 from app.api.endpoints import receipt
+from app.api.endpoints import image_url
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
@@ -28,3 +29,4 @@ app.include_router(evaluate.router)
 app.include_router(distributor.router)
 app.include_router(warehouse.router)
 app.include_router(receipt.router)
+app.include_router(image_url.router)
