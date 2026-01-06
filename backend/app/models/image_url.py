@@ -8,6 +8,7 @@ class ImageURL(Base):
 
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey("products.id"))
+    color_id = Column(Integer, ForeignKey("colors.id"))
     url = Column(String(255), nullable=False)
     public_id = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -15,3 +16,4 @@ class ImageURL(Base):
 
 
     product = relationship("Product", back_populates="images")
+    color = relationship("Color", back_populates="images")

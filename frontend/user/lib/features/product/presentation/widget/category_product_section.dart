@@ -117,17 +117,13 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
                     ),
                   ),
                 ),
-                // TextButton(
-                //   onPressed: widget.onSeeMore,
-                //   child: const Text("Xem thêm"),
-                // ),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
           SizedBox(
-            height: 490,
+            height: 530,
             child: Stack(
               children: [
                 ListView.separated(

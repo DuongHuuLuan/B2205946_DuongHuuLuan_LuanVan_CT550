@@ -1,8 +1,7 @@
 import 'dart:math';
-
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
 
@@ -24,15 +23,27 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard> {
   int _imgIndex = 0;
+
   String? _selectedSizeId;
+  String? _selectedColorId;
 
   List<ProductVariant> get _variants => widget.product.variants;
 
-  // size unique theo sizeId
+  // ====== VARIANTS: sizes theo màu ======
+
   List<ProductVariant> get _uniqueSizes {
     final seen = <String>{};
     final result = <ProductVariant>[];
-    for (final v in _variants) {
+
+    final colorId =
+        _selectedColorId ??
+        (_variants.isNotEmpty ? _variants.first.colorId : null);
+
+    final filtered = (colorId == null)
+        ? _variants
+        : _variants.where((v) => v.colorId == colorId).toList();
+
+    for (final v in filtered) {
       if (seen.add(v.sizeId)) result.add(v);
     }
     return result;
@@ -41,19 +52,93 @@ class _ProductCardState extends State<ProductCard> {
   ProductVariant? get _selectedVariant {
     if (_variants.isEmpty) return null;
 
-    if (_selectedSizeId != null) {
-      final match = _variants
-          .where((v) => v.sizeId == _selectedSizeId)
-          .toList();
-      if (match.isNotEmpty) return match.first;
-    }
+    final colorId = _selectedColorId ?? _variants.first.colorId;
+    final sizeId = _selectedSizeId ?? _variants.first.sizeId;
+
+    final exact = _variants.where(
+      (v) => v.colorId == colorId && v.sizeId == sizeId,
+    );
+    if (exact.isNotEmpty) return exact.first;
+
+    final byColor = _variants.where((v) => v.colorId == colorId);
+    if (byColor.isNotEmpty) return byColor.first;
+
     return _variants.first;
+  }
+
+  // ====== IMAGES: filter theo màu + fallback ảnh chung ======
+
+  List get _allImages => widget.product.images;
+
+  List get _commonImages =>
+      _allImages.where((img) => img.colorId == null).toList();
+
+  List _imagesByColor(String colorId) =>
+      _allImages.where((img) => img.colorId == colorId).toList();
+
+  // ảnh dùng để hiển thị cho màu đang chọn
+  List get _displayImages {
+    if (_allImages.isEmpty) return [];
+
+    final cId = _selectedColorId;
+    if (cId != null) {
+      final byColor = _imagesByColor(cId);
+      if (byColor.isNotEmpty) return byColor;
+    }
+
+    if (_commonImages.isNotEmpty) return _commonImages;
+
+    return _allImages;
+  }
+
+  // ====== THUMBNAILS CHỌN MÀU (mỗi màu 1 ảnh đại diện) ======
+  // ưu tiên lấy ảnh đầu tiên của màu đó; nếu không có thì bỏ qua
+  List<_ColorThumb> get _colorThumbs {
+    final seen = <String>{};
+    final result = <_ColorThumb>[];
+
+    for (final v in _variants) {
+      if (!seen.add(v.colorId)) continue; // unique theo colorId
+
+      final imgs = _imagesByColor(v.colorId);
+      if (imgs.isEmpty) continue;
+
+      result.add(
+        _ColorThumb(
+          colorId: v.colorId,
+          label: v.colorName, // nếu bạn muốn hiện tên màu (optional)
+          url: imgs.first.url,
+        ),
+      );
+    }
+
+    // fallback: nếu không có ảnh theo màu, không render dòng này
+    return result;
   }
 
   @override
   void initState() {
     super.initState();
-    if (_variants.isNotEmpty) _selectedSizeId = _variants.first.sizeId;
+    if (_variants.isNotEmpty) {
+      _selectedColorId = _variants.first.colorId;
+      _selectedSizeId = _variants.first.sizeId;
+    }
+  }
+
+  void _selectColor(String colorId) {
+    setState(() {
+      _selectedColorId = colorId;
+      _imgIndex = 0; // đổi màu thì reset về ảnh đầu
+
+      // nếu size đang chọn không tồn tại trong màu mới -> auto chọn size đầu tiên của màu đó
+      final ok = _variants.any(
+        (x) => x.colorId == colorId && x.sizeId == _selectedSizeId,
+      );
+      if (!ok) {
+        final firstOfColor = _variants.firstWhere((x) => x.colorId == colorId);
+        _selectedSizeId = firstOfColor.sizeId;
+      }
+    });
   }
 
   @override
@@ -61,8 +146,10 @@ class _ProductCardState extends State<ProductCard> {
     final p = widget.product;
     final variant = _selectedVariant;
 
-    final mainUrl = p.images.isNotEmpty
-        ? p.images[_imgIndex.clamp(0, p.images.length - 1)].url
+    final images = _displayImages;
+
+    final mainUrl = images.isNotEmpty
+        ? images[_imgIndex.clamp(0, images.length - 1)].url
         : null;
 
     final inStock = (variant?.stockQuantity ?? 0) > 0;
@@ -98,18 +185,60 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // thumbnails
-            if (p.images.length > 1)
+            // ✅ Dòng thumbnails chọn MÀU (mỗi màu 1 thumbnail)
+            if (_colorThumbs.length > 1)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                child: SizedBox(
+                  height: 48,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _colorThumbs.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final t = _colorThumbs[i];
+                      final active = t.colorId == _selectedColorId;
+
+                      return InkWell(
+                        onTap: () => _selectColor(t.colorId),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: active
+                                  ? AppColors.secondary
+                                  : Colors.black12,
+                              width: active ? 2 : 1,
+                            ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Image.network(
+                            t.url,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Container(color: Colors.grey.shade200),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+            // ✅ Thumbnails ảnh (của màu đang chọn + fallback)
+            if (images.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: SizedBox(
                   height: 44,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: min(p.images.length, 4),
+                    itemCount: min(images.length, 4),
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, i) {
-                      final url = p.images[i].url;
+                      final url = images[i].url;
                       final active = i == _imgIndex;
 
                       return InkWell(
@@ -139,7 +268,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // size chips
+            // Size chips (theo màu)
             if (_uniqueSizes.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -206,7 +335,7 @@ class _ProductCardState extends State<ProductCard> {
 
             const SizedBox(height: 12),
 
-            // Add to cart
+            // Add to cart (đúng variant theo màu + size)
             Padding(
               padding: const EdgeInsets.all(10),
               child: SizedBox(
@@ -230,6 +359,8 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
+  // ===== helpers =====
+
   Widget _imagePlaceholder() => Container(
     color: Colors.grey.shade200,
     alignment: Alignment.center,
@@ -252,4 +383,13 @@ class _ProductCardState extends State<ProductCard> {
     }
     return buf.toString();
   }
+}
+
+// helper class nội bộ để render list thumbnail theo màu
+class _ColorThumb {
+  final String colorId;
+  final String label;
+  final String url;
+
+  _ColorThumb({required this.colorId, required this.label, required this.url});
 }

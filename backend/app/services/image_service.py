@@ -15,6 +15,7 @@ class ImageService:
         for img in images:
             db_image = ImageURL(
                 product_id=product_id,
+                color_id =img.get("color_id"),
                 url=img["url"],
                 public_id=img["public_id"],
             )

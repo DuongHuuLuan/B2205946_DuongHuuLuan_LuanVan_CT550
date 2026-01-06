@@ -5,6 +5,7 @@ from typing import Optional, List
 class ImageURLBase(BaseModel):
     url: str
     public_id: str
+    color_id: Optional[int] = None
 
 
 class ImageURLCreate(ImageURLBase):
@@ -17,6 +18,7 @@ class ImageUrlOut(ImageURLBase):
     product_id: int
     url: str
     public_id: str
+    color_id: Optional[int]
     created_at: datetime
 
     class Config:

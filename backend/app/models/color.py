@@ -10,4 +10,7 @@ class Color(Base):
     hexcode = Column(String(10), nullable=False)
 
     product_details = relationship("ProductDetail", back_populates="color")
-    
+    images = relationship("ImageURL", back_populates="color")
+
+
+

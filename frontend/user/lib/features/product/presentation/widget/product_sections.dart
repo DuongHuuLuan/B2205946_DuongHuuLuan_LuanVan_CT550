@@ -42,7 +42,11 @@ class ProductSections extends StatelessWidget {
           onAddToCart: (Product p, ProductVariant v) {
             // TODO: cart
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Đã chọn: ${p.name} - size ${v.size}')),
+              SnackBar(
+                content: Text(
+                  'Đã chọn: ${p.name} - size ${v.size} - color ${v.colorName}',
+                ),
+              ),
             );
           },
         );
