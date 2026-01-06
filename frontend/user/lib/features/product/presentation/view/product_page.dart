@@ -1,11 +1,15 @@
+import 'dart:collection';
+
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
-import 'package:go_router/go_router.dart';
 
 class ProductPage extends StatefulWidget {
-  final String? categoryId;
-  const ProductPage({super.key, this.categoryId});
+  const ProductPage({super.key});
 
   @override
   State<ProductPage> createState() => _ProductPageState();
@@ -15,53 +19,43 @@ class _ProductPageState extends State<ProductPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => context.read<ProductViewmodel>().getAllProduct(
-        categoryId: widget.categoryId,
-      ),
-    );
+    Future.microtask(() async {
+      // Load categories + products (nếu đã load ở Home thì vẫn OK)
+      await context.read<CategoryViewModel>().load();
+      await context.read<ProductViewmodel>().getAllProduct();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ProductViewmodel>();
+    final categoryVm = context.watch<CategoryViewModel>();
+    final productVm = context.watch<ProductViewmodel>();
 
-    if (vm.isLoading) {
+    final List<Category> categories = categoryVm.categories;
+    final List<Product> products = productVm.products;
+
+    // Loading/Error tối thiểu (không đụng fields categoryVm.isLoading/errorMessage để tránh sai compile)
+    if (productVm.isLoading && products.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (vm.errorMessage != null) {
-      return Scaffold(body: Center(child: Text(vm.errorMessage!)));
+    if (productVm.errorMessage != null && products.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Sản phẩm")),
+        body: Center(child: Text(productVm.errorMessage!)),
+      );
+    }
+
+    // Gom product theo categoryId
+    final Map<String, List<Product>> byCategory = HashMap();
+    for (final p in products) {
+      byCategory.putIfAbsent(p.categoryId, () => []).add(p);
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sản phẩm")),
-      body: RefreshIndicator(
-        onRefresh: () => vm.getAllProduct(categoryId: widget.categoryId),
-        child: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: vm.products.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) {
-            final p = vm.products[i];
-            final price = p.variants.isNotEmpty ? p.variants.first.price : 0;
-            final stock = p.variants.isNotEmpty
-                ? p.variants.first.stockQuantity
-                : 0;
-            return ListTile(
-              title: Text(p.name),
-              subtitle: Text(p.description),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text("$price"),
-                  Text("Kho: $stock", style: const TextStyle(fontSize: 12)),
-                ],
-              ),
-              onTap: () => context.go("/products/${p.id}"),
-            );
-          },
-        ),
+      appBar: AppBar(title: const Text("Sản phẩm theo loại")),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [ProductSections(categories: categories, products: products)],
       ),
     );
   }

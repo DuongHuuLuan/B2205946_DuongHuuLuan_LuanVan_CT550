@@ -7,7 +7,6 @@ class ProductVariant {
   final String size;
   final int stockQuantity;
   final double price;
-  // final double? purchasePrice;
 
   ProductVariant({
     required this.id,
@@ -18,6 +17,5 @@ class ProductVariant {
     required this.size,
     required this.stockQuantity,
     required this.price,
-    // required this.purchasePrice,
   });
 }

@@ -4,6 +4,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/hero_carousel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_app_bar.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -61,6 +62,21 @@ class _HomePageState extends State<HomePage> {
             thumbnails: categoryThumbs,
             onTap: (c) {},
           ),
+          if (productVm.isLoading && productVm.products.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (productVm.errorMessage != null && productVm.products.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(productVm.errorMessage!),
+            )
+          else
+            ProductSections(
+              categories: categoryVm.categories,
+              products: productVm.products,
+            ),
         ],
       ),
     );

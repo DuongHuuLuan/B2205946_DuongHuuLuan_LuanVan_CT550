@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Primary
   static const primary = Color(0xFF0F1E31); // #0F1E31
-  static const secondary = Color(0xFFD4AF37); // Royal gold
+  static const secondary = Color(0xFFD6AA69); // Royal gold
 
   // Background / Surface (navy glossy)
   static const background = Color(0xFF0A1524);
