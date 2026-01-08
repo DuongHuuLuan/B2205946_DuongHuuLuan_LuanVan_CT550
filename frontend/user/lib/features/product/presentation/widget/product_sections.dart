@@ -37,6 +37,7 @@ class ProductSections extends StatelessWidget {
           onSeeMore: () {
             // nếu muốn đi trang /products lọc theo category
             // context.go('/products?categoryId=${c.id}');
+            context.go('/products/categories/${c.id}');
           },
           onProductTap: (p) => context.go('/products/${p.id}'),
           onAddToCart: (Product p, ProductVariant v) {

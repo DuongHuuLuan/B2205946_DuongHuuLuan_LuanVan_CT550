@@ -48,3 +48,14 @@ class CategoryService:
         db.delete(db_category)
         db.commit()
         return{"message": "Xóa danh mục thành công"}
+
+
+    @staticmethod
+    def get_product_by_category(db: Session, category_id: int):
+        category = db.query(Category).filter(Category.id == category_id).first()
+        if not category:
+            raise HTTPException(status_code=404, detail="Không tìm thấy danh mục")
+        
+        db.commit()
+        db.refresh(category)
+        return category.products

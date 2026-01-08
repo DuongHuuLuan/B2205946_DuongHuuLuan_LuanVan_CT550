@@ -13,6 +13,7 @@ class AppColors {
   // Text
   static const textPrimary = Color(0xFFF2F6FF);
   static const textSecondary = Color(0xFFB7C1D1);
+  static const textDart = Color(0xFF070C14);
 
   // Status
   static const error = Color(0xFFFF4D4D);

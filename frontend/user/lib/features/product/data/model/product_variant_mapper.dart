@@ -10,7 +10,6 @@ class ProductVariantMapper extends ProductVariant {
     required super.size,
     required super.price,
     required super.stockQuantity,
-    //required super.purchasePrice,
   });
 
   factory ProductVariantMapper.fromJson(Map<String, dynamic> json) {

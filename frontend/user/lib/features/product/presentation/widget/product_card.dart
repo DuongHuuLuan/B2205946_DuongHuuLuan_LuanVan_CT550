@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
 
 class ProductCard extends StatefulWidget {
@@ -23,129 +26,89 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard> {
   int _imgIndex = 0;
-
-  String? _selectedSizeId;
   String? _selectedColorId;
+  String? _selectedSizeId;
 
-  List<ProductVariant> get _variants => widget.product.variants;
+  Product get _p => widget.product;
 
-  // ====== VARIANTS: sizes theo màu ======
+  // ====== helpers images ======
 
-  List<ProductVariant> get _uniqueSizes {
-    final seen = <String>{};
-    final result = <ProductVariant>[];
+  List<ProductImage> _imagesByColor(String colorId) =>
+      _p.images.where((img) => img.colorId == colorId).toList();
 
-    final colorId =
-        _selectedColorId ??
-        (_variants.isNotEmpty ? _variants.first.colorId : null);
+  List<ProductImage> get _commonImages =>
+      _p.images.where((img) => img.colorId == null).toList();
 
-    final filtered = (colorId == null)
-        ? _variants
-        : _variants.where((v) => v.colorId == colorId).toList();
+  /// Ảnh hiển thị theo màu đang chọn + fallback ảnh chung (colorId null)
+  List<ProductImage> get _displayImages => _p.filterImages(_selectedColorId);
 
-    for (final v in filtered) {
-      if (seen.add(v.sizeId)) result.add(v);
-    }
-    return result;
-  }
+  // ====== UI data ======
 
-  ProductVariant? get _selectedVariant {
-    if (_variants.isEmpty) return null;
+  List<ProductVariant> get _colors => _p.uniqueColors;
 
-    final colorId = _selectedColorId ?? _variants.first.colorId;
-    final sizeId = _selectedSizeId ?? _variants.first.sizeId;
+  List<ProductVariant> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
 
-    final exact = _variants.where(
-      (v) => v.colorId == colorId && v.sizeId == sizeId,
-    );
-    if (exact.isNotEmpty) return exact.first;
+  ProductVariant? get _selectedVariant =>
+      _p.findVariant(_selectedColorId, _selectedSizeId);
 
-    final byColor = _variants.where((v) => v.colorId == colorId);
-    if (byColor.isNotEmpty) return byColor.first;
-
-    return _variants.first;
-  }
-
-  // ====== IMAGES: filter theo màu + fallback ảnh chung ======
-
-  List get _allImages => widget.product.images;
-
-  List get _commonImages =>
-      _allImages.where((img) => img.colorId == null).toList();
-
-  List _imagesByColor(String colorId) =>
-      _allImages.where((img) => img.colorId == colorId).toList();
-
-  // ảnh dùng để hiển thị cho màu đang chọn
-  List get _displayImages {
-    if (_allImages.isEmpty) return [];
-
-    final cId = _selectedColorId;
-    if (cId != null) {
-      final byColor = _imagesByColor(cId);
-      if (byColor.isNotEmpty) return byColor;
-    }
-
-    if (_commonImages.isNotEmpty) return _commonImages;
-
-    return _allImages;
-  }
-
-  // ====== THUMBNAILS CHỌN MÀU (mỗi màu 1 ảnh đại diện) ======
-  // ưu tiên lấy ảnh đầu tiên của màu đó; nếu không có thì bỏ qua
+  // ====== Color thumbnails ======
+  // mỗi màu 1 thumbnail (ưu tiên ảnh theo màu, fallback ảnh chung)
   List<_ColorThumb> get _colorThumbs {
-    final seen = <String>{};
+    if (_colors.isEmpty) return [];
+
     final result = <_ColorThumb>[];
 
-    for (final v in _variants) {
-      if (!seen.add(v.colorId)) continue; // unique theo colorId
+    for (final c in _colors) {
+      final byColor = _imagesByColor(c.colorId);
+      final fallback = _commonImages.isNotEmpty ? _commonImages : _p.images;
 
-      final imgs = _imagesByColor(v.colorId);
-      if (imgs.isEmpty) continue;
+      final list = byColor.isNotEmpty ? byColor : fallback;
+      if (list.isEmpty) continue;
 
       result.add(
         _ColorThumb(
-          colorId: v.colorId,
-          label: v.colorName, // nếu bạn muốn hiện tên màu (optional)
-          url: imgs.first.url,
+          colorId: c.colorId,
+          label: c.colorName,
+          url: list.first.url,
         ),
       );
     }
 
-    // fallback: nếu không có ảnh theo màu, không render dòng này
     return result;
   }
 
   @override
   void initState() {
     super.initState();
-    if (_variants.isNotEmpty) {
-      _selectedColorId = _variants.first.colorId;
-      _selectedSizeId = _variants.first.sizeId;
+
+    if (_p.variants.isNotEmpty) {
+      _selectedColorId = _p.variants.first.colorId;
+      _selectedSizeId = _p.variants.first.sizeId;
     }
   }
 
   void _selectColor(String colorId) {
     setState(() {
       _selectedColorId = colorId;
-      _imgIndex = 0; // đổi màu thì reset về ảnh đầu
+      _imgIndex = 0;
 
-      // nếu size đang chọn không tồn tại trong màu mới -> auto chọn size đầu tiên của màu đó
-      final ok = _variants.any(
-        (x) => x.colorId == colorId && x.sizeId == _selectedSizeId,
-      );
-      if (!ok) {
-        final firstOfColor = _variants.firstWhere((x) => x.colorId == colorId);
-        _selectedSizeId = firstOfColor.sizeId;
+      // nếu size hiện tại không tồn tại trong màu mới => auto chọn size đầu tiên của màu đó
+      final sizes = _p.getUniqueSizesByColor(colorId);
+      final stillOk = sizes.any((s) => s.sizeId == _selectedSizeId);
+
+      if (!stillOk) {
+        _selectedSizeId = sizes.isNotEmpty ? sizes.first.sizeId : null;
       }
     });
   }
 
+  void _selectSize(String sizeId) {
+    setState(() => _selectedSizeId = sizeId);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final p = widget.product;
     final variant = _selectedVariant;
-
     final images = _displayImages;
 
     final mainUrl = images.isNotEmpty
@@ -153,7 +116,7 @@ class _ProductCardState extends State<ProductCard> {
         : null;
 
     final inStock = (variant?.stockQuantity ?? 0) > 0;
-    final priceText = variant != null ? _formatVnd(variant.price) : "Liên hệ";
+    final priceText = variant != null ? variant.price.toVnd() : "Liên hệ";
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -166,7 +129,7 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Ảnh lớn
+            // ====== Ảnh lớn ======
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(14),
@@ -185,7 +148,7 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // ✅ Dòng thumbnails chọn MÀU (mỗi màu 1 thumbnail)
+            // ====== Thumbnails chọn MÀU (bằng ảnh) ======
             if (_colorThumbs.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -227,7 +190,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ✅ Thumbnails ảnh (của màu đang chọn + fallback)
+            // ====== Thumbnails ảnh (theo màu + fallback) ======
             if (images.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -268,17 +231,17 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // Size chips (theo màu)
-            if (_uniqueSizes.isNotEmpty)
+            // ====== Size chips ======
+            if (_sizes.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _uniqueSizes.map((v) {
+                  children: _sizes.map((v) {
                     final selected = v.sizeId == _selectedSizeId;
                     return InkWell(
-                      onTap: () => setState(() => _selectedSizeId = v.sizeId),
+                      onTap: () => _selectSize(v.sizeId),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -297,7 +260,7 @@ class _ProductCardState extends State<ProductCard> {
                           v.size,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: Colors.black,
+                            color: AppColors.textDart,
                           ),
                         ),
                       ),
@@ -306,11 +269,11 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // Tên
+            // ====== Tên ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Text(
-                p.name.toUpperCase(),
+                _p.name.toUpperCase(),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -320,11 +283,11 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // Giá
+            // ====== Giá ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
               child: Text(
-                "$priceText đ",
+                priceText,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -335,7 +298,7 @@ class _ProductCardState extends State<ProductCard> {
 
             const SizedBox(height: 12),
 
-            // Add to cart (đúng variant theo màu + size)
+            // ====== Add to cart ======
             Padding(
               padding: const EdgeInsets.all(10),
               child: SizedBox(
@@ -343,7 +306,7 @@ class _ProductCardState extends State<ProductCard> {
                 child: ElevatedButton(
                   onPressed: (!inStock || variant == null)
                       ? null
-                      : () => widget.onAddToCart?.call(p, variant),
+                      : () => widget.onAddToCart?.call(_p, variant),
                   child: Text(
                     inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
                     style: inStock
@@ -359,8 +322,6 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  // ===== helpers =====
-
   Widget _imagePlaceholder() => Container(
     color: Colors.grey.shade200,
     alignment: Alignment.center,
@@ -372,20 +333,8 @@ class _ProductCardState extends State<ProductCard> {
     alignment: Alignment.center,
     child: const CircularProgressIndicator(strokeWidth: 2),
   );
-
-  String _formatVnd(double v) {
-    final s = v.toStringAsFixed(0);
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      final left = s.length - i;
-      buf.write(s[i]);
-      if (left > 1 && left % 3 == 1) buf.write('.');
-    }
-    return buf.toString();
-  }
 }
 
-// helper class nội bộ để render list thumbnail theo màu
 class _ColorThumb {
   final String colorId;
   final String label;

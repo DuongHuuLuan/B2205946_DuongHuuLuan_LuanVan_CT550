@@ -82,7 +82,8 @@ class _CategoryStripState extends State<CategoryStrip> {
     if (widget.categories.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      color: const Color(0xFF070C14),
+      // color: const Color(0xFF070C14),
+      color: AppColors.background,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: SizedBox(
         height: 230,

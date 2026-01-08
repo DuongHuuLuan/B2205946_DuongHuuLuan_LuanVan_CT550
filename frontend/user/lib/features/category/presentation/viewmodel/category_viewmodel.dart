@@ -23,4 +23,29 @@ class CategoryViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<Category?> getById(String id) async {
+    try {
+      return await _repository.getById(id);
+    } catch (e) {
+      errorMessage = e.toString();
+      isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<List<Category>?> getAllProudctByCategoryId(String categoryId) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      return await _repository.getAllProudctByCategoryId(categoryId);
+    } catch (e) {
+      errorMessage = e.toString();
+      isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
 }

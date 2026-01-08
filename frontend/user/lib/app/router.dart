@@ -3,6 +3,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/lo
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/view/category_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation/view/about_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
 import 'package:go_router/go_router.dart';
@@ -59,9 +61,17 @@ class AppRouter {
         ),
 
         GoRoute(
-          path: "/categories",
+          path: "/products/categories",
           builder: (context, state) {
-            return const CategoryPage();
+            return const ProductCatagoryPage();
+          },
+        ),
+
+        GoRoute(
+          path: "/products/categories/:id",
+          builder: (context, state) {
+            final categoryId = state.pathParameters["id"]!;
+            return ProductCatagoryPage(categoryId: categoryId);
           },
         ),
 
@@ -75,6 +85,8 @@ class AppRouter {
             return ProductDetailPage(productId: state.pathParameters["id"]!);
           },
         ),
+
+        GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
       ],
     );
   }

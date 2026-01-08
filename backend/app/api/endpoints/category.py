@@ -47,3 +47,10 @@ def delete_category(category_id: int, db: Session = Depends(get_db), current_adm
     API  xóa danh mục
     """
     return CategoryService.delete_category(db,category_id)
+
+@router.get("/{category_id}/products", response_model=List[CategoryOut])
+def get_products_by_category(category_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_user)):
+    """
+    API lấy tất cả sản phẩm theo danh mục
+    """
+    return CategoryService.get_product_by_category(db, category_id)

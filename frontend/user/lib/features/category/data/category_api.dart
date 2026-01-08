@@ -19,4 +19,14 @@ class CategoryApi {
       throw ErrorHandler.handle(e);
     }
   }
+
+  Future<Response> getAllProudctByCategoryId(String categoryId) async {
+    try {
+      return await DioClient.instance.get(
+        "${ApiEndpoints.category}/$categoryId/products",
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
 }

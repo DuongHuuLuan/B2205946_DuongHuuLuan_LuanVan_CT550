@@ -29,4 +29,15 @@ class CategoryRepositoryImpl implements CategoryRepository {
       throw ErrorHandler.handle(e);
     }
   }
+
+  @override
+  Future<List<Category>> getAllProudctByCategoryId(String categoryId) async {
+    try {
+      final response = await _api.getAllProudctByCategoryId(categoryId);
+      final list = (response.data as List).cast<Map<String, dynamic>>();
+      return list.map(CategoryMapper.fromJson).toList();
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
 }

@@ -1,4 +1,3 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +24,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
     if (vm.isLoading)
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.onPrimary),
+        child: CircularProgressIndicator(color: Colors.white),
       );
     if (vm.errorMessage != null) {
       return Center(child: Text(vm.errorMessage!));
