@@ -17,17 +17,18 @@ class ApiEndpoints {
       "/products/category/$categoryId";
 
   // Product Detail
-  static const variants = "/product-details";
-  static const variantColors = "/product-details/colors";
-  static const variantSizes = "/product-details/sizes";
-  static String addVariant(int productId) => "/product-details/$productId";
-  static String variantDetail(int productDetailId) =>
+  static const productDetails = "/product-details";
+  static const productDetailColors = "/product-details/colors";
+  static const productDetailSizes = "/product-details/sizes";
+  static String addProductDetail(int productId) =>
+      "/product-details/$productId";
+  static String updateProductDetail(int productDetailId) =>
       "/product-details/$productDetailId";
   // Cart
   static const cart = "/carts";
-  static const cartDetails = "/carts/product_details";
+  static const cartDetails = "/carts/cart-details";
   static String cartDetail(int cartDetailId) =>
-      "/carts/product_details/$cartDetailId";
+      "/carts/cart-details/$cartDetailId";
   // Order
   static const orders = "/orders";
   static const orderHistory = "/orders/history";

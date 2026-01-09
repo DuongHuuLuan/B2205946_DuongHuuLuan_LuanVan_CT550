@@ -1,5 +1,5 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_image_mapper.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_variant_mapper.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_detail_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';

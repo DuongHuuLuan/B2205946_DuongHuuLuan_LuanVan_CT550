@@ -31,23 +31,23 @@ def get_all_sizes(db: Session = Depends(get_db)):
     return ProductDetailService.get_all_sizes(db)
 
 @router.post("/product-details/{product_id}", response_model= ProductDetailOut)
-def add_variant(product_id: int, variant_in: ProductDetailCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
+def add_product_detail(product_id: int, variant_in: ProductDetailCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
     """Gán một biến thể (Màu + Size + Tồn kho) cho một sản phẩm cụ thể """
     return ProductDetailService.create_variant(db,variant_in, product_id)
 
-@router.put("/product-detail/{product_detail_id}", response_model=ProductDetailOut)
-def update_variant(
-    variant_id: int,
+@router.put("/product-details/{product_detail_id}", response_model=ProductDetailOut)
+def update_product_detail(
+    product_detail_id: int,
     new_quantity: int,
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin)
 ):
-    return ProductDetailService.update_variant(db, variant_id,new_quantity)
+    return ProductDetailService.update_variant(db, product_detail_id, new_quantity)
 
-@router.delete("/product-detail/{product_detail_id}", status_code=status.HTTP_200_OK)
-def delete_variant(
-    variant_id: int,
+@router.delete("/product-details/{product_detail_id}", status_code=status.HTTP_200_OK)
+def delete_product_detail(
+    product_detail_id: int,
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin)
 ):
-    return ProductDetailService.delete_variant(db,variant_id)
+    return ProductDetailService.delete_variant(db,product_detail_id)

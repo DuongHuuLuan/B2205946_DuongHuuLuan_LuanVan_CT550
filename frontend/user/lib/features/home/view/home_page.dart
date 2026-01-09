@@ -10,6 +10,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_dra
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -73,7 +74,9 @@ class _HomePageState extends State<HomePage> {
             child: CategoryStrip(
               categories: categoryVm.categories,
               thumbnails: categoryThumbs,
-              onTap: (c) {},
+              onTap: (c) {
+                context.go("/products/categories/${c.id}");
+              },
             ),
           ),
 
@@ -204,4 +207,3 @@ class _HomeSliverAppBar extends StatelessWidget {
     );
   }
 }
-

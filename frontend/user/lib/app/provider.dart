@@ -1,6 +1,10 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/auth_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/login_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/register_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category_repository.dart';
@@ -34,6 +38,14 @@ final List<SingleChildWidget> Providers = [
     create: (context) => ProductRepositoryImpl(context.read<ProductApi>()),
   ),
 
+  //cart
+  Provider(create: (context) => CartApi()),
+  Provider<CartRepository>(
+    create: (context) => CartRepositoryImpl(context.read<CartApi>()),
+  ),
+
+  ///-------------------------------------------------------------------------
+
   // AuthViewModel
   ChangeNotifierProvider(
     create: (context) => AuthViewmodel(context.read<AuthRepository>()),
@@ -56,5 +68,10 @@ final List<SingleChildWidget> Providers = [
   //product
   ChangeNotifierProvider(
     create: (context) => ProductViewmodel(context.read<ProductRepository>()),
+  ),
+
+  //cart
+  ChangeNotifierProvider(
+    create: (context) => CartViewmodel(context.read<CartRepository>()),
   ),
 ];
