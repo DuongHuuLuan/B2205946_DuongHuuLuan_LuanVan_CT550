@@ -1,7 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_card.dart';
 
@@ -11,7 +11,12 @@ class CategoryProductSection extends StatefulWidget {
 
   final VoidCallback onSeeMore;
   final void Function(Product product) onProductTap;
-  final void Function(Product product, ProductVariant variant) onAddToCart;
+  final void Function(
+    Product product,
+    ProductDetail productDetail,
+    int quantity,
+  )
+  onAddToCart;
 
   const CategoryProductSection({
     super.key,
@@ -139,7 +144,8 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
                       child: ProductCard(
                         product: product,
                         onTap: () => widget.onProductTap(product),
-                        onAddToCart: (p, v) => widget.onAddToCart(p, v),
+                        onAddToCart: (p, v, quantity) =>
+                            widget.onAddToCart(p, v, quantity),
                       ),
                     );
                   },

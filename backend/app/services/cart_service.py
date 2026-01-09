@@ -28,24 +28,24 @@ class CartService:
     
 
     @staticmethod
-    def add_to_cart(db: Session, user_id: int, item_in: CartDetailCreate):
+    def add_to_cart(db: Session, user_id: int, cart_detail_in: CartDetailCreate):
         cart = CartService.get_or_create_cart(db,user_id)
 
-        product_detail = db.query(ProductDetail).filter(ProductDetail.id == item_in.product_detail_id).first()
+        product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail_in.product_detail_id).first()
         if not product_detail:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
         
-        if product_detail.stock_quantity < item_in.quantity:
+        if product_detail.stock_quantity < cart_detail_in.quantity:
             raise HTTPException(status_code=400, detail=f"Chỉ còn {product_detail.stock_quantity} sản phẩm trong kho")
         
 
         cart_detail = db.query(CartDetail).filter(
             CartDetail.cart_id == cart.id,
-            CartDetail.product_detail_id == item_in.product_detail_id
+            CartDetail.product_detail_id == cart_detail_in.product_detail_id
         ).first()
         if cart_detail:
             # neu roi thi cong don so luong
-            new_quantity = cart_detail.quantity + item_in.quantity
+            new_quantity = cart_detail.quantity + cart_detail_in.quantity
             if product_detail.stock_quantity < new_quantity:
                 raise HTTPException(status_code=400, detail=" Tổng số lượng vượt quá tồn kho")
             cart_detail.quantity = new_quantity
@@ -53,8 +53,8 @@ class CartService:
             # nếu chưa có thì thêm mới
             cart_detail = CartDetail(
                 cart_id = cart.id,
-                product_detail_id = item_in.product_detail_id,
-                quantity = item_in.quantity
+                product_detail_id = cart_detail_in.product_detail_id,
+                quantity = cart_detail_in.quantity
             )
             db.add(cart_detail)
         
@@ -139,13 +139,13 @@ class CartService:
     
 
     @staticmethod
-    def update_cart_item(db: Session, user_id: int,item_id: int, new_quantity: int):
-        """Cập nhật số lượng của một item cụ thể trong giỏ hàng"""
+    def update_cart_detail(db: Session, user_id: int, cart_detail_id: int, new_quantity: int):
+        """Cập nhật số lượng của một cart detail cụ thể trong giỏ hàng"""
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
         if not cart:
             raise HTTPException(status_code=404, detail="Giỏ hàng trống")
         
-        cart_detail = db.query(CartDetail).filter(CartDetail.id == item_id, CartDetail.cart_id == cart.id).first()
+        cart_detail = db.query(CartDetail).filter(CartDetail.id == cart_detail_id, CartDetail.cart_id == cart.id).first()
         if not cart_detail:
             raise HTTPException(status_code=404, detail="Không tìm thấy món hàng")
         
@@ -159,10 +159,10 @@ class CartService:
         return CartService.get_cart(db, user_id)
 
     @staticmethod
-    def delete_item_cart(db: Session, user_id: int, item_id: int):
-        """Xoa mot item khoi gio"""
+    def delete_cart_detail(db: Session, user_id: int, cart_detail_id: int):
+        """Xoa mot cart detail khoi gio"""
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
-        cart_detail = db.query(CartDetail).filter(CartDetail.id == item_id, CartDetail.cart_id == cart.id).first()
+        cart_detail = db.query(CartDetail).filter(CartDetail.id == cart_detail_id, CartDetail.cart_id == cart.id).first()
         if not cart_detail:
             raise HTTPException(status_code=404, detail=" Không tìm thấy món hàng trong giỏ hàng")
         

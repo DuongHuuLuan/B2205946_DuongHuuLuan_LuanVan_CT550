@@ -2,40 +2,40 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:flutter/material.dart';
 
 class ProductViewmodel extends ChangeNotifier {
   final ProductRepository _repository;
   ProductViewmodel(this._repository);
 
-  // Tráº¡ng thÃ¡i
+  // Trạng thái
   bool isLoading = false;
   String? errorMessage;
 
-  List<Product> products = []; // danh sÃ¡ch cho ProductPage
-  Product? product; // Chi tiáº¿t cho trang ProductDetail
+  List<Product> products = []; // danh sách cho ProductPage
+  Product? product; // Chi tiết cho trang ProductDetail
 
   int? _selectedColorId;
   int? _selectedSizeId;
   int _imgIndex = 0;
   int _quantity = 1;
 
-  // getter (sá»­ dá»¥ng láº¡i cÃ¡c extension)
+  // getter (sử dụng lại các extension)
   int? get selectedColorId => _selectedColorId;
   int? get selectedSizeId => _selectedSizeId;
   int get imgIndex => _imgIndex;
   int get quantity => _quantity;
 
-  List<ProductVariant> get colors => product?.uniqueColors ?? [];
-  List<ProductVariant> get sizes =>
+  List<ProductDetail> get colors => product?.uniqueColors ?? [];
+  List<ProductDetail> get sizes =>
       product?.getUniqueSizesByColor(_selectedColorId) ?? [];
-  ProductVariant? get selectedVariant =>
+  ProductDetail? get selectedVariant =>
       product?.findVariant(_selectedColorId, _selectedSizeId);
   List<ProductImage> get displayImages =>
       product?.filterImages(_selectedColorId) ?? [];
 
-  // gÃ³m nhÃ³m sáº£n pháº©m theo Category (cho ProductPage)
+  // góm nhóm sản phẩm theo Category (cho ProductPage)
   Map<int, List<Product>> get productsByCategory {
     final map = <int, List<Product>>{};
     for (final p in products) {
@@ -74,9 +74,9 @@ class ProductViewmodel extends ChangeNotifier {
   }
 
   void _resetSelection() {
-    if (product != null && product!.variants.isNotEmpty) {
-      _selectedColorId = product!.variants.first.colorId;
-      _selectedSizeId = product!.variants.first.sizeId;
+    if (product != null && product!.productDetails.isNotEmpty) {
+      _selectedColorId = product!.productDetails.first.colorId;
+      _selectedSizeId = product!.productDetails.first.sizeId;
       _imgIndex = 0;
       _quantity = 1;
     }
@@ -114,4 +114,3 @@ class ProductViewmodel extends ChangeNotifier {
     }
   }
 }
-

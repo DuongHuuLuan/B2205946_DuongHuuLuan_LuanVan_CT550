@@ -1,5 +1,4 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/text_styles.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_app_bar.dart';
 import 'package:flutter/material.dart';
 
 class AboutPage extends StatefulWidget {

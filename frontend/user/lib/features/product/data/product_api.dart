@@ -6,10 +6,13 @@ import 'package:dio/dio.dart';
 class ProductApi {
   Future<Response> getAllProduct({int? categoryId}) async {
     try {
-      return await DioClient.instance.get(
-        ApiEndpoints.products,
-        queryParameters: {if (categoryId != null) "category_id": categoryId},
-      );
+      if (categoryId != null) {
+        return await DioClient.instance.get(
+          ApiEndpoints.productsByCategory(categoryId),
+        );
+      }
+
+      return await DioClient.instance.get(ApiEndpoints.products);
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }

@@ -1,5 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 
 class Product {
   final int id;
@@ -8,7 +8,7 @@ class Product {
   final String unit;
   final int categoryId;
   final List<ProductImage> images;
-  final List<ProductVariant> variants;
+  final List<ProductDetail> productDetails;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,7 +19,7 @@ class Product {
     required this.unit,
     required this.categoryId,
     required this.images,
-    required this.variants,
+    required this.productDetails,
     this.createdAt,
     this.updatedAt,
   });

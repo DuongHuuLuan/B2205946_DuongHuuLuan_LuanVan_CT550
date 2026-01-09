@@ -2,7 +2,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_variant_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 
 class ProductMapper extends Product {
   ProductMapper({
@@ -12,15 +12,15 @@ class ProductMapper extends Product {
     required super.unit,
     required super.categoryId,
     required super.images,
-    required super.variants,
+    required super.productDetails,
     super.createdAt,
     super.updatedAt,
   });
 
   factory ProductMapper.fromJson(Map<String, dynamic> json) {
-    final variantsJson = (json["variants"] as List? ?? [])
+    final productDetailJson = (json["product_details"] as List? ?? [])
         .cast<Map<String, dynamic>>();
-    final imagesJson = (json["images"] as List? ?? [])
+    final imagesJson = (json["product_images"] as List? ?? [])
         .cast<Map<String, dynamic>>();
 
     int toInt(dynamic value) =>
@@ -37,8 +37,8 @@ class ProductMapper extends Product {
           .map<ProductImage>((e) => ProductImageMapper.fromJson(e))
           .toList(),
 
-      variants: variantsJson
-          .map<ProductVariant>((e) => ProductVariantMapper.fromJson(e))
+      productDetails: productDetailJson
+          .map<ProductDetail>((e) => ProductDetailMapper.fromJson(e))
           .toList(),
 
       createdAt: json["created_at"] != null
@@ -50,5 +50,3 @@ class ProductMapper extends Product {
     );
   }
 }
-
-

@@ -6,12 +6,17 @@ import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
   final VoidCallback? onTap;
-  final void Function(Product product, ProductVariant variant)? onAddToCart;
+  final void Function(
+    Product product,
+    ProductDetail productDetail,
+    int quantity,
+  )?
+  onAddToCart;
 
   const ProductCard({
     super.key,
@@ -39,20 +44,18 @@ class _ProductCardState extends State<ProductCard> {
   List<ProductImage> get _commonImages =>
       _p.images.where((img) => img.colorId == null).toList();
 
-  /// áº¢nh hiá»ƒn thá»‹ theo mÃ u Ä‘ang chá»n + fallback áº£nh chung (colorId null)
   List<ProductImage> get _displayImages => _p.filterImages(_selectedColorId);
 
   // ====== UI data ======
 
-  List<ProductVariant> get _colors => _p.uniqueColors;
+  List<ProductDetail> get _colors => _p.uniqueColors;
 
-  List<ProductVariant> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
+  List<ProductDetail> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
 
-  ProductVariant? get _selectedVariant =>
+  ProductDetail? get _selectedProductDetail =>
       _p.findVariant(_selectedColorId, _selectedSizeId);
 
   // ====== Color thumbnails ======
-  // má»—i mÃ u 1 thumbnail (Æ°u tiÃªn áº£nh theo mÃ u, fallback áº£nh chung)
   List<_ColorThumb> get _colorThumbs {
     if (_colors.isEmpty) return [];
 
@@ -81,9 +84,9 @@ class _ProductCardState extends State<ProductCard> {
   void initState() {
     super.initState();
 
-    if (_p.variants.isNotEmpty) {
-      _selectedColorId = _p.variants.first.colorId;
-      _selectedSizeId = _p.variants.first.sizeId;
+    if (_p.productDetails.isNotEmpty) {
+      _selectedColorId = _p.productDetails.first.colorId;
+      _selectedSizeId = _p.productDetails.first.sizeId;
     }
   }
 
@@ -92,7 +95,6 @@ class _ProductCardState extends State<ProductCard> {
       _selectedColorId = colorId;
       _imgIndex = 0;
 
-      // náº¿u size hiá»‡n táº¡i khÃ´ng tá»“n táº¡i trong mÃ u má»›i => auto chá»n size Ä‘áº§u tiÃªn cá»§a mÃ u Ä‘Ã³
       final sizes = _p.getUniqueSizesByColor(colorId);
       final stillOk = sizes.any((s) => s.sizeId == _selectedSizeId);
 
@@ -108,15 +110,17 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final variant = _selectedVariant;
+    final productDetail = _selectedProductDetail;
     final images = _displayImages;
 
     final mainUrl = images.isNotEmpty
         ? images[_imgIndex.clamp(0, images.length - 1)].url
         : null;
 
-    final inStock = (variant?.stockQuantity ?? 0) > 0;
-    final priceText = variant != null ? variant.price.toVnd() : "LiÃªn há»‡";
+    final inStock = (productDetail?.stockQuantity ?? 0) > 0;
+    final priceText = productDetail != null
+        ? productDetail.price.toVnd()
+        : "Liên hệ";
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -129,7 +133,6 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ====== áº¢nh lá»›n ======
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(14),
@@ -148,7 +151,6 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // ====== Thumbnails chá»n MÃ€U (báº±ng áº£nh) ======
             if (_colorThumbs.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -190,7 +192,6 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ====== Thumbnails áº£nh (theo mÃ u + fallback) ======
             if (images.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -269,7 +270,6 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ====== TÃªn ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Text(
@@ -283,7 +283,6 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // ====== GiÃ¡ ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
               child: Text(
@@ -304,11 +303,11 @@ class _ProductCardState extends State<ProductCard> {
               child: SizedBox(
                 height: 44,
                 child: ElevatedButton(
-                  onPressed: (!inStock || variant == null)
+                  onPressed: (!inStock || productDetail == null)
                       ? null
-                      : () => widget.onAddToCart?.call(_p, variant),
+                      : () => widget.onAddToCart?.call(_p, productDetail, 1),
                   child: Text(
-                    inStock ? "THÃŠM VÃ€O GIá»Ž HÃ€NG" : "Háº¾T HÃ€NG",
+                    inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
                     style: inStock
                         ? TextStyle(color: AppColors.textPrimary)
                         : TextStyle(color: AppColors.error),
@@ -342,4 +341,3 @@ class _ColorThumb {
 
   _ColorThumb({required this.colorId, required this.label, required this.url});
 }
-

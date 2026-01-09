@@ -1,29 +1,31 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 
 extension ProductX on Product {
-  // láº¥y danh sÃ¡ch mÃ u khÃ´ng trÃ¹ng
-  List<ProductVariant> get uniqueColors {
+  // lấy danh sách màu sắc duy nhất
+  List<ProductDetail> get uniqueColors {
     final seen = <int>{};
-    return variants.where((element) => seen.add(element.colorId)).toList();
+    return productDetails
+        .where((element) => seen.add(element.colorId))
+        .toList();
   }
 
-  // láº¥y danh sÃ¡ch size theo mÃ u Ä‘Ã£ chá»n
-  List<ProductVariant> getUniqueSizesByColor(int? colorId) {
-    if (variants.isEmpty) return [];
+  // lấy danh sách size theo màu đã chọn
+  List<ProductDetail> getUniqueSizesByColor(int? colorId) {
+    if (productDetails.isEmpty) return [];
 
-    final cId = colorId ?? variants.first.colorId;
+    final cId = colorId ?? productDetails.first.colorId;
 
     final seen = <int>{};
-    return variants
+    return productDetails
         .where((element) => element.colorId == cId)
         .where((element) => seen.add(element.sizeId))
         .toList();
   }
 
-  // tÃ¬m biáº¿n thá»ƒ (variant) khá»›p nháº¥t
-  // ProductVariant? findVariant(int? colorId, int? sizeId) {
+  // tìm biến thể (variant) phù hợp nhất
+  // ProductDetail? findVariant(int? colorId, int? sizeId) {
   //   if (variants.isEmpty) return null;
   //   try {
   //     return variants.firstWhere(
@@ -35,8 +37,8 @@ extension ProductX on Product {
   //     return variants.first;
   //   }
   // }
-  ProductVariant? findVariant(int? colorId, int? sizeId) {
-    final vs = variants.cast<ProductVariant>(); // âœ… Ã©p type vá» base
+  ProductDetail? findVariant(int? colorId, int? sizeId) {
+    final vs = productDetails.cast<ProductDetail>(); // âœ… ép type về base
     if (vs.isEmpty) return null;
 
     final cId = colorId ?? vs.first.colorId;
@@ -51,7 +53,7 @@ extension ProductX on Product {
     return vs.first;
   }
 
-  // lá»c áº£nh hiá»ƒn thá»‹ (theo mÃ u hoáº·c áº£nh chung)
+  // lọc ảnh hiển thị (theo màu hoặc ảnh chung)
   List<ProductImage> filterImages(int? colorId) {
     final byColor = images
         .where((element) => element.colorId == colorId)
@@ -62,4 +64,3 @@ extension ProductX on Product {
     return commons.isNotEmpty ? commons : images;
   }
 }
-

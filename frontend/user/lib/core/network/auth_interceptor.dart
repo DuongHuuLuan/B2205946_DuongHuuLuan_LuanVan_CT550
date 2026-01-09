@@ -10,7 +10,8 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     // 1. Kiểm tra nếu là API login hoặc register thì không gắn token
-    if (options.path.contains('/auth/login') ||
+    if (options.path.contains('/auth/login/user') ||
+        options.path.contains('/auth/login/admin') ||
         options.path.contains('/auth/register')) {
       return handler.next(options); // Tiếp tục request mà không làm gì thêm
     }

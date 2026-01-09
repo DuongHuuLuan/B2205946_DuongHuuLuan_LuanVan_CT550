@@ -26,7 +26,7 @@ class CategoryGrid extends StatelessWidget {
     }
 
     final items = <_CatItem>[
-      _CatItem(id: null, name: "Táº¥t cáº£"),
+      _CatItem(id: null, name: "Tất cả"),
       ...categories.map((e) => _CatItem(id: e.id, name: e.name)),
     ];
 
@@ -84,5 +84,3 @@ class _CatItem {
   final String name;
   _CatItem({required this.id, required this.name});
 }
-
-

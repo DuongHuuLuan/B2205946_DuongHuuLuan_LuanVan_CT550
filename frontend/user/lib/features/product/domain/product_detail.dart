@@ -1,4 +1,4 @@
-class ProductVariant {
+class ProductDetail {
   final int id;
   final int colorId;
   final String colorName;
@@ -8,7 +8,7 @@ class ProductVariant {
   final int stockQuantity;
   final double price;
 
-  ProductVariant({
+  ProductDetail({
     required this.id,
     required this.colorId,
     required this.colorName,

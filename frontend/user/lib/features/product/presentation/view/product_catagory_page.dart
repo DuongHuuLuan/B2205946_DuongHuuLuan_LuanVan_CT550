@@ -1,6 +1,4 @@
-﻿import 'dart:math';
-
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/widget/category_grid.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
@@ -52,7 +50,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onSecondary,
         title: Text(
-          "Danh má»¥c sáº£n pháº©m",
+          "Danh Mục Sản Phẩm",
           style: TextStyle(color: AppColors.onPrimary),
         ),
         leading: IconButton(
@@ -86,8 +84,8 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                 Expanded(
                   child: Text(
                     _selectedCategoryId == null
-                        ? "Táº¥t cáº£ sáº£n pháº©m"
-                        : "Sáº£n pháº©m theo danh má»¥c",
+                        ? "Tất cả sản phẩm"
+                        : "Sản phẩm theo danh mục",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -114,13 +112,13 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Center(
-                  child: Text(productVm.errorMessage ?? "Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh"),
+                  child: Text(productVm.errorMessage ?? "Lỗi không xác định"),
                 ),
               )
             else if (!productVm.isLoading && productVm.products.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text("KhÃ´ng cÃ³ sáº£n pháº©m")),
+                child: Center(child: Text("Không có sản phẩm")),
               )
             else
               GridView.builder(
@@ -141,7 +139,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                     onTap: () {
                       context.go("/products/${product.id}");
                     },
-                    onAddToCart: (product, variant) {},
+                    onAddToCart: (product, productDetail, quantity) {},
                   );
                 },
               ),
@@ -151,4 +149,3 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
     );
   }
 }
-

@@ -7,7 +7,7 @@ from app.schemas import *
 from app.services.product_detail_service import ProductDetailService
 from app.api.deps import require_admin
 
-router = APIRouter(prefix="/variants", tags=["Product Variants"])
+router = APIRouter(prefix="/product-details", tags=["Product Details"])
 
 @router.post("/colors", response_model= ColorOut, status_code=status.HTTP_201_CREATED)
 def create_color(color_in: ColorCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):

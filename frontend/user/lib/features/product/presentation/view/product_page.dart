@@ -34,13 +34,13 @@ class _ProductPageState extends State<ProductPage> {
     final List<Category> categories = categoryVm.categories;
     final List<Product> products = productVm.products;
 
-    // Loading/Error tá»‘i thiá»ƒu (khÃ´ng Ä‘á»¥ng fields categoryVm.isLoading/errorMessage Ä‘á»ƒ trÃ¡nh sai compile)
+    // Loading/Error tối thiểu (không dùng fields categoryVm.isLoading/errorMessage để tránh sai compile)
     if (productVm.isLoading && products.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (productVm.errorMessage != null && products.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Sáº£n pháº©m")),
+        appBar: AppBar(title: const Text("Sản phẩm")),
         body: Center(child: Text(productVm.errorMessage!)),
       );
     }
@@ -52,7 +52,7 @@ class _ProductPageState extends State<ProductPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sáº£n pháº©m theo loáº¡i")),
+      appBar: AppBar(title: const Text("Sản phẩm theo loại")),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [ProductSections(categories: categories, products: products)],
@@ -60,4 +60,3 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 }
-

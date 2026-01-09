@@ -23,9 +23,9 @@ def get_cart(
     return CartService.get_cart(db, user_id=current_user.id)
 
 
-@router.post("/items", response_model= CartOut)
+@router.post("/cart-details", response_model= CartOut)
 def add_to_cart(
-    item_in: CartDetailCreate,
+    cart_detail_in: CartDetailCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
@@ -33,30 +33,30 @@ def add_to_cart(
     Thêm một biến thể sản phẩm vào giỏ hàng.
     Nếu sản phẩm đã tồn tại, cộng dồn số lượng
     """
-    return CartService.add_to_cart(db,user_id=current_user.id,item_in=item_in)
+    return CartService.add_to_cart(db,user_id=current_user.id,cart_detail_in=cart_detail_in)
 
-@router.put("/items/{item_id}", response_model=CartOut)
+@router.put("/cart-details/{cart_detail_id}", response_model=CartOut)
 def update_cart(
-    item_id: int,
+    cart_detail_id: int,
     new_quantity: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
-    """"
+    """
     Cập nhật số lượng sản phẩm trong giỏ
     """
     if new_quantity <=0:
         raise HTTPException(status_code=400, detail="Số lượng phải lớn hơn 0")
-    return CartService.update_cart_item(db, user_id=current_user.id, item_id=item_id, new_quantity=new_quantity)
+    return CartService.update_cart_detail(db, user_id=current_user.id, cart_detail_id=cart_detail_id, new_quantity=new_quantity)
 
-@router.delete("/items/{item_id}")
+@router.delete("/cart-details/{cart_detail_id}")
 def delete_cart(
-    item_id: int,
+    cart_detail_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
     """ API xóa một mục hàng cụ thể khỏi giỏ dựa trên id của CartDetail"""
-    return CartService.delete_item_cart(db,user_id=current_user.id,item_id=item_id)
+    return CartService.delete_cart_detail(db,user_id=current_user.id,cart_detail_id=cart_detail_id)
 
 
 @router.get("/test", response_model= List[ImageUrlOut])

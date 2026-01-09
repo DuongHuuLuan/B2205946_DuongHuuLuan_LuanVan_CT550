@@ -19,9 +19,9 @@ class CartDetailOut(BaseModel):
     product_detail_id: int
     quantity: int
     product_detail: ProductDetailOut
-    # product_id: int
-    # product_name: str
-    # image_url: Optional[str] = None
+    product_id: int
+    product_name: str
+    image_url: Optional[str] = None
 
     class Config: 
         from_attributes = True

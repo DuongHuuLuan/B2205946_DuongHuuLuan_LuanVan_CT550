@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 
 import 'category_product_section.dart';
 
@@ -35,17 +35,17 @@ class ProductSections extends StatelessWidget {
           title: c.name.toUpperCase(),
           products: items,
           onSeeMore: () {
-            // náº¿u muá»‘n Ä‘i trang /products lá»c theo category
+            // điều hướng
             // context.go('/products?categoryId=${c.id}');
             context.go('/products/categories/${c.id}');
           },
           onProductTap: (p) => context.go('/products/${p.id}'),
-          onAddToCart: (Product p, ProductVariant v) {
+          onAddToCart: (Product p, ProductDetail v, int quantity) {
             // TODO: cart
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'ÄÃ£ chá»n: ${p.name} - size ${v.size} - color ${v.colorName}',
+                  'Đã chọn: ${p.name} - size ${v.size} - color ${v.colorName} - số lượng: $quantity',
                 ),
               ),
             );
@@ -55,4 +55,3 @@ class ProductSections extends StatelessWidget {
     );
   }
 }
-
