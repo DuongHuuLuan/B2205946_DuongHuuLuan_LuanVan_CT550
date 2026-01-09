@@ -27,15 +27,15 @@ class SizeOut(SizeBase):
         from_attributes = True
 
 
-#schema Product_detail (variant)
-class VariantCreate(BaseModel):
+#schema Product_detail 
+class ProductDetailCreate(BaseModel):
     color_id: int
     size_id: int
     price: int
     stock_quantity: int
 
 
-class VariantOut(BaseModel):
+class ProductDetailOut(BaseModel):
     id: int
     color: ColorOut
     size: SizeOut

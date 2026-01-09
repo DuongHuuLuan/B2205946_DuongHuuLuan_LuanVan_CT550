@@ -1,4 +1,4 @@
-import 'dart:collection';
+﻿import 'dart:collection';
 
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +20,7 @@ class _ProductPageState extends State<ProductPage> {
   void initState() {
     super.initState();
     Future.microtask(() async {
-      // Load categories + products (nếu đã load ở Home thì vẫn OK)
+      // Load categories + products (náº¿u Ä‘Ã£ load á»Ÿ Home thÃ¬ váº«n OK)
       await context.read<CategoryViewModel>().load();
       await context.read<ProductViewmodel>().getAllProduct();
     });
@@ -34,25 +34,25 @@ class _ProductPageState extends State<ProductPage> {
     final List<Category> categories = categoryVm.categories;
     final List<Product> products = productVm.products;
 
-    // Loading/Error tối thiểu (không đụng fields categoryVm.isLoading/errorMessage để tránh sai compile)
+    // Loading/Error tá»‘i thiá»ƒu (khÃ´ng Ä‘á»¥ng fields categoryVm.isLoading/errorMessage Ä‘á»ƒ trÃ¡nh sai compile)
     if (productVm.isLoading && products.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (productVm.errorMessage != null && products.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Sản phẩm")),
+        appBar: AppBar(title: const Text("Sáº£n pháº©m")),
         body: Center(child: Text(productVm.errorMessage!)),
       );
     }
 
     // Gom product theo categoryId
-    final Map<String, List<Product>> byCategory = HashMap();
+    final Map<int, List<Product>> byCategory = HashMap();
     for (final p in products) {
       byCategory.putIfAbsent(p.categoryId, () => []).add(p);
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sản phẩm theo loại")),
+      appBar: AppBar(title: const Text("Sáº£n pháº©m theo loáº¡i")),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [ProductSections(categories: categories, products: products)],
@@ -60,3 +60,4 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 }
+

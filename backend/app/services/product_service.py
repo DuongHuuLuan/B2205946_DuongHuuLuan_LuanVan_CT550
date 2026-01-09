@@ -22,11 +22,11 @@ class ProductService:
 
     @staticmethod
     def getAll_product(db: Session):
-        return db.query(Product).options(joinedload(Product.images)).all()
+        return db.query(Product).options(joinedload(Product.product_images)).all()
 
     @staticmethod
     def get_product_byID(db: Session, product_id: int):
-        product = db.query(Product).options(joinedload(Product.images)).filter(Product.id == product_id).first()
+        product = db.query(Product).options(joinedload(Product.product_images)).filter(Product.id == product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
         return product 
@@ -34,7 +34,7 @@ class ProductService:
 ## hàm lấy tất cả sản phẩm theo danh mục
     @staticmethod
     def get_product_category(db: Session, category_id: int):
-        products = db.query(Product).filter(Product.category_id == category_id).options(joinedload(Product.category), joinedload(Product.images)).all()
+        products = db.query(Product).filter(Product.category_id == category_id).options(joinedload(Product.category), joinedload(Product.product_images)).all()
         if not products:
             raise HTTPException(status_code=404, detail="Không tìm thấy danh mục sản phẩm")
         return products

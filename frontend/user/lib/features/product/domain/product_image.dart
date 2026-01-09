@@ -1,8 +1,8 @@
 class ProductImage {
-  final String id;
+  final int id;
   final String url;
   final String publicId;
-  final String? colorId;
+  final int? colorId;
 
   ProductImage({
     required this.id,

@@ -1,9 +1,9 @@
 class ProductVariant {
-  final String id;
-  final String colorId;
+  final int id;
+  final int colorId;
   final String colorName;
   final String colorHex;
-  final String sizeId;
+  final int sizeId;
   final String size;
   final int stockQuantity;
   final double price;

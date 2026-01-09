@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 
 class ProductImageMapper extends ProductImage {
   ProductImageMapper({
@@ -9,11 +9,15 @@ class ProductImageMapper extends ProductImage {
   });
 
   factory ProductImageMapper.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic value) =>
+        value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
+    int? toNullableInt(dynamic value) => value == null ? null : toInt(value);
     return ProductImageMapper(
-      id: json["id"].toString(),
+      id: toInt(json["id"]),
       url: json["url"] ?? "",
       publicId: json["public_id"] ?? "",
-      colorId: json['color_id']?.toString(),
+      colorId: toNullableInt(json["color_id"]),
     );
   }
 }
+

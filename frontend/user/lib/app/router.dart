@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/view/category_page.dart';
@@ -17,7 +17,7 @@ class AppRouter {
       initialLocation: "/",
       refreshListenable: authVM,
       redirect: (context, state) {
-        // đợi AuthViewModel nạp dữ liệu từ SecureStorage trước
+        // Ä‘á»£i AuthViewModel náº¡p dá»¯ liá»‡u tá»« SecureStorage trÆ°á»›c
         if (!authVM.isInitialized) return "/splash";
 
         final bool loggedIn = authVM.isAuthenticated;
@@ -27,20 +27,20 @@ class AppRouter {
         final bool isAtRegister = location == "/register";
         final bool isAtSplash = location == "/splash";
 
-        // 2. Nếu CHƯA đăng nhập
+        // 2. Náº¿u CHÆ¯A Ä‘Äƒng nháº­p
         if (!loggedIn) {
-          // Nếu đang ở Login hoặc Register thì cho ở lại, ngược lại đẩy về Login
+          // Náº¿u Ä‘ang á»Ÿ Login hoáº·c Register thÃ¬ cho á»Ÿ láº¡i, ngÆ°á»£c láº¡i Ä‘áº©y vá» Login
           if (isAtLogin || isAtRegister) return null;
           return "/login";
         }
 
-        // 3. Nếu ĐÃ đăng nhập
+        // 3. Náº¿u ÄÃƒ Ä‘Äƒng nháº­p
         if (loggedIn) {
-          // Nếu đang ở Login, Register hoặc Splash thì đẩy vào Home
+          // Náº¿u Ä‘ang á»Ÿ Login, Register hoáº·c Splash thÃ¬ Ä‘áº©y vÃ o Home
           if (isAtLogin || isAtRegister || isAtSplash) return "/";
         }
 
-        // Mọi trường hợp khác cho phép đi tiếp
+        // Má»i trÆ°á»ng há»£p khÃ¡c cho phÃ©p Ä‘i tiáº¿p
         return null;
       },
       routes: [
@@ -70,7 +70,7 @@ class AppRouter {
         GoRoute(
           path: "/products/categories/:id",
           builder: (context, state) {
-            final categoryId = state.pathParameters["id"]!;
+            final categoryId = int.parse(state.pathParameters["id"]!);
             return ProductCatagoryPage(categoryId: categoryId);
           },
         ),
@@ -82,7 +82,7 @@ class AppRouter {
         GoRoute(
           path: "/products/:id",
           builder: (context, state) {
-            return ProductDetailPage(productId: state.pathParameters["id"]!);
+            return ProductDetailPage(productId: int.parse(state.pathParameters["id"]!));
           },
         ),
 
@@ -91,3 +91,4 @@ class AppRouter {
     );
   }
 }
+

@@ -12,5 +12,5 @@ class CartDetail(Base):
 
     created_at = Column(DateTime(timezone=True), server_default= func.now())
 
-    cart = relationship("Cart", back_populates="items")
-    product_variant = relationship("ProductDetail")
+    cart = relationship("Cart", back_populates="cart_details")
+    product_detail = relationship("ProductDetail")

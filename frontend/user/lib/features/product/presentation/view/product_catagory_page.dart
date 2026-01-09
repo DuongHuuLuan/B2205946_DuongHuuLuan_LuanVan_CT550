@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
@@ -10,7 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class ProductCatagoryPage extends StatefulWidget {
-  final String? categoryId;
+  final int? categoryId;
   const ProductCatagoryPage({super.key, this.categoryId});
 
   @override
@@ -18,7 +18,7 @@ class ProductCatagoryPage extends StatefulWidget {
 }
 
 class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
-  String? _selectedCategoryId;
+  int? _selectedCategoryId;
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
     });
   }
 
-  Future<void> _selectCategory(String? categoryId) async {
+  Future<void> _selectCategory(int? categoryId) async {
     setState(() {
       _selectedCategoryId = categoryId;
     });
@@ -52,7 +52,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onSecondary,
         title: Text(
-          "Danh mục sản phẩm",
+          "Danh má»¥c sáº£n pháº©m",
           style: TextStyle(color: AppColors.onPrimary),
         ),
         leading: IconButton(
@@ -86,8 +86,8 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                 Expanded(
                   child: Text(
                     _selectedCategoryId == null
-                        ? "Tất cả sản phẩm"
-                        : "Sản phẩm theo danh mục",
+                        ? "Táº¥t cáº£ sáº£n pháº©m"
+                        : "Sáº£n pháº©m theo danh má»¥c",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -114,13 +114,13 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Center(
-                  child: Text(productVm.errorMessage ?? "Lỗi không xác định"),
+                  child: Text(productVm.errorMessage ?? "Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh"),
                 ),
               )
             else if (!productVm.isLoading && productVm.products.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text("Không có sản phẩm")),
+                child: Center(child: Text("KhÃ´ng cÃ³ sáº£n pháº©m")),
               )
             else
               GridView.builder(
@@ -151,3 +151,4 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
     );
   }
 }
+

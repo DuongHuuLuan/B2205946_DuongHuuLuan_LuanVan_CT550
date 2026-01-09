@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from app.models import *
 from app.schemas import *
 
-class VariantService:
+class ProductDetailService:
 
     @staticmethod
     def create_color(db: Session, color_in: ColorCreate):
@@ -33,7 +33,7 @@ class VariantService:
 
 
     @staticmethod
-    def create_variant(db: Session, variant_in: VariantCreate, product_id: int):
+    def create_variant(db: Session, variant_in: ProductDetailCreate, product_id: int):
         existing_variant = db.query(ProductDetail).filter(
             ProductDetail.product_id == product_id,
             ProductDetail.color_id == variant_in.color_id,

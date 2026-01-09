@@ -1,11 +1,11 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 
 class CategoryStrip extends StatefulWidget {
   final List<Category> categories;
-  final Map<String, String> thumbnails; // categoryId -> imageUrl
+  final Map<int, String> thumbnails; // categoryId -> imageUrl
   final void Function(Category c)? onTap;
 
   const CategoryStrip({
@@ -213,3 +213,4 @@ class _CategoryStripState extends State<CategoryStrip> {
     );
   }
 }
+

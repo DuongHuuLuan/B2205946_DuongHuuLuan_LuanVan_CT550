@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -10,7 +10,7 @@ class ProductRepositoryImpl extends ProductRepository {
   ProductRepositoryImpl(this._api);
 
   @override
-  Future<List<Product>> getAllProduct({String? categoryId}) async {
+  Future<List<Product>> getAllProduct({int? categoryId}) async {
     try {
       final response = await _api.getAllProduct(categoryId: categoryId);
       final raw = response.data is Map
@@ -24,7 +24,7 @@ class ProductRepositoryImpl extends ProductRepository {
   }
 
   @override
-  Future<Product> productDetail(String id) async {
+  Future<Product> productDetail(int id) async {
     try {
       final response = await _api.productDetail(id);
       final raw = response.data is Map
@@ -36,3 +36,4 @@ class ProductRepositoryImpl extends ProductRepository {
     }
   }
 }
+

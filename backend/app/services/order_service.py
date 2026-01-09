@@ -11,34 +11,32 @@ class OrderService:
     @staticmethod
     def create_order(db: Session, user_id: int, order_in: OrderCreate):
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
-        if not cart or not cart.items:
+        if not cart or not cart.cart_details:
             raise HTTPException(status_code=400, detail= "Giỏ hàng trống")
         
         total_price = 0
         order_items_to_create = []
 
-        for cart_item in cart.items:
-            variant = db.query(ProductDetail).filter(ProductDetail.id == cart_item.product_detail_id).first()
+        for cart_detail in cart.cart_details:
+            product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail.product_detail_id).first()
 
-            if not variant or variant.stock_quantity < cart_item.quantity:
+            if not product_detail or product_detail.stock_quantity < cart_detail.quantity:
                 raise HTTPException(
                     status_code=400,
-                    detail= f"Sản phẩm {variant.product.name if variant else 'ID'+ str(cart_item.product_detail_id)} không đủ hàng"
+                    detail= f"Sản phẩm {product_detail.product.name if product_detail else 'ID'+ str(cart_detail.product_detail_id)} không đủ hàng"
                 )
 
             #tinh tien (gia tai thoi diem mua)
-            total_price += variant.price *cart_item.quantity
-
+            total_price += product_detail.price *cart_detail.quantity
             #chuan bi du lieu cho OrderDetail
             order_items_to_create.append({
-                "product_detail_id": variant.id,
-                "quantity": cart_item.quantity,
-                "price": variant.price
+                "product_detail_id": product_detail.id,
+                "quantity": cart_detail.quantity,
+                "price": product_detail.price
             })
 
             # tru kho
-            variant.stock_quantity -= cart_item.quantity
-
+            product_detail.stock_quantity -= cart_detail.quantity
         #tinh rank_discount
         # chổ này ví dụ đang tính là 5%
         rank_discount_amount = total_price * 0.05 
@@ -93,15 +91,15 @@ class OrderService:
     @staticmethod
     def get_orders(db: Session, user_id: int, ) -> List[Order]:
         return db.query(Order).options(
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.product)
-                .joinedload(Product.images),
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+                .joinedload(Product.product_images),
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.color),
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.size)
             ).filter(Order.user_id == user_id).order_by(Order.created_at.desc()).all()
     
@@ -110,15 +108,15 @@ class OrderService:
     def get_order_byID(db: Session, order_id: int, user_id: int):
         order = db.query(Order).options(
             # Tương tự như trên, phải nạp đủ các bảng liên quan
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.product)
-                .joinedload(Product.images),
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+                .joinedload(Product.product_images),
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.color),
-            joinedload(Order.items)
-                .joinedload(OrderDetail.product_variant)
+            joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.size),
             joinedload(Order.delivery_info),
             joinedload(Order.payment_method)
@@ -149,8 +147,8 @@ class OrderService:
         
         if order.status != OrderStatus.PENDING:
             raise HTTPException(status_code=400, detail="Chỉ có thể hủy đơn hàng đang chờ xử lý")
-        for item in order.items:
-            item.product_variant.stock_quantity += item.quantity
+        for order_detail in order.order_details:
+            order_detail.product_detail.stock_quantity += order_detail.quantity
 
             
         order.status = OrderStatus.CANCELLED

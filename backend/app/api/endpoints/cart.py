@@ -25,7 +25,7 @@ def get_cart(
 
 @router.post("/items", response_model= CartOut)
 def add_to_cart(
-    item_in: CartItemCreate,
+    item_in: CartDetailCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
@@ -57,3 +57,14 @@ def delete_cart(
 ):
     """ API xóa một mục hàng cụ thể khỏi giỏ dựa trên id của CartDetail"""
     return CartService.delete_item_cart(db,user_id=current_user.id,item_id=item_id)
+
+
+@router.get("/test", response_model= List[ImageUrlOut])
+def test_cart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user)
+):
+    """
+    Test lấy giỏ hàng từ quan hệ
+    """
+    return CartService.get_cart2(db, user_id=current_user.id)

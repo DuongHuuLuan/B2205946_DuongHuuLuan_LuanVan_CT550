@@ -1,4 +1,4 @@
-import 'dart:collection';
+﻿import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,7 +21,7 @@ class ProductSections extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Gom product theo categoryId
-    final Map<String, List<Product>> byCategory = HashMap();
+    final Map<int, List<Product>> byCategory = HashMap();
     for (final p in products) {
       byCategory.putIfAbsent(p.categoryId, () => []).add(p);
     }
@@ -35,7 +35,7 @@ class ProductSections extends StatelessWidget {
           title: c.name.toUpperCase(),
           products: items,
           onSeeMore: () {
-            // nếu muốn đi trang /products lọc theo category
+            // náº¿u muá»‘n Ä‘i trang /products lá»c theo category
             // context.go('/products?categoryId=${c.id}');
             context.go('/products/categories/${c.id}');
           },
@@ -45,7 +45,7 @@ class ProductSections extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Đã chọn: ${p.name} - size ${v.size} - color ${v.colorName}',
+                  'ÄÃ£ chá»n: ${p.name} - size ${v.size} - color ${v.colorName}',
                 ),
               ),
             );
@@ -55,3 +55,4 @@ class ProductSections extends StatelessWidget {
     );
   }
 }
+

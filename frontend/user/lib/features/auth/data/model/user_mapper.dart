@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/user.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/user.dart';
 
 class UserMapper extends User {
   UserMapper({
@@ -10,7 +10,7 @@ class UserMapper extends User {
 
   factory UserMapper.fromJson(Map<String, dynamic> json) {
     return UserMapper(
-      id: json['id'].toString(),
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       email: json['email'] ?? '',
       username: json['username'] ?? '',
       role: json['role'] ?? 'user',
@@ -21,3 +21,4 @@ class UserMapper extends User {
     return {"id": id, "email": email, "username": username, "role": role};
   }
 }
+

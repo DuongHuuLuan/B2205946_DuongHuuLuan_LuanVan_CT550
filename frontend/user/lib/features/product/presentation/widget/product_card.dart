@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
 
@@ -26,20 +26,20 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard> {
   int _imgIndex = 0;
-  String? _selectedColorId;
-  String? _selectedSizeId;
+  int? _selectedColorId;
+  int? _selectedSizeId;
 
   Product get _p => widget.product;
 
   // ====== helpers images ======
 
-  List<ProductImage> _imagesByColor(String colorId) =>
+  List<ProductImage> _imagesByColor(int colorId) =>
       _p.images.where((img) => img.colorId == colorId).toList();
 
   List<ProductImage> get _commonImages =>
       _p.images.where((img) => img.colorId == null).toList();
 
-  /// Ảnh hiển thị theo màu đang chọn + fallback ảnh chung (colorId null)
+  /// áº¢nh hiá»ƒn thá»‹ theo mÃ u Ä‘ang chá»n + fallback áº£nh chung (colorId null)
   List<ProductImage> get _displayImages => _p.filterImages(_selectedColorId);
 
   // ====== UI data ======
@@ -52,7 +52,7 @@ class _ProductCardState extends State<ProductCard> {
       _p.findVariant(_selectedColorId, _selectedSizeId);
 
   // ====== Color thumbnails ======
-  // mỗi màu 1 thumbnail (ưu tiên ảnh theo màu, fallback ảnh chung)
+  // má»—i mÃ u 1 thumbnail (Æ°u tiÃªn áº£nh theo mÃ u, fallback áº£nh chung)
   List<_ColorThumb> get _colorThumbs {
     if (_colors.isEmpty) return [];
 
@@ -87,12 +87,12 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
-  void _selectColor(String colorId) {
+  void _selectColor(int colorId) {
     setState(() {
       _selectedColorId = colorId;
       _imgIndex = 0;
 
-      // nếu size hiện tại không tồn tại trong màu mới => auto chọn size đầu tiên của màu đó
+      // náº¿u size hiá»‡n táº¡i khÃ´ng tá»“n táº¡i trong mÃ u má»›i => auto chá»n size Ä‘áº§u tiÃªn cá»§a mÃ u Ä‘Ã³
       final sizes = _p.getUniqueSizesByColor(colorId);
       final stillOk = sizes.any((s) => s.sizeId == _selectedSizeId);
 
@@ -102,7 +102,7 @@ class _ProductCardState extends State<ProductCard> {
     });
   }
 
-  void _selectSize(String sizeId) {
+  void _selectSize(int sizeId) {
     setState(() => _selectedSizeId = sizeId);
   }
 
@@ -116,7 +116,7 @@ class _ProductCardState extends State<ProductCard> {
         : null;
 
     final inStock = (variant?.stockQuantity ?? 0) > 0;
-    final priceText = variant != null ? variant.price.toVnd() : "Liên hệ";
+    final priceText = variant != null ? variant.price.toVnd() : "LiÃªn há»‡";
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -129,7 +129,7 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ====== Ảnh lớn ======
+            // ====== áº¢nh lá»›n ======
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(14),
@@ -148,7 +148,7 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // ====== Thumbnails chọn MÀU (bằng ảnh) ======
+            // ====== Thumbnails chá»n MÃ€U (báº±ng áº£nh) ======
             if (_colorThumbs.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -190,7 +190,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ====== Thumbnails ảnh (theo màu + fallback) ======
+            // ====== Thumbnails áº£nh (theo mÃ u + fallback) ======
             if (images.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -269,7 +269,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ====== Tên ======
+            // ====== TÃªn ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Text(
@@ -283,7 +283,7 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
-            // ====== Giá ======
+            // ====== GiÃ¡ ======
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
               child: Text(
@@ -308,7 +308,7 @@ class _ProductCardState extends State<ProductCard> {
                       ? null
                       : () => widget.onAddToCart?.call(_p, variant),
                   child: Text(
-                    inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
+                    inStock ? "THÃŠM VÃ€O GIá»Ž HÃ€NG" : "Háº¾T HÃ€NG",
                     style: inStock
                         ? TextStyle(color: AppColors.textPrimary)
                         : TextStyle(color: AppColors.error),
@@ -336,9 +336,10 @@ class _ProductCardState extends State<ProductCard> {
 }
 
 class _ColorThumb {
-  final String colorId;
+  final int colorId;
   final String label;
   final String url;
 
   _ColorThumb({required this.colorId, required this.label, required this.url});
 }
+

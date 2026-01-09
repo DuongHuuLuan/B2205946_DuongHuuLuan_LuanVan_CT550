@@ -14,6 +14,6 @@ class ImageURL(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-
-    product = relationship("Product", back_populates="images")
+    
+    product = relationship("Product", back_populates="product_images")
     color = relationship("Color", back_populates="images")

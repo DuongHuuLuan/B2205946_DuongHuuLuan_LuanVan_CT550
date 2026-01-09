@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +24,7 @@ class CategoryViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Category?> getById(String id) async {
+  Future<Category?> getById(int id) async {
     try {
       return await _repository.getById(id);
     } catch (e) {
@@ -35,7 +35,7 @@ class CategoryViewModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Category>?> getAllProudctByCategoryId(String categoryId) async {
+  Future<List<Category>?> getAllProudctByCategoryId(int categoryId) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -49,3 +49,4 @@ class CategoryViewModel extends ChangeNotifier {
     }
   }
 }
+

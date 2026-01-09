@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
     final productVm = context.watch<ProductViewmodel>();
     final categoryVm = context.watch<CategoryViewModel>();
 
-    final Map<String, String> categoryThumbs = {};
+    final Map<int, String> categoryThumbs = {};
     for (final p in productVm.products) {
       if (p.images.isEmpty) continue;
       categoryThumbs.putIfAbsent(p.categoryId, () => p.images.first.url);
@@ -204,3 +204,4 @@ class _HomeSliverAppBar extends StatelessWidget {
     );
   }
 }
+

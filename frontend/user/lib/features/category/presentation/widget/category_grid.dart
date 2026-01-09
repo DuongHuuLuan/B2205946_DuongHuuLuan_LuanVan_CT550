@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 
 class CategoryGrid extends StatelessWidget {
   final List<Category> categories;
-  final String? selectedCategoryId;
+  final int? selectedCategoryId;
   final VoidCallback onSelectAll;
   final void Function(Category c) onSelectCategory;
 
@@ -26,7 +26,7 @@ class CategoryGrid extends StatelessWidget {
     }
 
     final items = <_CatItem>[
-      _CatItem(id: null, name: "Tất cả"),
+      _CatItem(id: null, name: "Táº¥t cáº£"),
       ...categories.map((e) => _CatItem(id: e.id, name: e.name)),
     ];
 
@@ -80,7 +80,9 @@ class CategoryGrid extends StatelessWidget {
 }
 
 class _CatItem {
-  final String? id;
+  final int? id;
   final String name;
   _CatItem({required this.id, required this.name});
 }
+
+

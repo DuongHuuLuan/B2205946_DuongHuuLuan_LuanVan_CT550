@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_va
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 
 class ProductDetailPage extends StatefulWidget {
-  final String productId;
+  final int productId;
 
   final void Function(Product product, ProductVariant variant, int qty)?
   onAddToCart;
@@ -39,7 +39,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget build(BuildContext context) {
     final vm = context.watch<ProductViewmodel>();
 
-    // Loading lần đầu
+    // Loading láº§n Ä‘áº§u
     if (vm.isLoading && vm.product == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -49,7 +49,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // Error
     if (vm.errorMessage != null && vm.product == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Chi tiết sản phẩm")),
+        appBar: AppBar(title: const Text("Chi tiáº¿t sáº£n pháº©m")),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -62,7 +62,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   onPressed: () => context
                       .read<ProductViewmodel>()
                       .productDetail(widget.productId),
-                  child: const Text("Thử lại"),
+                  child: const Text("Thá»­ láº¡i"),
                 ),
               ],
             ),
@@ -111,7 +111,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ===== Ảnh lớn =====
+                    // ===== áº¢nh lá»›n =====
                     AspectRatio(
                       aspectRatio: 1,
                       child: mainUrl != null
@@ -123,7 +123,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           : _imagePlaceholder(),
                     ),
 
-                    // ===== Thumbnails chọn MÀU (dựa theo ảnh theo color_id) =====
+                    // ===== Thumbnails chá»n MÃ€U (dá»±a theo áº£nh theo color_id) =====
                     if (vm.colors.length > 1)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -181,7 +181,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                       ),
 
-                    // ===== Thumbnails ảnh (theo màu đang chọn + fallback ảnh chung) =====
+                    // ===== Thumbnails áº£nh (theo mÃ u Ä‘ang chá»n + fallback áº£nh chung) =====
                     if (images.length > 1)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -224,7 +224,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                       ),
 
-                    // ===== Tên + Giá =====
+                    // ===== TÃªn + GiÃ¡ =====
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: Text(
@@ -292,7 +292,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       child: Row(
                         children: [
                           const Text(
-                            "Số lượng:",
+                            "Sá»‘ lÆ°á»£ng:",
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: AppColors.onSecondary,
@@ -349,7 +349,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   );
                                 },
                           child: Text(
-                            inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
+                            inStock ? "THÃŠM VÃ€O GIá»Ž HÃ€NG" : "Háº¾T HÃ€NG",
                           ),
                         ),
                       ),
@@ -370,13 +370,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     child: const Icon(Icons.image, size: 42, color: Colors.black38),
   );
 
-  /// lấy ảnh đại diện cho màu:
-  /// - ưu tiên ảnh có color_id = màu đó
-  /// - fallback ảnh chung (color_id null)
-  /// - fallback ảnh đầu tiên
+  /// láº¥y áº£nh Ä‘áº¡i diá»‡n cho mÃ u:
+  /// - Æ°u tiÃªn áº£nh cÃ³ color_id = mÃ u Ä‘Ã³
+  /// - fallback áº£nh chung (color_id null)
+  /// - fallback áº£nh Ä‘áº§u tiÃªn
   static String? _thumbForColor({
     required Product product,
-    required String colorId,
+    required int colorId,
   }) {
     final byColor = product.images.where((e) => e.colorId == colorId).toList();
     if (byColor.isNotEmpty) return byColor.first.url;
@@ -388,3 +388,4 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return null;
   }
 }
+

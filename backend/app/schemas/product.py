@@ -4,7 +4,7 @@ from datetime import datetime
 from app.models.product import UnitEnum
 from app.schemas.category import CategoryOut
 from app.schemas.image_url import ImageUrlOut
-from app.schemas.variant import VariantOut
+from app.schemas.product_detail import ProductDetailOut
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -24,8 +24,8 @@ class ProductOut(ProductBase):
     updated_at: Optional[datetime]
 
     category: CategoryOut
-    images: List[ImageUrlOut] = []
-    variants: List[VariantOut] = []
+    product_images: List[ImageUrlOut] = []
+    product_details: List[ProductDetailOut] = []
 
     class Config:
         from_attributes = True

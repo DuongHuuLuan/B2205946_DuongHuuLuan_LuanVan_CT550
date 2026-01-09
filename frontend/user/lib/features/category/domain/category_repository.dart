@@ -2,6 +2,6 @@ import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.
 
 abstract class CategoryRepository {
   Future<List<Category>> getAll();
-  Future<Category> getById(String id);
-  Future<List<Category>> getAllProudctByCategoryId(String categoryId);
+  Future<Category> getById(int id);
+  Future<List<Category>> getAllProudctByCategoryId(int categoryId);
 }

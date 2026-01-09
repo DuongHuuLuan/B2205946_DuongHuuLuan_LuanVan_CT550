@@ -45,24 +45,24 @@ class OrderDetailOut(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def get_related_data(cls, data):
-        variant = getattr(data, "product_variant", None)
+        product_detail = getattr(data, "product_detail", None)
         result = data
         if not isinstance(data, dict):
             result = {col.name: getattr(data, col.name) for col in data.__table__.columns}
 
-        if variant:
+        if product_detail:
             # 1. Lấy thông tin sản phẩm và ảnh
-            if variant.product:
-                result["product_name"] = variant.product.name
-                if variant.product.images:
+            if product_detail.product:
+                result["product_name"] = product_detail.product.name
+                if product_detail.product.product_images:
                     # Kiểm tra lại tên trường trong DB của bạn là .url hay .image_url
-                    result["image_url"] = variant.product.images[0].url
-            
+                    result["image_url"] = product_detail.product.product_images[0].url
+
             # 2. Lấy thông tin màu sắc và kích thước
-            if variant.color:
-                result["color_name"] = variant.color.name
-            if variant.size:
-                result["size_name"] = variant.size.size
+            if product_detail.color:
+                result["color_name"] = product_detail.color.name
+            if product_detail.size:
+                result["size_name"] = product_detail.size.size
         
         return result
 
@@ -85,7 +85,7 @@ class OrderOut(BaseModel):
     delivery_info: Optional[DeliveryInfoOut]
     payment_method: Optional[PaymentMethodOut]
 
-    items: List[OrderDetailOut] = []
+    order_details: List[OrderDetailOut] = []
 
     class Config:
         from_attributes = True

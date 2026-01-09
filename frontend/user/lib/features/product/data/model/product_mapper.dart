@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_image_mapper.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_image_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/model/product_variant_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
@@ -23,12 +23,15 @@ class ProductMapper extends Product {
     final imagesJson = (json["images"] as List? ?? [])
         .cast<Map<String, dynamic>>();
 
+    int toInt(dynamic value) =>
+        value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
+
     return ProductMapper(
-      id: json["id"].toString(),
+      id: toInt(json["id"]),
       name: json["name"] ?? "",
       description: json["description"] ?? "",
       unit: json["unit"] ?? "",
-      categoryId: json["category_id"]?.toString() ?? "",
+      categoryId: toInt(json["category_id"]),
 
       images: imagesJson
           .map<ProductImage>((e) => ProductImageMapper.fromJson(e))
@@ -47,3 +50,5 @@ class ProductMapper extends Product {
     );
   }
 }
+
+

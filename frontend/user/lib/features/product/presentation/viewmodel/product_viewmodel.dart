@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
@@ -9,21 +9,21 @@ class ProductViewmodel extends ChangeNotifier {
   final ProductRepository _repository;
   ProductViewmodel(this._repository);
 
-  // Trạng thái
+  // Tráº¡ng thÃ¡i
   bool isLoading = false;
   String? errorMessage;
 
-  List<Product> products = []; // danh sách cho ProductPage
-  Product? product; // Chi tiết cho trang ProductDetail
+  List<Product> products = []; // danh sÃ¡ch cho ProductPage
+  Product? product; // Chi tiáº¿t cho trang ProductDetail
 
-  String? _selectedColorId;
-  String? _selectedSizeId;
+  int? _selectedColorId;
+  int? _selectedSizeId;
   int _imgIndex = 0;
   int _quantity = 1;
 
-  // getter (sử dụng lại các extension)
-  String? get selectedColorId => _selectedColorId;
-  String? get selectedSizeId => _selectedSizeId;
+  // getter (sá»­ dá»¥ng láº¡i cÃ¡c extension)
+  int? get selectedColorId => _selectedColorId;
+  int? get selectedSizeId => _selectedSizeId;
   int get imgIndex => _imgIndex;
   int get quantity => _quantity;
 
@@ -35,16 +35,16 @@ class ProductViewmodel extends ChangeNotifier {
   List<ProductImage> get displayImages =>
       product?.filterImages(_selectedColorId) ?? [];
 
-  // góm nhóm sản phẩm theo Category (cho ProductPage)
-  Map<String, List<Product>> get productsByCategory {
-    final map = <String, List<Product>>{};
+  // gÃ³m nhÃ³m sáº£n pháº©m theo Category (cho ProductPage)
+  Map<int, List<Product>> get productsByCategory {
+    final map = <int, List<Product>>{};
     for (final p in products) {
       map.putIfAbsent(p.categoryId, () => []).add(p);
     }
     return map;
   }
 
-  Future<void> getAllProduct({String? categoryId}) async {
+  Future<void> getAllProduct({int? categoryId}) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -58,7 +58,7 @@ class ProductViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<void> productDetail(String id) async {
+  Future<void> productDetail(int id) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -82,7 +82,7 @@ class ProductViewmodel extends ChangeNotifier {
     }
   }
 
-  void selectColor(String colorId) {
+  void selectColor(int colorId) {
     _selectedColorId = colorId;
     _imgIndex = 0;
 
@@ -95,7 +95,7 @@ class ProductViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectSize(String sizeId) {
+  void selectSize(int sizeId) {
     _selectedSizeId = sizeId;
     notifyListeners();
   }
@@ -114,3 +114,4 @@ class ProductViewmodel extends ChangeNotifier {
     }
   }
 }
+

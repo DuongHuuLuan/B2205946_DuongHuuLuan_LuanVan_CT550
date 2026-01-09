@@ -25,7 +25,7 @@ class Order(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", back_populates="orders")
-    items = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
+    order_details = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     delivery_info = relationship("DeliveryInfo", back_populates="orders")
     payment_method = relationship("PaymentMethod", back_populates="orders")
     applied_discounts = relationship(
@@ -44,5 +44,5 @@ class OrderDetail(Base):
     quantity = Column(Integer, nullable=False)
     price = Column(Numeric(10,2), nullable=False)
 
-    order = relationship("Order", back_populates="items")
-    product_variant= relationship("ProductDetail")
+    order = relationship("Order", back_populates="order_details")
+    product_detail= relationship("ProductDetail")

@@ -10,4 +10,4 @@ class Cart(Base):
 
 
     user = relationship("User", back_populates="cart")
-    items = relationship("CartDetail", back_populates="cart", cascade="all, delete-orphan")
+    cart_details = relationship("CartDetail", back_populates="cart", cascade="all, delete-orphan")

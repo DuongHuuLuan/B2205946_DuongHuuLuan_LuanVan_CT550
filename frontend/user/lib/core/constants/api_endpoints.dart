@@ -6,16 +6,17 @@ class ApiEndpoints {
 
   //category
   static const category = "/categories";
-  static String categoryDetail(String id) => "/categories/$id";
+  static String categoryDetail(int id) => "/categories/$id";
 
   //Product
   static const products = "/products";
-  static String productDetail(String id) => "/products/$id";
-  static String productVariants(String id) => "/products/$id/variants";
+  static String productDetail(int id) => "/products/$id";
+  static String productVariants(int id) => "/products/$id/variants";
 
   //Cart
-  static const cart = "/cart";
-  static const cartItems = "/cart/items";
+  static const cart = "/carts";
+  static const cartItems = "/carts/items";
+  static String cartItem(int itemId) => "/carts/items/$itemId";
 
   //Order
   static const orders = "/orders";

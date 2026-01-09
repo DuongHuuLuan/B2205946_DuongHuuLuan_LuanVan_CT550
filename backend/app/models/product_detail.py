@@ -13,9 +13,9 @@ class ProductDetail(Base):
     price = Column(Integer, nullable=True)
 
 
-    product = relationship("Product", back_populates="variants")
+    product = relationship("Product", back_populates="product_details")
     color = relationship("Color", back_populates="product_details")
     size = relationship("Size", back_populates="product_details")
 
-    order_items = relationship("OrderDetail", back_populates="product_variant")
-    cart_items = relationship("CartDetail", back_populates="product_variant")
+    order_details = relationship("OrderDetail", back_populates="product_detail")
+    cart_details = relationship("CartDetail", back_populates="product_detail")

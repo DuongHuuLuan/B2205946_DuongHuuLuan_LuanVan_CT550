@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/model/category_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
@@ -21,7 +21,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @override
-  Future<Category> getById(String id) async {
+  Future<Category> getById(int id) async {
     try {
       final response = await _api.getById(id);
       return CategoryMapper.fromJson(response.data as Map<String, dynamic>);
@@ -31,7 +31,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @override
-  Future<List<Category>> getAllProudctByCategoryId(String categoryId) async {
+  Future<List<Category>> getAllProudctByCategoryId(int categoryId) async {
     try {
       final response = await _api.getAllProudctByCategoryId(categoryId);
       final list = (response.data as List).cast<Map<String, dynamic>>();
@@ -41,3 +41,4 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
   }
 }
+

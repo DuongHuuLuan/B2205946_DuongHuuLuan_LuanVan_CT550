@@ -1,4 +1,4 @@
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_variant.dart';
 
 class ProductVariantMapper extends ProductVariant {
   ProductVariantMapper({
@@ -15,15 +15,19 @@ class ProductVariantMapper extends ProductVariant {
   factory ProductVariantMapper.fromJson(Map<String, dynamic> json) {
     final color = (json["color"] ?? {}) as Map<String, dynamic>;
     final size = (json["size"] ?? {}) as Map<String, dynamic>;
+    int toInt(dynamic value) =>
+        value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
     return ProductVariantMapper(
-      id: json["id"].toString(),
-      colorId: color["id"].toString(),
+      id: toInt(json["id"]),
+      colorId: toInt(color["id"]),
       colorName: color["name"] ?? "",
       colorHex: color["hexcode"] ?? "",
-      sizeId: size["id"]?.toString() ?? "",
+      sizeId: toInt(size["id"]),
       size: size["size"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0,
       stockQuantity: (json["stock_quantity"] ?? 0) as int,
     );
   }
 }
+
+

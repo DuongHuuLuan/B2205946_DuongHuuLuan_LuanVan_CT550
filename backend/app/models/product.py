@@ -23,6 +23,6 @@ class Product(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     category = relationship("Category", back_populates="products")
-    images = relationship("ImageURL", back_populates="product", cascade="all, delete")
+    product_images = relationship("ImageURL", back_populates="product", cascade="all, delete")
     
-    variants = relationship("ProductDetail", back_populates="product", cascade="all, delete-orphan")
+    product_details = relationship("ProductDetail", back_populates="product", cascade="all, delete-orphan")
