@@ -44,7 +44,8 @@ class _ProductCardState extends State<ProductCard> {
   List<ProductImage> get _commonImages =>
       _p.images.where((img) => img.colorId == null).toList();
 
-  List<ProductImage> get _displayImages => _p.filterImages(_selectedColorId);
+  List<ProductImage> get _displayImages =>
+      _p.filterProductImages(_selectedColorId);
 
   // ====== UI data ======
 
@@ -53,7 +54,7 @@ class _ProductCardState extends State<ProductCard> {
   List<ProductDetail> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
 
   ProductDetail? get _selectedProductDetail =>
-      _p.findVariant(_selectedColorId, _selectedSizeId);
+      _p.findProductDetail(_selectedColorId, _selectedSizeId);
 
   // ====== Color thumbnails ======
   List<_ColorThumb> get _colorThumbs {
