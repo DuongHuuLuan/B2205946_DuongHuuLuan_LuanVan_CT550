@@ -52,7 +52,9 @@ class _HomePageState extends State<HomePage> {
       body: CustomScrollView(
         slivers: [
           _HomeSliverAppBar(
-            onCart: () {},
+            onCart: () {
+              context.go("/cart");
+            },
             onSearch: () {},
             onProfile: () async => auth.logout(),
             onMenu: () => _scaffoldKey.currentState?.openDrawer(),
@@ -189,10 +191,7 @@ class _HomeSliverAppBar extends StatelessWidget {
                     const Spacer(),
                     CircleIconButton(icon: Icons.person, onTap: onProfile),
                     const SizedBox(width: 12),
-                    CircleIconButton(
-                      icon: Icons.shopping_basket,
-                      onTap: onCart,
-                    ),
+                    CircleIconButton(icon: Icons.shopping_bag, onTap: onCart),
                     const SizedBox(width: 12),
                     CircleIconButton(icon: Icons.search, onTap: onSearch),
                     const SizedBox(width: 12),

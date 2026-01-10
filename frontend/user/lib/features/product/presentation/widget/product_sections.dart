@@ -1,7 +1,9 @@
-﻿import 'dart:collection';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
@@ -20,7 +22,6 @@ class ProductSections extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Gom product theo categoryId
     final Map<int, List<Product>> byCategory = HashMap();
     for (final p in products) {
       byCategory.putIfAbsent(p.categoryId, () => []).add(p);
@@ -34,20 +35,15 @@ class ProductSections extends StatelessWidget {
         return CategoryProductSection(
           title: c.name.toUpperCase(),
           products: items,
-          onSeeMore: () {
-            // điều hướng
-            // context.go('/products?categoryId=${c.id}');
-            context.go('/products/categories/${c.id}');
-          },
+          onSeeMore: () => context.go('/products/categories/${c.id}'),
           onProductTap: (p) => context.go('/products/${p.id}'),
           onAddToCart: (Product p, ProductDetail v, int quantity) {
-            // TODO: cart
+            context.read<CartViewmodel>().addToCart(
+              productDetailId: v.id,
+              quantity: quantity,
+            );
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Đã chọn: ${p.name} - size ${v.size} - color ${v.colorName} - số lượng: $quantity',
-                ),
-              ),
+              SnackBar(content: Text('Da them "${p.name}" vao gio hang')),
             );
           },
         );

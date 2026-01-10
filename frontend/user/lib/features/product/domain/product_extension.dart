@@ -37,7 +37,7 @@ extension ProductX on Product {
   //     return variants.first;
   //   }
   // }
-  ProductDetail? findVariant(int? colorId, int? sizeId) {
+  ProductDetail? findProductDetail(int? colorId, int? sizeId) {
     final vs = productDetails.cast<ProductDetail>(); // âœ… ép type về base
     if (vs.isEmpty) return null;
 
@@ -54,7 +54,7 @@ extension ProductX on Product {
   }
 
   // lọc ảnh hiển thị (theo màu hoặc ảnh chung)
-  List<ProductImage> filterImages(int? colorId) {
+  List<ProductImage> filterProductImages(int? colorId) {
     final byColor = images
         .where((element) => element.colorId == colorId)
         .toList();

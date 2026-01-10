@@ -1,4 +1,5 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/widget/category_grid.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
@@ -139,7 +140,19 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                     onTap: () {
                       context.go("/products/${product.id}");
                     },
-                    onAddToCart: (product, productDetail, quantity) {},
+                    onAddToCart: (product, productDetail, quantity) {
+                      context.read<CartViewmodel>().addToCart(
+                        productDetailId: productDetail.id,
+                        quantity: quantity,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Da them "${product.name}" vao gio hang',
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

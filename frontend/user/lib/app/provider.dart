@@ -72,6 +72,9 @@ final List<SingleChildWidget> Providers = [
 
   //cart
   ChangeNotifierProvider(
-    create: (context) => CartViewmodel(context.read<CartRepository>()),
+    create: (context) => CartViewmodel(
+      context.read<CartRepository>(),
+      context.read<ProductRepository>(),
+    ),
   ),
 ];

@@ -1,7 +1,7 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/view/category_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation/view/about_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
@@ -82,13 +82,16 @@ class AppRouter {
         GoRoute(
           path: "/products/:id",
           builder: (context, state) {
-            return ProductDetailPage(productId: int.parse(state.pathParameters["id"]!));
+            return ProductDetailPage(
+              productId: int.parse(state.pathParameters["id"]!),
+            );
           },
         ),
+
+        GoRoute(path: "/cart", builder: (context, state) => const CartPage()),
 
         GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
       ],
     );
   }
 }
-

@@ -213,4 +213,3 @@ class _CategoryStripState extends State<CategoryStrip> {
     );
   }
 }
-

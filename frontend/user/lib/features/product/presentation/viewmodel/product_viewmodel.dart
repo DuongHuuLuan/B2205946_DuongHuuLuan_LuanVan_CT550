@@ -30,10 +30,10 @@ class ProductViewmodel extends ChangeNotifier {
   List<ProductDetail> get colors => product?.uniqueColors ?? [];
   List<ProductDetail> get sizes =>
       product?.getUniqueSizesByColor(_selectedColorId) ?? [];
-  ProductDetail? get selectedVariant =>
-      product?.findVariant(_selectedColorId, _selectedSizeId);
-  List<ProductImage> get displayImages =>
-      product?.filterImages(_selectedColorId) ?? [];
+  ProductDetail? get selectedProductDetail =>
+      product?.findProductDetail(_selectedColorId, _selectedSizeId);
+  List<ProductImage> get displayProductImages =>
+      product?.filterProductImages(_selectedColorId) ?? [];
 
   // góm nhóm sản phẩm theo Category (cho ProductPage)
   Map<int, List<Product>> get productsByCategory {
@@ -106,7 +106,7 @@ class ProductViewmodel extends ChangeNotifier {
   }
 
   void updateQuantity(int delta) {
-    final maxStock = selectedVariant?.stockQuantity ?? 1;
+    final maxStock = selectedProductDetail?.stockQuantity ?? 1;
     final newQuantity = _quantity + delta;
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       _quantity = newQuantity;

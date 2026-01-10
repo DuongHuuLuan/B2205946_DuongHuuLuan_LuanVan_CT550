@@ -1,6 +1,7 @@
 ﻿import 'dart:math';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +14,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view
 class ProductDetailPage extends StatefulWidget {
   final int productId;
 
-  final void Function(Product product, ProductDetail variant, int qty)?
+  final void Function(Product product, ProductDetail productDetail, int qty)?
   onAddToCart;
 
   const ProductDetailPage({
@@ -39,7 +40,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget build(BuildContext context) {
     final vm = context.watch<ProductViewmodel>();
 
-    // Loading láº§n Ä‘áº§u
+    // Loading lần đầu
     if (vm.isLoading && vm.product == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -72,15 +73,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     final Product p = vm.product!;
-    final variant = vm.selectedVariant;
-    final images = vm.displayImages;
+    final productDetail = vm.selectedProductDetail;
+    final productImages = vm.displayProductImages;
 
-    final mainUrl = images.isNotEmpty
-        ? images[vm.imgIndex.clamp(0, max(0, images.length - 1))].url
+    final mainUrl = productImages.isNotEmpty
+        ? productImages[vm.imgIndex.clamp(0, max(0, productImages.length - 1))]
+              .url
         : null;
 
-    final priceText = (variant?.price ?? 0).toVnd();
-    final inStock = (variant?.stockQuantity ?? 0) > 0;
+    final priceText = (productDetail?.price ?? 0).toVnd();
+    final inStock = (productDetail?.stockQuantity ?? 0) > 0;
 
     return Scaffold(
       // backgroundColor: const Color(0xFF070C14),
@@ -179,18 +181,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                       ),
 
-                    if (images.length > 1)
+                    if (productImages.length > 1)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         child: SizedBox(
                           height: 46,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: min(images.length, 6),
+                            itemCount: min(productImages.length, 6),
                             separatorBuilder: (_, __) =>
                                 const SizedBox(width: 8),
                             itemBuilder: (context, i) {
-                              final url = images[i].url;
+                              final url = productImages[i].url;
                               final active = i == vm.imgIndex;
 
                               return InkWell(
@@ -319,11 +321,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ),
                           ),
                           const Spacer(),
-                          // if (variant != null)
-                          //   Text(
-                          //     "Kho: ${variant.stockQuantity}",
-                          //     style: const TextStyle(color: Colors.black54),
-                          //   ),
                         ],
                       ),
                     ),
@@ -336,17 +333,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: (!inStock || variant == null)
+                          onPressed: (!inStock || productDetail == null)
                               ? null
                               : () {
-                                  widget.onAddToCart?.call(
-                                    p,
-                                    variant,
-                                    vm.quantity,
+                                  if (widget.onAddToCart != null) {
+                                    widget.onAddToCart?.call(
+                                      p,
+                                      productDetail,
+                                      vm.quantity,
+                                    );
+                                    return;
+                                  }
+                                  context.read<CartViewmodel>().addToCart(
+                                    productDetailId: productDetail.id,
+                                    quantity: vm.quantity,
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Da them "${p.name}" vao gio hang',
+                                      ),
+                                    ),
                                   );
                                 },
                           child: Text(
-                            inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
+                            inStock ? "THEM VAO GIO HANG" : "HET HANG",
                           ),
                         ),
                       ),
