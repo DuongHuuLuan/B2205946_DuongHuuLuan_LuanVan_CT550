@@ -44,8 +44,7 @@ final List<SingleChildWidget> Providers = [
   //warehouse
   Provider(create: (context) => WarehouseApi()),
   Provider<WarehouseRepository>(
-    create: (context) =>
-        WarehouseRepositoryImpl(context.read<WarehouseApi>()),
+    create: (context) => WarehouseRepositoryImpl(context.read<WarehouseApi>()),
   ),
 
   //cart

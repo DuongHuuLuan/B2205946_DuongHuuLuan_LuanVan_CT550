@@ -14,6 +14,7 @@ class CartActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Expanded(
           child: OutlinedButton.icon(
@@ -26,7 +27,8 @@ class CartActions extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: isLoading ? null : onRefresh,
+            // onPressed: isLoading ? null : onRefresh,
+            onPressed: onRefresh,
             child: Text("CẬP NHẬT GIỎ HÀNG"),
           ),
         ),

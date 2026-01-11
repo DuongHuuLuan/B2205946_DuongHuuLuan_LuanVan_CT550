@@ -1,4 +1,3 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_actions.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_summary.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_table.dart';
@@ -84,17 +83,17 @@ class _Breadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final divider = Theme.of(context).dividerColor;
+    final textSmall = Theme.of(context).textTheme.bodySmall;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: divider),
       ),
-      child: const Text(
-        "Trang chủ | Giỏ hàng",
-        style: TextStyle(color: AppColors.textSecondary),
-      ),
+      child: Text(" Trang chủ| Giỏ hàng", style: textSmall),
     );
   }
 }
@@ -104,21 +103,19 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final headerStyle = textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
     return Row(
-      children: const [
-        Expanded(
-          flex: 4,
-          child: Text(
-            "SẢN PHẨM",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
+      children: [
+        Expanded(flex: 4, child: Text("SẢN PHẨM", style: headerStyle)),
         Expanded(
           flex: 2,
           child: Text(
-            "GiÁ",
+            "SỐ LƯỢNG",
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: headerStyle,
           ),
         ),
       ],
@@ -151,30 +148,43 @@ class _CouponBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final divider = Theme.of(context).dividerColor;
+    final titleStyle = Theme.of(
+      context,
+    ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600);
+    final iconColor = Theme.of(context).textTheme.bodySmall?.color;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            children: const [
-              Icon(Icons.local_offer, color: AppColors.textSecondary, size: 18),
-              SizedBox(width: 8),
-              Text("Mã ưu đãi", style: TextStyle(fontWeight: FontWeight.w600)),
+            children: [
+              Icon(Icons.local_offer, color: iconColor, size: 18),
+              const SizedBox(width: 8),
+              Text("Mã ưu đãi", style: titleStyle),
             ],
           ),
           const SizedBox(height: 12),
           TextField(
             controller: controller,
-            decoration: const InputDecoration(hintText: "Nhập mã giảm giá"),
+            decoration: const InputDecoration(hintText: "nhập mã giảm giá"),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: onApply, child: const Text("Áp dụng")),
+          OutlinedButton(
+            onPressed: onApply,
+            style: OutlinedButton.styleFrom(
+              backgroundColor: scheme.onSurfaceVariant,
+            ),
+            child: Text("Áp dụng", style: TextStyle(color: scheme.onPrimary)),
+          ),
         ],
       ),
     );

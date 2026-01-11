@@ -1,4 +1,3 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_row.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -10,6 +9,7 @@ class CartTable extends StatelessWidget {
   final void Function(int id) onRemove;
   final void Function(int id, int quantity) onUpdateQuantity;
   final Product? Function(int productDetailId) resolveProduct;
+
   const CartTable({
     super.key,
     required this.cartDetails,
@@ -21,45 +21,49 @@ class CartTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface, // Dùng màu surface từ Theme
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: colorScheme
+              .outlineVariant, // Dùng outlineVariant cho viền nhẹ nhàng
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Tiêu đề bảng (Nếu bạn muốn giữ lại HeaderRow)
-          const Text(
-            "Chi tiết đơn hàng",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-
           if (isLoading && cartDetails.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator()),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: CircularProgressIndicator(color: colorScheme.primary),
+              ),
             )
           else if (cartDetails.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
+            Padding(
+              padding: const EdgeInsets.all(20),
               child: Center(
                 child: Text(
                   "Giỏ hàng trống",
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                  ), // Màu chữ phụ
                 ),
               ),
             )
           else
-            // Dùng separated để có đường kẻ giữa các Item
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: cartDetails.length,
-              separatorBuilder: (context, index) => const Divider(height: 24),
+              separatorBuilder: (context, index) => Divider(
+                height: 24,
+                color: colorScheme.outlineVariant.withOpacity(0.5),
+              ),
               itemBuilder: (context, index) {
                 final item = cartDetails[index];
                 return CartRow(

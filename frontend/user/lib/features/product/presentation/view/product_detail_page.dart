@@ -1,19 +1,17 @@
 ﻿import 'dart:math';
-
-import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
-
   final void Function(Product product, ProductDetail productDetail, int qty)?
   onAddToCart;
 
@@ -39,31 +37,39 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ProductViewmodel>();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    // Loading lần đầu
+    // Trạng thái Loading
     if (vm.isLoading && vm.product == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
       );
     }
 
-    // Error
+    // Trạng thái Lỗi
     if (vm.errorMessage != null && vm.product == null) {
       return Scaffold(
         appBar: AppBar(title: const Text("Chi tiết sản phẩm")),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(vm.errorMessage!),
-                const SizedBox(height: 12),
-                ElevatedButton(
+                Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+                const SizedBox(height: 16),
+                Text(vm.errorMessage!, textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
                   onPressed: () => context
                       .read<ProductViewmodel>()
                       .productDetail(widget.productId),
-                  child: const Text("Thử lại"),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("Thử lại"),
                 ),
               ],
             ),
@@ -86,313 +92,322 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final inStock = availableQuantity != null && availableQuantity > 0;
 
     return Scaffold(
-      // backgroundColor: const Color(0xFF070C14),
-      backgroundColor: AppColors.background,
+      backgroundColor: colorScheme.onPrimary,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
               pinned: true,
               elevation: 0,
-              backgroundColor: AppColors.primary,
-              title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              title: Text(
+                p.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  if (context.canPop()) {
-                    return Navigator.pop(context);
-                  } else {
-                    context.go('/');
-                  }
-                },
+                onPressed: () =>
+                    context.canPop() ? context.pop() : context.go('/'),
               ),
             ),
 
             SliverToBoxAdapter(
-              child: Container(
-                color: Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AspectRatio(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    color: Colors.white,
+                    child: AspectRatio(
                       aspectRatio: 1,
                       child: mainUrl != null
                           ? Image.network(
                               mainUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                              fit: BoxFit
+                                  .contain, // Contain giúp thấy toàn bộ mũ
+                              errorBuilder: (_, __, ___) =>
+                                  _imagePlaceholder(colorScheme),
                             )
-                          : _imagePlaceholder(),
+                          : _imagePlaceholder(colorScheme),
+                    ),
+                  ),
+
+                  // Danh sách màu sắc (Thumbnails)
+                  if (vm.colors.length > 1)
+                    _buildSectionTitle("Chọn màu sắc", textTheme, colorScheme),
+
+                  if (vm.colors.length > 1)
+                    Container(
+                      height: 70,
+                      margin: const EdgeInsets.only(top: 8),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: vm.colors.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, i) {
+                          final c = vm.colors[i];
+                          final active = c.colorId == vm.selectedColorId;
+                          final thumbUrl = _thumbForColor(
+                            product: p,
+                            colorId: c.colorId,
+                          );
+
+                          return InkWell(
+                            onTap: () => vm.selectColor(c.colorId),
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 60,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: active
+                                      ? colorScheme.secondary
+                                      : colorScheme.outlineVariant,
+                                  width: active ? 2.5 : 1,
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: thumbUrl == null
+                                  ? Icon(
+                                      Icons.image,
+                                      color: colorScheme.outline,
+                                    )
+                                  : Image.network(thumbUrl, fit: BoxFit.cover),
+                            ),
+                          );
+                        },
+                      ),
                     ),
 
-                    if (vm.colors.length > 1)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: SizedBox(
-                          height: 52,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: vm.colors.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 10),
-                            itemBuilder: (context, i) {
-                              final c = vm.colors[i];
-                              final active = c.colorId == vm.selectedColorId;
-
-                              final thumbUrl = _thumbForColor(
-                                product: p,
-                                colorId: c.colorId,
-                              );
-
-                              return InkWell(
-                                onTap: () => vm.selectColor(c.colorId),
-                                child: Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: active
-                                          ? AppColors.secondary
-                                          : Colors.black12,
-                                      width: active ? 2 : 1,
-                                    ),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: thumbUrl == null
-                                      ? Container(
-                                          color: Colors.grey.shade200,
-                                          child: const Icon(
-                                            Icons.image,
-                                            color: Colors.black38,
-                                          ),
-                                        )
-                                      : Image.network(
-                                          thumbUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Container(
-                                                color: Colors.grey.shade200,
-                                              ),
-                                        ),
-                                ),
-                              );
-                            },
+                  // Tên và Giá
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p.name,
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                      ),
-
-                    if (productImages.length > 1)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: SizedBox(
-                          height: 46,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: min(productImages.length, 6),
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 8),
-                            itemBuilder: (context, i) {
-                              final url = productImages[i].url;
-                              final active = i == vm.imgIndex;
-
-                              return InkWell(
-                                onTap: () => vm.setImgIndex(i),
-                                child: Container(
-                                  width: 46,
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: active
-                                          ? AppColors.secondary
-                                          : Colors.black12,
-                                      width: active ? 2 : 1,
-                                    ),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Image.network(
-                                    url,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        Container(color: Colors.grey.shade200),
-                                  ),
-                                ),
-                              );
-                            },
+                        const SizedBox(height: 8),
+                        Text(
+                          priceText,
+                          style: textTheme.headlineSmall?.copyWith(
+                            color: colorScheme.error,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
 
-                    // ===== Tên + Giá =====
+                  // Chọn Size
+                  if (vm.sizes.isNotEmpty)
+                    _buildSectionTitle("Kích thước", textTheme, colorScheme),
+
+                  if (vm.sizes.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Text(
-                        p.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSecondary,
-                        ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: vm.sizes.map((s) {
+                          final selected = s.sizeId == vm.selectedSizeId;
+                          return ChoiceChip(
+                            label: Text(s.size),
+                            selected: selected,
+                            onSelected: (_) => vm.selectSize(s.sizeId),
+                            selectedColor: colorScheme.primaryContainer,
+                            labelStyle: TextStyle(
+                              color: selected
+                                  ? colorScheme.secondary
+                                  : colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Text(
-                        priceText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.error,
-                        ),
-                      ),
-                    ),
 
-                    // ===== Size =====
-                    if (vm.sizes.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                        child: Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: vm.sizes.map((s) {
-                            final selected = s.sizeId == vm.selectedSizeId;
-                            return InkWell(
-                              onTap: () => vm.selectSize(s.sizeId),
-                              child: Container(
+                  // // Số lượng
+                  // _buildSectionTitle("Số lượng", textTheme, colorScheme),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                    ), // Lề trái phải để không sát mép màn hình
+                    child: Row(
+                      children: [
+                        Container(
+                          height:
+                              45, // Giảm chiều cao xuống (trước đó mặc định khá lớn)
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Nút Giảm
+                              SizedBox(
+                                width: 36,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => vm.updateQuantity(-1),
+                                  icon: const Icon(Icons.remove, size: 16),
+                                  color: Colors.black54,
+                                ),
+                              ),
+
+                              VerticalDivider(
+                                width: 1,
+                                color: Colors.grey.shade300,
+                                indent: 8,
+                                endIndent: 8,
+                              ),
+
+                              // Số lượng
+                              Container(
+                                alignment: Alignment.center,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: selected
-                                        ? AppColors.secondary
-                                        : Colors.black26,
-                                    width: selected ? 2 : 1,
-                                  ),
+                                  horizontal: 12,
                                 ),
                                 child: Text(
-                                  s.size,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.onSecondary,
+                                  vm.quantity.toString(),
+                                  style: textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
 
-                    // ===== Quantity =====
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
-                          const Text(
-                            "Số lượng:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          IconButton(
-                            onPressed: () => vm.updateQuantity(-1),
-                            icon: const Icon(
-                              Icons.remove_circle_outline,
-                              color: AppColors.onSecondary,
-                            ),
-                          ),
-                          Text(
-                            vm.quantity.toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              color: AppColors.onSecondary,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => vm.updateQuantity(1),
-                            icon: const Icon(
-                              Icons.add_circle_outline,
-                              color: AppColors.onSecondary,
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                    ),
+                              VerticalDivider(
+                                width: 1,
+                                color: Colors.grey.shade300,
+                                indent: 8,
+                                endIndent: 8,
+                              ),
 
-                    const SizedBox(height: 16),
-
-                    // ===== Add to cart =====
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: (!inStock || productDetail == null)
-                              ? null
-                              : () {
-                                  if (widget.onAddToCart != null) {
-                                    widget.onAddToCart?.call(
-                                      p,
-                                      productDetail,
-                                      vm.quantity,
-                                    );
-                                    return;
-                                  }
-                                  context.read<CartViewmodel>().addToCart(
-                                    productDetailId: productDetail.id,
-                                    quantity: vm.quantity,
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Da them "${p.name}" vao gio hang',
-                                      ),
-                                    ),
-                                  );
-                                },
-                          child: Text(
-                            inStock ? "THEM VAO GIO HANG" : "HET HANG",
+                              // Nút Tăng
+                              SizedBox(
+                                width: 36,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => vm.updateQuantity(1),
+                                  icon: const Icon(Icons.add, size: 16),
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
             ),
           ],
         ),
       ),
+      // Bottom Action Bar - Nút mua hàng cố định phía dưới
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.onPrimary,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
+        ),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.secondary,
+            foregroundColor: colorScheme.onPrimary,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: (!inStock || productDetail == null)
+              ? null
+              : () {
+                  if (widget.onAddToCart != null) {
+                    widget.onAddToCart!(p, productDetail, vm.quantity);
+                  } else {
+                    context.read<CartViewmodel>().addToCart(
+                      productDetailId: productDetail.id,
+                      quantity: vm.quantity,
+                    );
+                    _showSuccessSnackBar(context, p.name, colorScheme);
+                  }
+                },
+          child: Text(
+            inStock ? "THÊM VÀO GIỎ HÀNG" : "TẠM HẾT HÀNG",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
     );
   }
 
-  static Widget _imagePlaceholder() => Container(
-    color: Colors.grey.shade200,
+  Widget _buildSectionTitle(
+    String title,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(
+        title,
+        style: textTheme.titleSmall?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(
+    BuildContext context,
+    String name,
+    ColorScheme colorScheme,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm "$name" vào giỏ hàng'),
+        backgroundColor: colorScheme.secondary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _imagePlaceholder(ColorScheme colorScheme) => Container(
+    color: colorScheme.surfaceVariant,
     alignment: Alignment.center,
-    child: const Icon(Icons.image, size: 42, color: Colors.black38),
+    child: Icon(
+      Icons.image_not_supported_outlined,
+      size: 48,
+      color: colorScheme.outline,
+    ),
   );
 
-  /// lấy ảnh đại diện cho màu:
-  /// - ưu tiên ảnh có color_id = màu đó
-  /// - fallback ảnh chung (color_id null)
-  /// - fallback ảnh đầu tiên
   static String? _thumbForColor({
     required Product product,
     required int colorId,
   }) {
     final byColor = product.images.where((e) => e.colorId == colorId).toList();
     if (byColor.isNotEmpty) return byColor.first.url;
-
-    final commons = product.images.where((e) => e.colorId == null).toList();
-    if (commons.isNotEmpty) return commons.first.url;
-
     if (product.images.isNotEmpty) return product.images.first.url;
     return null;
   }

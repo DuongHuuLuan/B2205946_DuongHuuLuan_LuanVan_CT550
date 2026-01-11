@@ -1,6 +1,9 @@
 ﻿import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+// Import viewmodels và widgets của bạn
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category_strip.dart';
@@ -9,9 +12,6 @@ import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/hero_car
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_drawer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,6 +38,9 @@ class _HomePageState extends State<HomePage> {
     final productVm = context.watch<ProductViewmodel>();
     final categoryVm = context.watch<CategoryViewModel>();
 
+    // Lấy ColorScheme
+    final colorScheme = Theme.of(context).colorScheme;
+
     final Map<int, String> categoryThumbs = {};
     for (final p in productVm.products) {
       if (p.images.isEmpty) continue;
@@ -47,14 +50,11 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const HomeDrawer(),
-      // backgroundColor: const Color(0xFF070C14),
-      backgroundColor: AppColors.background,
+      backgroundColor: colorScheme.surface, // Đồng bộ nền trang chủ
       body: CustomScrollView(
         slivers: [
           _HomeSliverAppBar(
-            onCart: () {
-              context.go("/cart");
-            },
+            onCart: () => context.go("/cart"),
             onSearch: () {},
             onProfile: () async => auth.logout(),
             onMenu: () => _scaffoldKey.currentState?.openDrawer(),
@@ -76,24 +76,27 @@ class _HomePageState extends State<HomePage> {
             child: CategoryStrip(
               categories: categoryVm.categories,
               thumbnails: categoryThumbs,
-              onTap: (c) {
-                context.go("/products/categories/${c.id}");
-              },
+              onTap: (c) => context.go("/products/categories/${c.id}"),
             ),
           ),
 
           if (productVm.isLoading && productVm.products.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                ),
               ),
             )
           else if (productVm.errorMessage != null && productVm.products.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(productVm.errorMessage!),
+                child: Text(
+                  productVm.errorMessage!,
+                  style: TextStyle(color: colorScheme.error),
+                ),
               ),
             )
           else
@@ -124,46 +127,38 @@ class _HomeSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final media = MediaQuery.of(context);
+
+    // Tính toán kích thước như cũ
     final statusBarH = media.padding.top;
     final w = media.size.width;
-
     final double logoMax = (w * 0.14).clamp(48.0, 58.0);
     final double logoMin = (w * 0.115).clamp(40.0, 48.0);
-
     final double topPadMax = (w * 0.030).clamp(8.0, 16.0);
-    final double topPadMin = (w * 0.000).clamp(0.0, 6.0);
-
+    final double topPadMin = 0.0;
     final double bottomPadMax = (w * 0.020).clamp(6.0, 12.0);
-    final double bottomPadMin = 0.0;
-
-    final double expandedContentH = logoMax + topPadMax + bottomPadMax;
-    final double collapsedContentH = logoMin + topPadMin + bottomPadMin;
-
-    final double expandedH = statusBarH + expandedContentH;
-    final double collapsedH = statusBarH + collapsedContentH;
+    final double expandedH = statusBarH + logoMax + topPadMax + bottomPadMax;
+    final double collapsedH = statusBarH + logoMin + topPadMin;
 
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: AppColors.primary,
+      backgroundColor: colorScheme.primary, // Màu thanh Appbar từ Theme
       expandedHeight: expandedH,
       collapsedHeight: collapsedH,
-      toolbarHeight: collapsedContentH,
       automaticallyImplyLeading: false,
-
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           final t =
               ((constraints.maxHeight - collapsedH) / (expandedH - collapsedH))
                   .clamp(0.0, 1.0);
-
           final logoSize = lerpDouble(logoMin, logoMax, t)!;
           final topPad = lerpDouble(topPadMin, topPadMax, t)!;
-          final bottomPad = lerpDouble(bottomPadMin, bottomPadMax, t)!;
+          final bottomPad = lerpDouble(0.0, bottomPadMax, t)!;
 
           return Container(
-            color: AppColors.primary,
+            color: colorScheme.primary, // Đồng nhất màu nền
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -175,26 +170,26 @@ class _HomeSliverAppBar extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    SizedBox(
+                    // Logo
+                    Container(
                       width: logoSize,
                       height: logoSize,
-                      child: const DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: AssetImage("assets/images/logo.webp"),
-                            fit: BoxFit.cover,
-                          ),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: AssetImage("assets/images/logo.webp"),
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     const Spacer(),
+                    // Nút bấm - Giả sử CircleIconButton đã dùng colorScheme bên trong
                     CircleIconButton(icon: Icons.person, onTap: onProfile),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     CircleIconButton(icon: Icons.shopping_bag, onTap: onCart),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     CircleIconButton(icon: Icons.search, onTap: onSearch),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     CircleIconButton(icon: Icons.menu, onTap: onMenu),
                   ],
                 ),

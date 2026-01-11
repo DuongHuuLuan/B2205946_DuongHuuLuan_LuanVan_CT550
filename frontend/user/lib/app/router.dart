@@ -10,37 +10,70 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/core/storage/secure_storage.dart';
 
 class AppRouter {
+  static bool _isRestored = false;
+
   static GoRouter createRouter(AuthViewmodel authVM) {
+    final storage = SecureStorage();
+
     return GoRouter(
       initialLocation: "/",
       refreshListenable: authVM,
-      redirect: (context, state) {
-        // Ä‘á»£i AuthViewModel náº¡p dá»¯ liá»‡u tá»« SecureStorage trÆ°á»›c
+      redirect: (context, state) async {
+        final String location = state.matchedLocation;
+        final String fullLocation = state.uri.toString();
+
+        // 1. Kiểm tra trạng thái khởi tạo
         if (!authVM.isInitialized) return "/splash";
 
         final bool loggedIn = authVM.isAuthenticated;
-        final String location = state.matchedLocation;
+        final bool isAtAuth =
+            location == "/login" ||
+            location == "/register" ||
+            location == "/splash";
 
-        final bool isAtLogin = location == "/login";
-        final bool isAtRegister = location == "/register";
-        final bool isAtSplash = location == "/splash";
-
-        // 2. Náº¿u CHÆ¯A Ä‘Äƒng nháº­p
+        // 2. Nếu chưa đăng nhập
         if (!loggedIn) {
-          // Náº¿u Ä‘ang á»Ÿ Login hoáº·c Register thÃ¬ cho á»Ÿ láº¡i, ngÆ°á»£c láº¡i Ä‘áº©y vá» Login
-          if (isAtLogin || isAtRegister) return null;
-          return "/login";
+          _isRestored = false;
+          // Nếu đang ở login/register thì cho phép ở lại, ngược lại ép về login
+          return (location == "/login" || location == "/register")
+              ? null
+              : "/login";
         }
 
-        // 3. Náº¿u ÄÃƒ Ä‘Äƒng nháº­p
+        // 3. Nếu đã đăng nhập
         if (loggedIn) {
-          // Náº¿u Ä‘ang á»Ÿ Login, Register hoáº·c Splash thÃ¬ Ä‘áº©y vÃ o Home
-          if (isAtLogin || isAtRegister || isAtSplash) return "/";
-        }
+          if (!_isRestored || isAtAuth) {
+            _isRestored = true;
 
-        // Má»i trÆ°á»ng há»£p khÃ¡c cho phÃ©p Ä‘i tiáº¿p
+            try {
+              // Thêm timeout hoặc try-catch để tránh treo khi đọc storage lỗi
+              final lastRoute = await storage.getLastRoute().timeout(
+                const Duration(seconds: 2),
+                onTimeout: () => null,
+              );
+
+              if (lastRoute != null &&
+                  lastRoute.isNotEmpty &&
+                  lastRoute != "/" &&
+                  lastRoute != location) {
+                return lastRoute;
+              }
+            } catch (e) {
+              debugPrint("Router Error: Không thể khôi phục route cũ: $e");
+            }
+
+            // Nếu đang kẹt ở trang Auth mà ko có route cũ thì về Home
+            return isAtAuth ? "/" : null;
+          }
+
+          // Lưu route hiện tại để khôi phục sau này (tránh lưu trang Auth)
+          if (!isAtAuth) {
+            await storage.saveLastRoute(fullLocation).catchError((e) => null);
+          }
+        }
         return null;
       },
       routes: [

@@ -1,4 +1,3 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
 
@@ -9,24 +8,41 @@ class CartSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
+        color: colorScheme.surface, // Dùng màu nền bề mặt
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+        ), // Viền nhẹ đồng bộ
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             "TỔNG CỘNG GIỎ HÀNG",
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
           ),
-          const Divider(height: 20),
-          _SummaryRow(label: "Tạm Tính", value: total.toVnd()),
-          const Divider(height: 18),
-          _SummaryRow(label: "Tổng", value: total.toVnd()),
+          Divider(height: 20, color: colorScheme.outlineVariant),
+          _SummaryRow(
+            label: "Tạm Tính",
+            value: total.toVnd(),
+            colorScheme: colorScheme,
+          ),
+          Divider(height: 18, color: colorScheme.outlineVariant),
+          _SummaryRow(
+            label: "Tổng",
+            value: total.toVnd(),
+            isTotal: true,
+            colorScheme: colorScheme,
+          ),
         ],
       ),
     );
@@ -36,8 +52,15 @@ class CartSummary extends StatelessWidget {
 class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
+  final bool isTotal;
+  final ColorScheme colorScheme;
 
-  const _SummaryRow({required this.label, required this.value});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.isTotal = false,
+    required this.colorScheme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +69,22 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurfaceVariant,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
         ),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: isTotal ? 16 : 14,
+            color: isTotal ? colorScheme.onSurface : colorScheme.onSurface,
+          ),
+        ),
       ],
     );
   }

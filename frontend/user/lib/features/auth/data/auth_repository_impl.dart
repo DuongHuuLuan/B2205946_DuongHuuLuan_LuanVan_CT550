@@ -61,6 +61,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     try {
       await _storage.deleteAccessToken();
+      await _storage.deleteLastRoute();
 
       print("AuthRepository: Đã xóa token, người dùng đã đăng xuất.");
     } catch (e) {

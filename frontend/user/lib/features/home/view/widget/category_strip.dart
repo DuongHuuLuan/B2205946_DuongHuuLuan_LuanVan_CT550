@@ -1,11 +1,10 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 
 class CategoryStrip extends StatefulWidget {
   final List<Category> categories;
-  final Map<int, String> thumbnails; // categoryId -> imageUrl
+  final Map<int, String> thumbnails;
   final void Function(Category c)? onTap;
 
   const CategoryStrip({
@@ -21,16 +20,13 @@ class CategoryStrip extends StatefulWidget {
 
 class _CategoryStripState extends State<CategoryStrip> {
   final ScrollController _controller = ScrollController();
-
   bool _showLeft = false;
   bool _showRight = false;
 
   void _updateArrows() {
     if (!_controller.hasClients) return;
-
     final max = _controller.position.maxScrollExtent;
     final offset = _controller.offset;
-
     final canScroll = max > 0;
     final showLeftNow = canScroll && offset > 2;
     final showRightNow = canScroll && offset < max - 2;
@@ -45,11 +41,10 @@ class _CategoryStripState extends State<CategoryStrip> {
 
   void _scrollBy(double dx) {
     if (!_controller.hasClients) return;
-
-    final minE = _controller.position.minScrollExtent;
-    final maxE = _controller.position.maxScrollExtent;
-
-    final target = (_controller.offset + dx).clamp(minE, maxE);
+    final target = (_controller.offset + dx).clamp(
+      _controller.position.minScrollExtent,
+      _controller.position.maxScrollExtent,
+    );
     _controller.animateTo(
       target,
       duration: const Duration(milliseconds: 250),
@@ -65,12 +60,6 @@ class _CategoryStripState extends State<CategoryStrip> {
   }
 
   @override
-  void didUpdateWidget(covariant CategoryStrip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateArrows());
-  }
-
-  @override
   void dispose() {
     _controller.removeListener(_updateArrows);
     _controller.dispose();
@@ -81,9 +70,11 @@ class _CategoryStripState extends State<CategoryStrip> {
   Widget build(BuildContext context) {
     if (widget.categories.isEmpty) return const SizedBox.shrink();
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      // color: const Color(0xFF070C14),
-      color: AppColors.background,
+      color: colorScheme.surface,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: SizedBox(
         height: 230,
@@ -101,11 +92,11 @@ class _CategoryStripState extends State<CategoryStrip> {
                     width: 180,
                     margin: const EdgeInsets.only(right: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: colorScheme.shadow.withOpacity(0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 6),
                         ),
@@ -126,11 +117,12 @@ class _CategoryStripState extends State<CategoryStrip> {
                               child: (thumb != null && thumb.isNotEmpty)
                                   ? Image.network(thumb, fit: BoxFit.cover)
                                   : Container(
-                                      color: Colors.grey.shade200,
-                                      child: const Icon(
+                                      color: colorScheme.surfaceVariant,
+                                      child: Icon(
                                         Icons.image,
                                         size: 40,
-                                        color: Colors.black38,
+                                        color: colorScheme.onSurfaceVariant
+                                            .withOpacity(0.5),
                                       ),
                                     ),
                             ),
@@ -143,7 +135,8 @@ class _CategoryStripState extends State<CategoryStrip> {
                             decoration: BoxDecoration(
                               border: Border(
                                 top: BorderSide(
-                                  color: AppColors.secondary,
+                                  color: colorScheme
+                                      .secondary, // Viền phân cách nhẹ nhàng
                                   width: 1.5,
                                 ),
                               ),
@@ -151,10 +144,9 @@ class _CategoryStripState extends State<CategoryStrip> {
                             child: Text(
                               c.name.toUpperCase(),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
+                              style: textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: colorScheme.onSecondary,
                               ),
                             ),
                           ),
@@ -166,48 +158,47 @@ class _CategoryStripState extends State<CategoryStrip> {
               ),
             ),
 
-            // Left arrow (fade)
-            Positioned(
-              left: 6,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: IgnorePointer(
-                  ignoring: !_showLeft,
-                  child: AnimatedOpacity(
-                    opacity: _showLeft ? 1 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOut,
-                    child: ArrowButton(
-                      icon: Icons.chevron_left,
-                      onTap: () => _scrollBy(-220),
-                    ),
-                  ),
-                ),
-              ),
+            // Left arrow
+            _buildArrow(
+              isVisible: _showLeft,
+              icon: Icons.chevron_left,
+              onTap: () => _scrollBy(-220),
+              alignment: Alignment.centerLeft,
             ),
 
-            // Right arrow (fade)
-            Positioned(
-              right: 6,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: IgnorePointer(
-                  ignoring: !_showRight,
-                  child: AnimatedOpacity(
-                    opacity: _showRight ? 1 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOut,
-                    child: ArrowButton(
-                      icon: Icons.chevron_right,
-                      onTap: () => _scrollBy(220),
-                    ),
-                  ),
-                ),
-              ),
+            // Right arrow
+            _buildArrow(
+              isVisible: _showRight,
+              icon: Icons.chevron_right,
+              onTap: () => _scrollBy(220),
+              alignment: Alignment.centerRight,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Hàm helper để xây dựng nút mũi tên đồng bộ Theme
+  Widget _buildArrow({
+    required bool isVisible,
+    required IconData icon,
+    required VoidCallback onTap,
+    required Alignment alignment,
+  }) {
+    return Positioned(
+      left: alignment == Alignment.centerLeft ? 6 : null,
+      right: alignment == Alignment.centerRight ? 6 : null,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: IgnorePointer(
+          ignoring: !isVisible,
+          child: AnimatedOpacity(
+            opacity: isVisible ? 1 : 0,
+            duration: const Duration(milliseconds: 180),
+            child: ArrowButton(icon: icon, onTap: onTap),
+          ),
         ),
       ),
     );

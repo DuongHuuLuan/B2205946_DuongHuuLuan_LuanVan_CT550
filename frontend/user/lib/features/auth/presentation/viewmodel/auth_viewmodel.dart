@@ -20,21 +20,29 @@ class AuthViewmodel extends ChangeNotifier {
 
   // hàm khởi tạo kiểm tra trạng thía đăng nhập từ ổ cứng
   Future<void> _initAuth() async {
-    final hasToken = await _repository.checkAuthStatus();
+    try {
+      debugPrint("AuthViewModel: bắt đầu khởi động");
+      final hasToken = await _repository.checkAuthStatus();
+      debugPrint("AuthViewModel: hasToken=$hasToken");
 
-    if (hasToken) {
-      try {
-        _user = await _repository.getMe();
-        print(
-          "AuthViewModel: Khôi phục phiên đăng nhập cho ${_user?.username}",
-        );
-      } catch (e) {
-        await logout();
-        print("AuthViewModel: Phiên đăng nhập đã hết hạn");
+      if (hasToken) {
+        try {
+          _user = await _repository.getMe();
+          debugPrint(
+            "AuthViewModel: phiên đăng nhập đã được khôi phục cho ${_user?.username}",
+          );
+        } catch (e) {
+          await logout();
+          debugPrint("AuthViewModel: phiên đăng nhập đã hết hạn");
+        }
       }
+    } catch (e) {
+      debugPrint("AuthViewModel: lỗi khởi tạo $e");
+    } finally {
+      _isInitialized = true;
+      notifyListeners();
+      debugPrint("AuthViewModel: khởi tạo hoàn thành");
     }
-    _isInitialized = true;
-    notifyListeners();
   }
 
   // cập nhật thông tin user sau khi login thành công

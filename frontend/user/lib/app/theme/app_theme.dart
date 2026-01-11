@@ -3,51 +3,48 @@ import 'colors.dart';
 import 'text_styles.dart';
 
 class AppTheme {
-  static ThemeData get darkTheme {
-    final scheme = const ColorScheme(
-      brightness: Brightness.dark,
-      primary: AppColors.primary,
-      onPrimary: AppColors.onPrimary,
-      secondary: AppColors.secondary,
-      onSecondary: AppColors.onSecondary,
-      error: AppColors.error,
-      onError: Colors.white,
-      background: AppColors.background,
-      onBackground: AppColors.textPrimary,
-      surface: AppColors.surface,
-      onSurface: AppColors.textPrimary,
-    );
+  static ThemeData _buildTheme({
+    required Brightness brightness,
+    required AppPalette p,
+  }) {
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: brightness,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: AppColors.onPrimary,
+          secondary: AppColors.secondary,
+          onSecondary: AppColors.onSecondary,
+          background: p.background,
+          onBackground: p.textPrimary,
+          surface: p.surface,
+          onSurface: p.textPrimary,
+          error: AppColors.error,
+          onError: Colors.white,
+        );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: p.background,
 
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: p.background,
+        foregroundColor: p.textPrimary,
         elevation: 0,
       ),
 
-      dividerTheme: const DividerThemeData(
-        color: AppColors.divider,
-        thickness: 1,
-      ),
+      dividerTheme: DividerThemeData(color: p.divider, thickness: 1),
 
-      textTheme: TextTheme(
-        headlineLarge: AppTextStyles.headlineLarge,
-        headlineMedium: AppTextStyles.headlineMedium,
-        titleLarge: AppTextStyles.titleLarge,
-        bodyMedium: AppTextStyles.bodyMedium,
-        bodySmall: AppTextStyles.caption,
-      ),
+      textTheme: AppTextStyles.textTheme(p),
 
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: p.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: p.border),
         ),
       ),
 
@@ -59,28 +56,28 @@ class AppTheme {
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          textStyle: AppTextStyles.button,
+          textStyle: AppTextStyles.button(p),
         ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(color: AppColors.border),
+          foregroundColor: p.textPrimary,
+          side: BorderSide(color: p.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          textStyle: AppTextStyles.button,
+          textStyle: AppTextStyles.button(p),
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface2,
-        hintStyle: AppTextStyles.inputHint,
-        helperStyle: AppTextStyles.inputHelper,
-        errorStyle: AppTextStyles.inputError,
+        fillColor: p.surface2,
+        hintStyle: AppTextStyles.inputHint(p),
+        helperStyle: AppTextStyles.inputHelper(p),
+        errorStyle: AppTextStyles.inputError(),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -88,11 +85,11 @@ class AppTheme {
 
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: p.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: p.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
@@ -100,17 +97,15 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: AppColors.error),
+          borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
     );
   }
 
-  static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ),
-  );
+  static ThemeData get darkTheme =>
+      _buildTheme(brightness: Brightness.dark, p: AppColors.dark);
+
+  static ThemeData get lightTheme =>
+      _buildTheme(brightness: Brightness.light, p: AppColors.light);
 }

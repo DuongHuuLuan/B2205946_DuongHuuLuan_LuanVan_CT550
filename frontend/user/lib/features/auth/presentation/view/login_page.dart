@@ -1,5 +1,4 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -30,13 +29,27 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final loginViewModel = context.watch<LoginViewModel>();
     final authState = context.read<AuthViewmodel>();
+
+    // Lấy Theme từ context
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface, // Đồng bộ màu nền
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Text("Đăng nhập", style: AppTextStyles.displayLarge),
+              // Sử dụng TextTheme thay cho AppTextStyles.displayLarge
+              Text(
+                "Đăng nhập",
+                style: textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
               const SizedBox(height: 40),
               Form(
                 key: _formKey,
@@ -49,9 +62,12 @@ class _LoginPageState extends State<LoginPage> {
                       height: 200,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface2,
+                        color: colorScheme
+                            .surfaceVariant, // Thay AppColors.surface2
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant,
+                        ), // Thay AppColors.border
                       ),
                       child: Image.asset('assets/images/logo.webp'),
                     ),
@@ -62,7 +78,10 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: "Email",
-                        prefixIcon: Icon(Icons.email),
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: colorScheme.onPrimary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(35),
                         ),
@@ -77,10 +96,13 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 30),
                     TextFormField(
                       controller: _passwordController,
-                      obscureText: true, // ẩn mật khẩu
+                      obscureText: true,
                       decoration: InputDecoration(
                         labelText: "Mật khẩu",
-                        prefixIcon: Icon(Icons.lock),
+                        prefixIcon: Icon(
+                          Icons.lock,
+                          color: colorScheme.onPrimary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(35),
                         ),
@@ -94,13 +116,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 10),
 
-                    // hiển thị thông báo lỗi nếu có từ ViewModel
                     if (loginViewModel.errorMessage.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Text(
                           loginViewModel.errorMessage,
-                          style: TextStyle(color: Colors.red, fontSize: 14),
+                          style: TextStyle(
+                            color: colorScheme.error,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -127,6 +151,9 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary, // Màu nút chính
+                        foregroundColor:
+                            colorScheme.onPrimary, // Màu chữ trên nút
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(35),
@@ -138,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.onPrimary,
+                                color: colorScheme.onPrimary,
                               ),
                             )
                           : const Text(
@@ -154,7 +181,14 @@ class _LoginPageState extends State<LoginPage> {
 
                     OutlinedButton(
                       onPressed: () => context.go("/register"),
-                      child: const SizedBox(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colorScheme.onPrimary),
+                        foregroundColor: colorScheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(35),
+                        ),
+                      ),
+                      child: SizedBox(
                         width: double.infinity,
                         child: Text(
                           "TẠO TÀI KHOẢN",
@@ -162,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                       ),

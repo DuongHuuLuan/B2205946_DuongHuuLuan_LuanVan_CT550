@@ -1,4 +1,3 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -20,6 +19,8 @@ class CartRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final detailProduct = cartDetail.productDetail;
     final imageUrl = product
         ?.filterProductImages(detailProduct.colorId)
@@ -50,21 +51,27 @@ class CartRow extends StatelessWidget {
                         product?.name ??
                             "Sản phẩm #${cartDetail.productDetailId}",
                         maxLines: 2,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
 
                       const SizedBox(height: 6),
                       Text(
                         "Màu sắc: ${detailProduct.colorName}",
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: color.secondary),
                       ),
                       Text(
                         "Kích cỡ: ${detailProduct.size}",
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: color.secondary),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         "${cartDetail.quantity} x ${detailProduct.price.toVnd()}",
+                        style: TextStyle(
+                          color: color.secondary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -92,6 +99,7 @@ class _RemoveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onPressed,
       child: Container(
@@ -99,9 +107,10 @@ class _RemoveButton extends StatelessWidget {
         height: 28,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.onSecondary),
+          border: Border.all(color: colorScheme.outlineVariant),
+          color: colorScheme.surfaceContainerHighest,
         ),
-        child: const Icon(Icons.close, size: 16, color: AppColors.textPrimary),
+        child: Icon(Icons.close, size: 16, color: colorScheme.error),
       ),
     );
   }
@@ -120,8 +129,8 @@ class _ProductImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
         url!,
-        width: 64,
-        height: 64,
+        width: 60,
+        height: 60,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _ImagePlaceholder(),
       ),
@@ -132,15 +141,17 @@ class _ProductImage extends StatelessWidget {
 class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
-        color: AppColors.surface2,
+        color: colorScheme.outline,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colorScheme.surfaceContainerHigh),
       ),
-      child: const Icon(Icons.shopping_bag, color: AppColors.textSecondary),
+      child: Icon(Icons.shopping_bag, color: colorScheme.secondary),
     );
   }
 }
@@ -152,6 +163,7 @@ class _QuantityControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -159,17 +171,21 @@ class _QuantityControl extends StatelessWidget {
           icon: Icons.remove,
           onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
         ),
-
         Container(
           width: 36,
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.symmetric(
+              horizontal: BorderSide(color: colorScheme.outline),
+            ),
           ),
           child: Text(
             "$quantity",
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface, // Màu chữ trên nền surface
+            ),
           ),
         ),
         _QuantityButton(
@@ -188,13 +204,23 @@ class _QuantityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onPressed,
       child: Container(
         width: 30,
         height: 30,
-        decoration: BoxDecoration(border: Border.all(color: AppColors.border)),
-        child: Icon(icon, size: 16, color: AppColors.textPrimary),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outline),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: onPressed == null
+              ? colorScheme.onSurface
+              : colorScheme.onSurface,
+        ),
       ),
     );
   }

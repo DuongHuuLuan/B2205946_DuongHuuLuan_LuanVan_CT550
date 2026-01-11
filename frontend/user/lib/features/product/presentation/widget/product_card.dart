@@ -1,8 +1,9 @@
 ﻿import 'dart:math';
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
 
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+// Giữ nguyên các import domain của bạn
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
@@ -39,8 +40,7 @@ class _ProductCardState extends State<ProductCard> {
 
   Product get _p => widget.product;
 
-  // ====== helpers images ======
-
+  // ====== Giữ nguyên helpers images ======
   List<ProductImage> _imagesByColor(int colorId) =>
       _p.images.where((img) => img.colorId == colorId).toList();
 
@@ -50,28 +50,21 @@ class _ProductCardState extends State<ProductCard> {
   List<ProductImage> get _displayImages =>
       _p.filterProductImages(_selectedColorId);
 
-  // ====== UI data ======
-
+  // ====== Giữ nguyên UI data ======
   List<ProductDetail> get _colors => _p.uniqueColors;
-
   List<ProductDetail> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
-
   ProductDetail? get _selectedProductDetail =>
       _p.findProductDetail(_selectedColorId, _selectedSizeId);
 
-  // ====== Color thumbnails ======
+  // ====== Giữ nguyên Color thumbnails ======
   List<_ColorThumb> get _colorThumbs {
     if (_colors.isEmpty) return [];
-
     final result = <_ColorThumb>[];
-
     for (final c in _colors) {
       final byColor = _imagesByColor(c.colorId);
       final fallback = _commonImages.isNotEmpty ? _commonImages : _p.images;
-
       final list = byColor.isNotEmpty ? byColor : fallback;
       if (list.isEmpty) continue;
-
       result.add(
         _ColorThumb(
           colorId: c.colorId,
@@ -80,14 +73,12 @@ class _ProductCardState extends State<ProductCard> {
         ),
       );
     }
-
     return result;
   }
 
   @override
   void initState() {
     super.initState();
-
     if (_p.productDetails.isNotEmpty) {
       _selectedColorId = _p.productDetails.first.colorId;
       _selectedSizeId = _p.productDetails.first.sizeId;
@@ -99,10 +90,8 @@ class _ProductCardState extends State<ProductCard> {
     setState(() {
       _selectedColorId = colorId;
       _imgIndex = 0;
-
       final sizes = _p.getUniqueSizesByColor(colorId);
       final stillOk = sizes.any((s) => s.sizeId == _selectedSizeId);
-
       if (!stillOk) {
         _selectedSizeId = sizes.isNotEmpty ? sizes.first.sizeId : null;
       }
@@ -119,18 +108,10 @@ class _ProductCardState extends State<ProductCard> {
     final detail = _selectedProductDetail;
     if (detail == null) {
       if (!mounted) return;
-      setState(() {
-        _availableQuantity = null;
-      });
+      setState(() => _availableQuantity = null);
       return;
     }
-
-    if (mounted) {
-      setState(() {
-        _availableQuantity = null;
-      });
-    }
-
+    if (mounted) setState(() => _availableQuantity = null);
     try {
       final qty = await context.read<WarehouseRepository>().getTotalStock(
         productId: _p.id,
@@ -138,14 +119,10 @@ class _ProductCardState extends State<ProductCard> {
         sizeId: detail.sizeId,
       );
       if (!mounted) return;
-      setState(() {
-        _availableQuantity = qty;
-      });
+      setState(() => _availableQuantity = qty);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _availableQuantity = null;
-      });
+      setState(() => _availableQuantity = null);
     }
   }
 
@@ -153,6 +130,10 @@ class _ProductCardState extends State<ProductCard> {
   Widget build(BuildContext context) {
     final productDetail = _selectedProductDetail;
     final images = _displayImages;
+
+    // Khai báo theme để sử dụng bên dưới
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final mainUrl = images.isNotEmpty
         ? images[_imgIndex.clamp(0, images.length - 1)].url
@@ -167,9 +148,12 @@ class _ProductCardState extends State<ProductCard> {
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.onPrimary,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black12, width: 1.5),
+          border: Border.all(
+            color: colorScheme.outline,
+            width: 1.25,
+          ), // Thay Colors.black12
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,11 +168,14 @@ class _ProductCardState extends State<ProductCard> {
                     ? Image.network(
                         mainUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                        errorBuilder: (_, __, ___) =>
+                            _imagePlaceholder(colorScheme),
                         loadingBuilder: (context, child, progress) =>
-                            progress == null ? child : _imageLoading(),
+                            progress == null
+                            ? child
+                            : _imageLoading(colorScheme),
                       )
-                    : _imagePlaceholder(),
+                    : _imagePlaceholder(colorScheme),
               ),
             ),
 
@@ -204,7 +191,6 @@ class _ProductCardState extends State<ProductCard> {
                     itemBuilder: (context, i) {
                       final t = _colorThumbs[i];
                       final active = t.colorId == _selectedColorId;
-
                       return InkWell(
                         onTap: () => _selectColor(t.colorId),
                         child: Container(
@@ -214,8 +200,8 @@ class _ProductCardState extends State<ProductCard> {
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: active
-                                  ? AppColors.secondary
-                                  : Colors.black12,
+                                  ? colorScheme.secondary
+                                  : colorScheme.outline,
                               width: active ? 2 : 1,
                             ),
                           ),
@@ -224,7 +210,7 @@ class _ProductCardState extends State<ProductCard> {
                             t.url,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
-                                Container(color: Colors.grey.shade200),
+                                Container(color: colorScheme.surfaceVariant),
                           ),
                         ),
                       );
@@ -245,7 +231,6 @@ class _ProductCardState extends State<ProductCard> {
                     itemBuilder: (context, i) {
                       final url = images[i].url;
                       final active = i == _imgIndex;
-
                       return InkWell(
                         onTap: () => setState(() => _imgIndex = i),
                         child: Container(
@@ -254,8 +239,8 @@ class _ProductCardState extends State<ProductCard> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: active
-                                  ? AppColors.secondary
-                                  : Colors.black12,
+                                  ? colorScheme.secondary
+                                  : colorScheme.outlineVariant,
                               width: active ? 2 : 1,
                             ),
                           ),
@@ -264,7 +249,7 @@ class _ProductCardState extends State<ProductCard> {
                             url,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
-                                Container(color: Colors.grey.shade200),
+                                Container(color: colorScheme.surfaceVariant),
                           ),
                         ),
                       );
@@ -273,7 +258,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // ====== Size chips ======
+            // Size
             if (_sizes.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
@@ -293,16 +278,18 @@ class _ProductCardState extends State<ProductCard> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: selected
-                                ? AppColors.secondary
-                                : Colors.black26,
+                                ? colorScheme.secondary
+                                : colorScheme.outline,
                             width: selected ? 2 : 1,
                           ),
                         ),
                         child: Text(
                           v.size,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textDart,
+                            color: selected
+                                ? colorScheme.secondary
+                                : colorScheme.onSecondary,
                           ),
                         ),
                       ),
@@ -317,9 +304,9 @@ class _ProductCardState extends State<ProductCard> {
                 _p.name.toUpperCase(),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: Colors.black,
+                  color: colorScheme.onSecondary,
                 ),
               ),
             ),
@@ -328,31 +315,33 @@ class _ProductCardState extends State<ProductCard> {
               padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
               child: Text(
                 priceText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.error,
+                  color: colorScheme.error,
                 ),
               ),
             ),
 
             const SizedBox(height: 12),
 
-            // ====== Add to cart ======
             Padding(
               padding: const EdgeInsets.all(10),
               child: SizedBox(
                 height: 44,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: inStock
+                        ? colorScheme.secondary
+                        : colorScheme.surfaceVariant,
+                    foregroundColor: inStock
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: (!inStock || productDetail == null)
                       ? null
                       : () => widget.onAddToCart?.call(_p, productDetail, 1),
-                  child: Text(
-                    inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG",
-                    style: inStock
-                        ? TextStyle(color: AppColors.textPrimary)
-                        : TextStyle(color: AppColors.error),
-                  ),
+                  child: Text(inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG"),
                 ),
               ),
             ),
@@ -362,14 +351,14 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Widget _imagePlaceholder() => Container(
-    color: Colors.grey.shade200,
+  Widget _imagePlaceholder(ColorScheme colorScheme) => Container(
+    color: colorScheme.surfaceVariant,
     alignment: Alignment.center,
-    child: const Icon(Icons.image, size: 40, color: Colors.black38),
+    child: Icon(Icons.image, size: 40, color: colorScheme.outline),
   );
 
-  Widget _imageLoading() => Container(
-    color: Colors.grey.shade200,
+  Widget _imageLoading(ColorScheme colorScheme) => Container(
+    color: colorScheme.surfaceVariant,
     alignment: Alignment.center,
     child: const CircularProgressIndicator(strokeWidth: 2),
   );
@@ -379,6 +368,5 @@ class _ColorThumb {
   final int colorId;
   final String label;
   final String url;
-
   _ColorThumb({required this.colorId, required this.label, required this.url});
 }

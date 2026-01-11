@@ -1,5 +1,4 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/widget/category_grid.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
@@ -45,14 +44,22 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
   Widget build(BuildContext context) {
     final categoryVm = context.watch<CategoryViewModel>();
     final productVm = context.watch<ProductViewmodel>();
+
+    // 1. Lấy thông tin Theme
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colorScheme.surface, // Dùng màu nền hệ thống
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onSecondary,
+        backgroundColor: colorScheme.primary, // Màu chính cho AppBar
+        elevation: 0,
         title: Text(
           "Danh Mục Sản Phẩm",
-          style: TextStyle(color: AppColors.onPrimary),
+          style: textTheme.titleLarge?.copyWith(
+            color: colorScheme.onPrimary, // Chữ trên nền màu chính
+            fontWeight: FontWeight.bold,
+          ),
         ),
         leading: IconButton(
           onPressed: () {
@@ -62,10 +69,11 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               context.go("/");
             }
           },
-          icon: Icon(Icons.arrow_back, color: AppColors.onPrimary),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary),
         ),
       ),
       body: RefreshIndicator(
+        color: colorScheme.primary,
         onRefresh: () async {
           await productVm.getAllProduct(categoryId: _selectedCategoryId);
         },
@@ -78,8 +86,9 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               onSelectAll: () => _selectCategory(null),
               onSelectCategory: (c) => _selectCategory(c.id),
             ),
-            const SizedBox(height: 16),
-            // TITLE PRODUCTS
+            const SizedBox(height: 20),
+
+            // TITLE PRODUCTS SECTION
             Row(
               children: [
                 Expanded(
@@ -87,39 +96,38 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                     _selectedCategoryId == null
                         ? "Tất cả sản phẩm"
                         : "Sản phẩm theo danh mục",
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: colorScheme
+                          .onSurface, // Chữ màu tối trên nền sáng (và ngược lại)
                     ),
                   ),
                 ),
                 if (productVm.isLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
+                  SizedBox(
+                    width: 18,
+                    height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color:
+                          colorScheme.primary, // Loading xoay theo màu chủ đạo
                     ),
                   ),
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // Product Grid
+            // Product Grid Area
             if (productVm.errorMessage != null && productVm.products.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Center(
-                  child: Text(productVm.errorMessage ?? "Lỗi không xác định"),
-                ),
+              _buildEmptyState(
+                message: productVm.errorMessage!,
+                color: colorScheme.error,
               )
             else if (!productVm.isLoading && productVm.products.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text("Không có sản phẩm")),
+              _buildEmptyState(
+                message: "Không có sản phẩm nào trong danh mục này",
+                color: colorScheme.onSurfaceVariant,
               )
             else
               GridView.builder(
@@ -130,16 +138,13 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
-                  // childAspectRatio: 0.62,
                   mainAxisExtent: 450,
                 ),
                 itemBuilder: (context, index) {
                   final product = productVm.products[index];
                   return ProductCard(
                     product: product,
-                    onTap: () {
-                      context.go("/products/${product.id}");
-                    },
+                    onTap: () => context.go("/products/${product.id}"),
                     onAddToCart: (product, productDetail, quantity) {
                       context.read<CartViewmodel>().addToCart(
                         productDetailId: productDetail.id,
@@ -147,9 +152,14 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                       );
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
+                          backgroundColor: colorScheme.secondaryContainer,
                           content: Text(
-                            'Da them "${product.name}" vao gio hang',
+                            'Đã thêm "${product.name}" vào giỏ hàng',
+                            style: TextStyle(
+                              color: colorScheme.onSecondaryContainer,
+                            ),
                           ),
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },
@@ -157,6 +167,19 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                 },
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({required String message, required Color color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: color),
         ),
       ),
     );
