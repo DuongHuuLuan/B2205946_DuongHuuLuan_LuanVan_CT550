@@ -3,11 +3,13 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_ex
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
 import 'package:flutter/material.dart';
 
 class ProductViewmodel extends ChangeNotifier {
   final ProductRepository _repository;
-  ProductViewmodel(this._repository);
+  final WarehouseRepository _warehouseRepository;
+  ProductViewmodel(this._repository, this._warehouseRepository);
 
   // Trạng thái
   bool isLoading = false;
@@ -20,12 +22,16 @@ class ProductViewmodel extends ChangeNotifier {
   int? _selectedSizeId;
   int _imgIndex = 0;
   int _quantity = 1;
+  int? _availableQuantity;
+  bool _stockLoading = false;
 
   // getter (sử dụng lại các extension)
   int? get selectedColorId => _selectedColorId;
   int? get selectedSizeId => _selectedSizeId;
   int get imgIndex => _imgIndex;
   int get quantity => _quantity;
+  int? get availableQuantity => _availableQuantity;
+  bool get isStockLoading => _stockLoading;
 
   List<ProductDetail> get colors => product?.uniqueColors ?? [];
   List<ProductDetail> get sizes =>
@@ -79,6 +85,7 @@ class ProductViewmodel extends ChangeNotifier {
       _selectedSizeId = product!.productDetails.first.sizeId;
       _imgIndex = 0;
       _quantity = 1;
+      _loadSelectedStock();
     }
   }
 
@@ -92,11 +99,13 @@ class ProductViewmodel extends ChangeNotifier {
           ? availableSizes.first.sizeId
           : null;
     }
+    _loadSelectedStock();
     notifyListeners();
   }
 
   void selectSize(int sizeId) {
     _selectedSizeId = sizeId;
+    _loadSelectedStock();
     notifyListeners();
   }
 
@@ -106,10 +115,36 @@ class ProductViewmodel extends ChangeNotifier {
   }
 
   void updateQuantity(int delta) {
-    final maxStock = selectedProductDetail?.stockQuantity ?? 1;
+    final maxStock = _availableQuantity ?? 0;
     final newQuantity = _quantity + delta;
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       _quantity = newQuantity;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadSelectedStock() async {
+    final detail = selectedProductDetail;
+    if (detail == null || product == null) {
+      _availableQuantity = null;
+      _stockLoading = false;
+      return;
+    }
+
+    _stockLoading = true;
+    _availableQuantity = null;
+    notifyListeners();
+    try {
+      final quantity = await _warehouseRepository.getTotalStock(
+        productId: product!.id,
+        colorId: detail.colorId,
+        sizeId: detail.sizeId,
+      );
+      _availableQuantity = quantity;
+    } catch (_) {
+      _availableQuantity = null;
+    } finally {
+      _stockLoading = false;
       notifyListeners();
     }
   }

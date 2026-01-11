@@ -43,6 +43,9 @@ class _CartPageState extends State<CartPage> {
           children: [
             // const _Breadcrumb(),
             const SizedBox(height: 12),
+            _HeaderRow(),
+            const SizedBox(height: 10),
+
             CartTable(
               cartDetails: cartDetails,
               isLoading: vm.isLoading,
@@ -115,22 +118,6 @@ class _HeaderRow extends StatelessWidget {
           child: Text(
             "GiÁ",
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            "SỐ LƯỢNG",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            "TẠM TÍNH",
-            textAlign: TextAlign.end,
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ),

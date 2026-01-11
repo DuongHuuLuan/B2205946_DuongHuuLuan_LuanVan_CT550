@@ -3,7 +3,7 @@ from app.schemas.profile import ProfileCreate, ProfileOut, ProfileUpdate, Profil
 from app.schemas.category import CategoryBase, CategoryCreate, CategoryOut
 from app.schemas.image_url import ImageUrlOut, ImageURLBase, ImageURLCreate
 from app.schemas.product import ProductBase, ProductCreate, ProductOut
-from app.schemas.product_detail import ProductDetailCreate, ProductDetailOut, ColorCreate, ColorOut, SizeCreate, SizeOut
+from app.schemas.product_detail import ProductDetailCreate, ProductDetailUpdate, ProductDetailOut, ColorCreate, ColorOut, SizeCreate, SizeOut
 from app.schemas.cart import CartDetailCreate,CartDetailUpdate,CartDetailOut,CartOut
 from app.schemas.order import OrderDetailOut, OrderCreate, OrderOut
 from app.schemas.discount import DiscountOut

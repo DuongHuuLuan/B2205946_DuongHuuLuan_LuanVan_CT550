@@ -75,6 +75,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final Product p = vm.product!;
     final productDetail = vm.selectedProductDetail;
     final productImages = vm.displayProductImages;
+    final availableQuantity = vm.availableQuantity;
 
     final mainUrl = productImages.isNotEmpty
         ? productImages[vm.imgIndex.clamp(0, max(0, productImages.length - 1))]
@@ -82,7 +83,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         : null;
 
     final priceText = (productDetail?.price ?? 0).toVnd();
-    final inStock = (productDetail?.stockQuantity ?? 0) > 0;
+    final inStock = availableQuantity != null && availableQuantity > 0;
 
     return Scaffold(
       // backgroundColor: const Color(0xFF070C14),

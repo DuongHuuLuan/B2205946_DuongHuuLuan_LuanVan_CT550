@@ -7,6 +7,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.da
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
+import 'package:provider/provider.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
@@ -33,6 +35,7 @@ class _ProductCardState extends State<ProductCard> {
   int _imgIndex = 0;
   int? _selectedColorId;
   int? _selectedSizeId;
+  int? _availableQuantity;
 
   Product get _p => widget.product;
 
@@ -89,6 +92,7 @@ class _ProductCardState extends State<ProductCard> {
       _selectedColorId = _p.productDetails.first.colorId;
       _selectedSizeId = _p.productDetails.first.sizeId;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStock());
   }
 
   void _selectColor(int colorId) {
@@ -103,10 +107,46 @@ class _ProductCardState extends State<ProductCard> {
         _selectedSizeId = sizes.isNotEmpty ? sizes.first.sizeId : null;
       }
     });
+    _loadStock();
   }
 
   void _selectSize(int sizeId) {
     setState(() => _selectedSizeId = sizeId);
+    _loadStock();
+  }
+
+  Future<void> _loadStock() async {
+    final detail = _selectedProductDetail;
+    if (detail == null) {
+      if (!mounted) return;
+      setState(() {
+        _availableQuantity = null;
+      });
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _availableQuantity = null;
+      });
+    }
+
+    try {
+      final qty = await context.read<WarehouseRepository>().getTotalStock(
+        productId: _p.id,
+        colorId: detail.colorId,
+        sizeId: detail.sizeId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _availableQuantity = qty;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _availableQuantity = null;
+      });
+    }
   }
 
   @override
@@ -118,7 +158,7 @@ class _ProductCardState extends State<ProductCard> {
         ? images[_imgIndex.clamp(0, images.length - 1)].url
         : null;
 
-    final inStock = (productDetail?.stockQuantity ?? 0) > 0;
+    final inStock = _availableQuantity != null && _availableQuantity! > 0;
     final priceText = productDetail != null
         ? productDetail.price.toVnd()
         : "Liên hệ";

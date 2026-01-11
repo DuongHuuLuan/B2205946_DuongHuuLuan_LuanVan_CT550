@@ -5,7 +5,9 @@ from decimal import Decimal
 
 # schema chi tiet tung mon trong phieu nhap
 class ReceiptDetailBase(BaseModel):
-    product_detail_id: int
+    product_id: int
+    color_id: int 
+    size_id: int
     quantity: int
     purchase_price: Decimal
 

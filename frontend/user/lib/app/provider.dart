@@ -13,6 +13,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_api.
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_repository_impl.dart';
@@ -36,6 +39,13 @@ final List<SingleChildWidget> Providers = [
   Provider(create: (context) => ProductApi()),
   Provider<ProductRepository>(
     create: (context) => ProductRepositoryImpl(context.read<ProductApi>()),
+  ),
+
+  //warehouse
+  Provider(create: (context) => WarehouseApi()),
+  Provider<WarehouseRepository>(
+    create: (context) =>
+        WarehouseRepositoryImpl(context.read<WarehouseApi>()),
   ),
 
   //cart
@@ -67,7 +77,10 @@ final List<SingleChildWidget> Providers = [
 
   //product
   ChangeNotifierProvider(
-    create: (context) => ProductViewmodel(context.read<ProductRepository>()),
+    create: (context) => ProductViewmodel(
+      context.read<ProductRepository>(),
+      context.read<WarehouseRepository>(),
+    ),
   ),
 
   //cart

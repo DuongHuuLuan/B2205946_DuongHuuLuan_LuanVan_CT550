@@ -17,7 +17,9 @@ class WarehouseOut(WarehouseBase):
 #schema hien thi ton kho thuc te
 class WarehouseDetailOut(BaseModel):
     warehouse_id: int
-    product_detail_id: int
+    product_id: int
+    color_id: int
+    size_id: int
     quantity: int
     
     class Config:

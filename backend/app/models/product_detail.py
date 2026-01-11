@@ -9,10 +9,9 @@ class ProductDetail(Base):
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
     color_id = Column(Integer, ForeignKey("colors.id"))
     size_id = Column(Integer, ForeignKey("sizes.id"))
-    stock_quantity = Column(Integer, default=0)
     price = Column(Integer, nullable=True)
 
-
+    
     product = relationship("Product", back_populates="product_details")
     color = relationship("Color", back_populates="product_details")
     size = relationship("Size", back_populates="product_details")

@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from app.models import *
 from app.schemas import *
 
+
 class ProductDetailService:
 
     @staticmethod
@@ -12,11 +13,11 @@ class ProductDetailService:
         db.commit()
         db.refresh(db_color)
         return db_color
-    
+
     @staticmethod
     def get_all_colors(db: Session):
         return db.query(Color).all()
-    
+
     @staticmethod
     def create_size(db: Session, size_in: SizeCreate):
         db_size = Size(**size_in.model_dump())
@@ -24,56 +25,53 @@ class ProductDetailService:
         db.commit()
         db.refresh(db_size)
         return db_size
-    
+
     @staticmethod
     def get_all_sizes(db: Session):
         return db.query(Size).all()
-    
-
-
 
     @staticmethod
-    def create_variant(db: Session, variant_in: ProductDetailCreate, product_id: int):
-        existing_variant = db.query(ProductDetail).filter(
+    def create_product_detail(db: Session, product_detail_in: ProductDetailCreate, product_id: int):
+        existing_product_detail = db.query(ProductDetail).filter(
             ProductDetail.product_id == product_id,
-            ProductDetail.color_id == variant_in.color_id,
-            ProductDetail.size_id == variant_in.size_id,
+            ProductDetail.color_id == product_detail_in.color_id,
+            ProductDetail.size_id == product_detail_in.size_id,
         ).first()
-        if existing_variant:
-            #nếu tồn tại rồi thì cộng dồn số lương kho
-            existing_variant.stock_quantity += variant_in.stock_quantity
+        if existing_product_detail:
+            existing_product_detail.price = product_detail_in.price
             db.commit()
-            db.refresh(existing_variant)
-            return existing_variant
+            db.refresh(existing_product_detail)
+            return existing_product_detail
 
-            #nếu chưa có thì mới tạo mới
-        db_variant = ProductDetail(
-            product_id = product_id,
-            **variant_in.model_dump()
+        db_product_detail = ProductDetail(
+            product_id=product_id,
+            **product_detail_in.model_dump()
         )
 
-        db.add(db_variant)
+        db.add(db_product_detail)
         db.commit()
-        db.refresh(db_variant)
-        return db_variant
-    
+        db.refresh(db_product_detail)
+        return db_product_detail
 
     @staticmethod
-    def update_variant(db: Session, variant_id: int, quantity: int):
-        db_variant = db.query(ProductDetail).filter(ProductDetail.id == variant_id).first()
-        if not db_variant:
-            raise HTTPException(status_code=404, detail="Không tìm thấy biến thể sản phẩm")
-        db_variant.stock_quantity = quantity
+    def update_product_detail(db: Session, product_detail_id: int, product_detail_in: ProductDetailUpdate):
+        db_product_detail = db.query(ProductDetail).filter(ProductDetail.id == product_detail_in).first()
+        if not db_product_detail:
+            raise HTTPException(status_code=404, detail="Khong tim thay bien the san pham")
+
+        update_data = product_detail_in.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_product_detail, key, value)
+
         db.commit()
-        db.refresh(db_variant)
-        return db_variant
-    
+        db.refresh(db_product_detail)
+        return db_product_detail
+
     @staticmethod
-    def delete_variant(db: Session, variant_id: int):
-        db_variant = db.query(ProductDetail).filter(ProductDetail.id == variant_id).first()
-        if not db_variant:
-            raise HTTPException(status_code=404, detail="Không tìm thấy biến thể sản phẩm cần xóa")
-        db.delete(db_variant)
+    def delete_product_detail(db: Session, product_detail_id: int):
+        db_product_detail = db.query(ProductDetail).filter(ProductDetail.id == product_detail_id).first()
+        if not db_product_detail:
+            raise HTTPException(status_code=404, detail="Khong tim thay bien the san pham can xoa")
+        db.delete(db_product_detail)
         db.commit()
-        return {"message":"Đã xóa biến thế sản phẩm thành công"}
-    
+        return {"message": "Da xoa bien the san pham thanh cong"}

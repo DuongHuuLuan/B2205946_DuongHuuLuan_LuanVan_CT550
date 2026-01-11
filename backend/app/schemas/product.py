@@ -18,6 +18,12 @@ class ImageUloadPayload(BaseModel):
 class ProductCreate(ProductBase):
     images: List[ImageUloadPayload] =[]
 
+class ProductQuantityOut(BaseModel):
+    product_id: int
+    size_id: int
+    color_id: int
+    total_quantity: int
+
 class ProductOut(ProductBase):
     id: int
     created_at: datetime

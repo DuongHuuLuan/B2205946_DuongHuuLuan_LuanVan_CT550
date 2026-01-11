@@ -9,7 +9,6 @@ class ProductDetailMapper extends ProductDetail {
     required super.sizeId,
     required super.size,
     required super.price,
-    required super.stockQuantity,
   });
 
   factory ProductDetailMapper.fromJson(Map<String, dynamic> json) {
@@ -25,7 +24,6 @@ class ProductDetailMapper extends ProductDetail {
       sizeId: toInt(size["id"]),
       size: size["size"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0,
-      stockQuantity: (json["stock_quantity"] ?? 0) as int,
     );
   }
 }

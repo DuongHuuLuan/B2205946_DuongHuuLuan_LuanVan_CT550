@@ -4,6 +4,7 @@ from app.models import *
 from app.models.discount import OrderDiscount
 from app.models.order import OrderStatus
 from app.schemas import *
+from app.services.warehouse_service import WarehouseService
 from typing import List
 
 class OrderService:
@@ -19,11 +20,17 @@ class OrderService:
 
         for cart_detail in cart.cart_details:
             product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail.product_detail_id).first()
-
-            if not product_detail or product_detail.stock_quantity < cart_detail.quantity:
+            if not product_detail:
                 raise HTTPException(
                     status_code=400,
-                    detail= f"Sản phẩm {product_detail.product.name if product_detail else 'ID'+ str(cart_detail.product_detail_id)} không đủ hàng"
+                    detail=f"San pham ID{cart_detail.product_detail_id} khong du hang"
+                )
+
+            available_quantity = WarehouseService.get_total_stock(db, product_detail)
+            if available_quantity < cart_detail.quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"San pham {product_detail.product.name} khong du hang"
                 )
 
             #tinh tien (gia tai thoi diem mua)
@@ -36,7 +43,7 @@ class OrderService:
             })
 
             # tru kho
-            product_detail.stock_quantity -= cart_detail.quantity
+            WarehouseService.decrease_stock(db, product_detail, cart_detail.quantity)
         #tinh rank_discount
         # chổ này ví dụ đang tính là 5%
         rank_discount_amount = total_price * 0.05 
@@ -148,7 +155,7 @@ class OrderService:
         if order.status != OrderStatus.PENDING:
             raise HTTPException(status_code=400, detail="Chỉ có thể hủy đơn hàng đang chờ xử lý")
         for order_detail in order.order_details:
-            order_detail.product_detail.stock_quantity += order_detail.quantity
+            WarehouseService.increase_stock(db, order_detail.product_detail, order_detail.quantity)
 
             
         order.status = OrderStatus.CANCELLED

@@ -13,9 +13,11 @@ class Warehouse(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
 
-class WarehouseDetail(Base):
+class WarehouseDetail(Base):    
     __tablename__ = "warehouse_details"
     id = Column(Integer, primary_key=True, index=True)
     warehouse_id = Column(Integer, ForeignKey("warehouses.id"))
-    product_detail_id = Column(Integer, ForeignKey("product_details.id"))
-    quantity = Column(Integer, default=0) # so luong ton kho thuc te tai kho
+    product_id = Column(Integer, ForeignKey("products.id"))
+    color_id = Column(Integer, ForeignKey("colors.id"))
+    size_id = Column(Integer, ForeignKey("sizes.id"))
+    quantity = Column(Integer, default=0) 

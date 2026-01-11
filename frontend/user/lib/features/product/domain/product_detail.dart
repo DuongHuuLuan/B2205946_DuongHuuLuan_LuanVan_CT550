@@ -5,7 +5,6 @@ class ProductDetail {
   final String colorHex;
   final int sizeId;
   final String size;
-  final int stockQuantity;
   final double price;
 
   ProductDetail({
@@ -15,7 +14,6 @@ class ProductDetail {
     required this.colorHex,
     required this.sizeId,
     required this.size,
-    required this.stockQuantity,
     required this.price,
   });
 }

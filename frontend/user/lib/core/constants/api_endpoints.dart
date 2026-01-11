@@ -24,6 +24,9 @@ class ApiEndpoints {
       "/product-details/$productId";
   static String updateProductDetail(int productDetailId) =>
       "/product-details/$productDetailId";
+  // Warehouse
+  static const warehouseTotalStock = "/warehouses/product-quantity";
+
   // Cart
   static const cart = "/carts";
   static const cartDetails = "/carts/cart-details";
