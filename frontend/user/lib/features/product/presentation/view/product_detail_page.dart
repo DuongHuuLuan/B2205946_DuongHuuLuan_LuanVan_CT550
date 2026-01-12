@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_drawer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
@@ -341,15 +342,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           onPressed: (!inStock || productDetail == null)
               ? null
-              : () {
+              : () async {
                   if (widget.onAddToCart != null) {
                     widget.onAddToCart!(p, productDetail, vm.quantity);
                   } else {
-                    context.read<CartViewmodel>().addToCart(
+                    await context.read<CartViewmodel>().addToCart(
                       productDetailId: productDetail.id,
                       quantity: vm.quantity,
                     );
-                    _showSuccessSnackBar(context, p.name, colorScheme);
+                    await CartDrawer.show(
+                      context,
+                      productDetailId: productDetail.id,
+                    );
                   }
                 },
           child: Text(

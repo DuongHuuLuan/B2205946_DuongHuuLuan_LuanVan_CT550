@@ -1,4 +1,5 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_drawer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/widget/category_grid.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
@@ -145,22 +146,14 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                   return ProductCard(
                     product: product,
                     onTap: () => context.go("/products/${product.id}"),
-                    onAddToCart: (product, productDetail, quantity) {
-                      context.read<CartViewmodel>().addToCart(
+                    onAddToCart: (product, productDetail, quantity) async {
+                      await context.read<CartViewmodel>().addToCart(
                         productDetailId: productDetail.id,
                         quantity: quantity,
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: colorScheme.secondaryContainer,
-                          content: Text(
-                            'Đã thêm "${product.name}" vào giỏ hàng',
-                            style: TextStyle(
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      await CartDrawer.show(
+                        context,
+                        productDetailId: productDetail.id,
                       );
                     },
                   );

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_drawer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
@@ -37,13 +38,14 @@ class ProductSections extends StatelessWidget {
           products: items,
           onSeeMore: () => context.go('/products/categories/${c.id}'),
           onProductTap: (p) => context.go('/products/${p.id}'),
-          onAddToCart: (Product p, ProductDetail v, int quantity) {
-            context.read<CartViewmodel>().addToCart(
+          onAddToCart: (Product p, ProductDetail v, int quantity) async {
+            await context.read<CartViewmodel>().addToCart(
               productDetailId: v.id,
               quantity: quantity,
             );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Da them "${p.name}" vao gio hang')),
+            await CartDrawer.show(
+              context,
+              productDetailId: v.id,
             );
           },
         );
