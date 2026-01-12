@@ -9,12 +9,16 @@ class CartRow extends StatelessWidget {
   final Product? product;
   final VoidCallback onRemove;
   final void Function(int quantity) onUpdateQuantity;
+  final bool isSelected;
+  final ValueChanged<bool?> onSelectedChanged;
   const CartRow({
     super.key,
     required this.cartDetail,
     required this.onRemove,
     required this.onUpdateQuantity,
     required this.product,
+    required this.isSelected,
+    required this.onSelectedChanged,
   });
 
   @override
@@ -37,12 +41,19 @@ class CartRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _RemoveButton(onPressed: onRemove),
-
-                const SizedBox(width: 5),
+                Checkbox(
+                  value: isSelected,
+                  onChanged: onSelectedChanged,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 4),
                 _ProductImage(url: imageUrl),
 
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,11 +72,12 @@ class CartRow extends StatelessWidget {
                         "Màu sắc: ${detailProduct.colorName}",
                         style: TextStyle(color: color.secondary),
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         "Kích cỡ: ${detailProduct.size}",
                         style: TextStyle(color: color.secondary),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Text(
                         "${cartDetail.quantity} x ${detailProduct.price.toVnd()}",
                         style: TextStyle(
@@ -79,6 +91,7 @@ class CartRow extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 5),
 
           Expanded(
             flex: 3,
@@ -87,6 +100,9 @@ class CartRow extends StatelessWidget {
               quantity: cartDetail.quantity,
             ),
           ),
+          const SizedBox(width: 5),
+          _RemoveButton(onPressed: onRemove),
+          const SizedBox(width: 3),
         ],
       ),
     );
@@ -172,7 +188,7 @@ class _QuantityControl extends StatelessWidget {
           onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
         ),
         Container(
-          width: 36,
+          width: 32,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: BoxDecoration(
@@ -184,7 +200,7 @@ class _QuantityControl extends StatelessWidget {
             "$quantity",
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface, // Màu chữ trên nền surface
+              color: colorScheme.onSurface,
             ),
           ),
         ),

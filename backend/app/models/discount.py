@@ -13,6 +13,7 @@ class Discount(Base):
     __tablename__ = "discounts"
 
     id = Column(Integer, primary_key=True, index=True)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     percent = Column(DECIMAL(5,2), nullable=False)
@@ -20,7 +21,9 @@ class Discount(Base):
     start_at = Column(DateTime, nullable=False)
     end_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
-    
+
+    category = relationship("Category", back_populates="discounts")
+
     
     orders = relationship(
         "Order", 

@@ -3,21 +3,23 @@ import 'package:flutter/material.dart';
 
 class CartSummary extends StatelessWidget {
   final double total;
+  final double discountPercent;
 
-  const CartSummary({super.key, required this.total});
+  const CartSummary({super.key, required this.total, this.discountPercent = 0});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    double discountAmount = total * (discountPercent / 100);
+    double finalTotal = total - discountAmount;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // Dùng màu nền bề mặt
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ), // Viền nhẹ đồng bộ
+        color: colorScheme.surface,
+        border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -31,15 +33,27 @@ class CartSummary extends StatelessWidget {
             ),
           ),
           Divider(height: 20, color: colorScheme.outlineVariant),
+
           _SummaryRow(
             label: "Tạm Tính",
             value: total.toVnd(),
             colorScheme: colorScheme,
           ),
+
+          //  hiển thị thêm dòng giảm giá nếu có mã áp dụng
+          if (discountPercent > 0) ...[
+            const SizedBox(height: 8),
+            _SummaryRow(
+              label: "Giảm giá ($discountPercent%)",
+              value: "- ${discountAmount.toVnd()}",
+              customValueColor: Colors.red,
+              colorScheme: colorScheme,
+            ),
+          ],
           Divider(height: 18, color: colorScheme.outlineVariant),
           _SummaryRow(
             label: "Tổng",
-            value: total.toVnd(),
+            value: finalTotal.toVnd(),
             isTotal: true,
             colorScheme: colorScheme,
           ),
@@ -54,12 +68,14 @@ class _SummaryRow extends StatelessWidget {
   final String value;
   final bool isTotal;
   final ColorScheme colorScheme;
+  final Color? customValueColor;
 
   const _SummaryRow({
     required this.label,
     required this.value,
     this.isTotal = false,
     required this.colorScheme,
+    this.customValueColor,
   });
 
   @override
@@ -82,7 +98,9 @@ class _SummaryRow extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: isTotal ? 16 : 14,
-            color: isTotal ? colorScheme.onSurface : colorScheme.onSurface,
+            color:
+                customValueColor ??
+                (isTotal ? colorScheme.onSurface : colorScheme.onSurface),
           ),
         ),
       ],

@@ -32,6 +32,9 @@ class ApiEndpoints {
   static const cartDetails = "/carts/cart-details";
   static String cartDetail(int cartDetailId) =>
       "/carts/cart-details/$cartDetailId";
+  // Discount
+  static const discountCart = "/discounts/discount-cart";
+
   // Order
   static const orders = "/orders";
   static const orderHistory = "/orders/history";

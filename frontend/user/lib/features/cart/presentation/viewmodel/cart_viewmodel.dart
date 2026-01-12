@@ -1,5 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +9,12 @@ import 'package:flutter/material.dart';
 class CartViewmodel extends ChangeNotifier {
   final CartRepository _repository;
   final ProductRepository _productRepository;
-  CartViewmodel(this._repository, this._productRepository);
+  final DiscountRepository _discountRepository;
+  CartViewmodel(
+    this._repository,
+    this._productRepository,
+    this._discountRepository,
+  );
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -17,9 +24,19 @@ class CartViewmodel extends ChangeNotifier {
   Cart? cart;
   Map<int, Product> _productByDetailid = {};
 
+  List<Discount> discounts = [];
+  bool _isDiscountLoading = false;
+  String? _discountError;
+  Set<int> _lastDiscountCategoryIds = {};
+
+  bool get isDiscountLoading => _isDiscountLoading;
+  String? get discountError => _discountError;
+
   List<CartDetail> get cartDetails => cart?.cartDetails ?? [];
   double get totalPrice => cart?.totalPrice ?? 0;
   Product? productForDetail(int detailId) => _productByDetailid[detailId];
+  int? categoryIdForDetail(int detailId) =>
+      _productByDetailid[detailId]?.categoryId;
 
   Future<void> _loadProductMap() async {
     if (_productByDetailid.isNotEmpty) return;
@@ -32,8 +49,35 @@ class CartViewmodel extends ChangeNotifier {
         }
       }
       _productByDetailid = map;
+    } catch (e) {}
+  }
+
+  Future<void> fetchDiscountsForCategories(List<int> categoryIds) async {
+    final normalized = categoryIds.toSet();
+    if (normalized.isEmpty) {
+      discounts = [];
+      _lastDiscountCategoryIds = {};
+      notifyListeners();
+      return;
+    }
+    if (_lastDiscountCategoryIds.length == normalized.length &&
+        _lastDiscountCategoryIds.containsAll(normalized)) {
+      return;
+    }
+    _lastDiscountCategoryIds = normalized;
+    _isDiscountLoading = true;
+    _discountError = null;
+    notifyListeners();
+    try {
+      discounts = await _discountRepository.getDiscountsForCart(
+        categoryIds: normalized.toList(),
+      );
     } catch (e) {
-      // Handle error if necessary
+      _discountError = e.toString();
+      discounts = [];
+    } finally {
+      _isDiscountLoading = false;
+      notifyListeners();
     }
   }
 

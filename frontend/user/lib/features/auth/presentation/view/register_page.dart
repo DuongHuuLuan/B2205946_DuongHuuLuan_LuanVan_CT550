@@ -171,11 +171,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         ElevatedButton(
                           onPressed: _handleRegister,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
+                            backgroundColor: colorScheme.secondary,
                             foregroundColor: colorScheme.onPrimary,
                             minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
                           child: const Text(
@@ -193,7 +193,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: Text(
                           "Đã có tài khoản? Đăng nhập",
                           style: textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

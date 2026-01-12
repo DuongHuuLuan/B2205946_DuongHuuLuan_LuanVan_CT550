@@ -66,10 +66,15 @@ class OrderDetailOut(BaseModel):
         
         return result
 
+class OrderItemCreate(BaseModel):
+    product_detail_id: int
+    quantity: int
+
 class OrderCreate(BaseModel):
     delivery_info_id: int
     payment_method_id: int
     discount_code: Optional[str] = None
+    order_items: Optional[List[OrderItemCreate]] = None
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus

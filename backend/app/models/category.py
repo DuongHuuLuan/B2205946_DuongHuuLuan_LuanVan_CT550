@@ -11,4 +11,5 @@ class Category(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    products = relationship("Product", back_populates='category')
+    products = relationship("Product", back_populates="category")
+    discounts = relationship("Discount", back_populates="category")

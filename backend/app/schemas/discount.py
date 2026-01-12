@@ -5,7 +5,9 @@ from decimal import Decimal
 
 
 class DiscountBase(BaseModel):
+    category_id: int
     name: str
+    description: str
     percent: Decimal
     start_at: datetime
     end_at: datetime

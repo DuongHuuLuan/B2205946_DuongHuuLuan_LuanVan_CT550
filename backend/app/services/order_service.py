@@ -6,6 +6,7 @@ from app.models.order import OrderStatus
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
 from typing import List
+from decimal import Decimal, ROUND_HALF_UP
 
 class OrderService:
 
@@ -15,47 +16,101 @@ class OrderService:
         if not cart or not cart.cart_details:
             raise HTTPException(status_code=400, detail= "Giỏ hàng trống")
         
-        total_price = 0
-        order_items_to_create = []
+        total_price = Decimal("0") # tổng tiền đơn hàng
+        order_details_to_create = [] # danh sách chứa chi tiết đơn hàng
+        cart_details = [] # danh sách các item sẽ được xử lý
+        requested_items = None # lưu giữ ID và số lượng nếu người dùng chọn mua lẻ các sản phẩm trong giỏ hàng
+        selected_cart_details = cart.cart_details # mặc định là chọn toàn bộ giỏ hàng
 
-        for cart_detail in cart.cart_details:
+        #logic chọn mua các sản phẩm cụ thể
+        if order_in.order_items is not None:
+            if not order_in.order_items:
+                raise HTTPException(status_code=400, detail="Danh sách mua không được rỗng")
+            requested_items = {}
+            for order_item in order_in.order_items:
+                if order_item.quantity <= 0:
+                    raise HTTPException(status_code=400, detail="Số lượng mua phải lớn hơn 0")
+                if order_item.product_detail_id in requested_items:
+                    raise HTTPException(status_code=400, detail="Trùng sản phẩm trong danh sách mua")
+                requested_items[order_item.product_detail_id] = order_item.quantity
+
+            selected_cart_details = [
+                cart_detail
+                for cart_detail in cart.cart_details
+                if cart_detail.product_detail_id in requested_items
+            ]
+            missing_items = set(requested_items.keys()) - {
+                cart_detail.product_detail_id for cart_detail in selected_cart_details
+            }
+            if missing_items:
+                raise HTTPException(status_code=400, detail="Sản phẩm không có trong giỏ hàng")
+
+        for cart_detail in selected_cart_details:
             product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail.product_detail_id).first()
             if not product_detail:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"San pham ID{cart_detail.product_detail_id} khong du hang"
+                    detail=f"Sản phẩm ID{cart_detail.product_detail_id} không đủ hàng"
                 )
 
             available_quantity = WarehouseService.get_total_stock(db, product_detail)
-            if available_quantity < cart_detail.quantity:
+            requested_quantity = cart_detail.quantity
+            if requested_items:
+                requested_quantity = requested_items[cart_detail.product_detail_id]
+                if requested_quantity > cart_detail.quantity:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Số lượng mua vượt quá số lượng trong giỏ hàng: {product_detail.product.name}"
+                    )
+            if available_quantity < requested_quantity:
                 raise HTTPException(
                     status_code=400,
                     detail=f"San pham {product_detail.product.name} khong du hang"
                 )
 
-            #tinh tien (gia tai thoi diem mua)
-            total_price += product_detail.price *cart_detail.quantity
-            #chuan bi du lieu cho OrderDetail
-            order_items_to_create.append({
-                "product_detail_id": product_detail.id,
-                "quantity": cart_detail.quantity,
-                "price": product_detail.price
-            })
+            cart_details.append((cart_detail, product_detail, requested_quantity))
 
             # tru kho
-            WarehouseService.decrease_stock(db, product_detail, cart_detail.quantity)
+            WarehouseService.decrease_stock(db, product_detail, requested_quantity)
+
+        category_ids = {
+            product_detail.product.category_id
+            for _, product_detail, _ in cart_details
+            if product_detail.product and product_detail.product.category_id
+        }
+        from app.services.discount_service import DiscountService
+        category_discounts = DiscountService.get_valid_discounts_by_category_ids(
+            db,
+            category_ids,
+        )
+
+        for cart_detail, product_detail, requested_quantity in cart_details:
+            unit_price = Decimal(str(product_detail.price or 0))
+            discount = None
+            if product_detail.product:
+                discount = category_discounts.get(product_detail.product.category_id)
+
+            discounted_unit_price = unit_price
+            if discount:
+                percent = Decimal(str(discount.percent))
+                discount_multiplier = (Decimal("100") - percent) / Decimal("100")
+                discounted_unit_price = (unit_price * discount_multiplier).quantize(
+                    Decimal("0.01"),
+                    rounding=ROUND_HALF_UP,
+                )
+
+            total_price += discounted_unit_price * requested_quantity
+            order_details_to_create.append({
+                "product_detail_id": product_detail.id,
+                "quantity": requested_quantity,
+                "price": discounted_unit_price,
+            })
         #tinh rank_discount
         # chổ này ví dụ đang tính là 5%
-        rank_discount_amount = total_price * 0.05 
-
-        #giảm giá theo voucher
-        voucher_discount = None
-        if order_in.discount_code:
-            from app.services.discount_service import DiscountService
-            voucher_discount = DiscountService.get_valid_discount(db,order_in.discount_code)
-            if not voucher_discount:
-                raise HTTPException(status_code=400, detail="Mã giảm giá không hợp lệ hoặc đã hết hạn")
-            
+        rank_discount_amount = (total_price * Decimal("0.05")).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
 
         # tạo order header
         new_order = Order(
@@ -68,26 +123,25 @@ class OrderService:
         db.add(new_order)
         db.flush() # lay ID de gan vao chi tiet
 
-        # luu lien ket Voucher vao bang trung gian
-        if voucher_discount:
-            order_discount = OrderDiscount(
-                order_id = new_order.id,
-                discount_id = voucher_discount.id
-            )
-            db.add(order_discount)
-
         #tao cac order detail
-        for item in order_items_to_create:
+        for order_detail in order_details_to_create:
             detail = OrderDetail(
                 order_id = new_order.id,
-                product_detail_id =item["product_detail_id"],
-                quantity = item["quantity"],
-                price = item["price"]
+                product_detail_id =order_detail["product_detail_id"],
+                quantity = order_detail["quantity"],
+                price = order_detail["price"]
             )
             db.add(detail)
         
         #xoa gio hang sau khi dat thanh cong
-        db.query(CartDetail).filter(CartDetail.cart_id == cart.id).delete()
+        if requested_items:
+            for cart_detail, _, requested_quantity in cart_details:
+                if requested_quantity < cart_detail.quantity:
+                    cart_detail.quantity = cart_detail.quantity - requested_quantity
+                else:
+                    db.delete(cart_detail)
+        else:
+            db.query(CartDetail).filter(CartDetail.cart_id == cart.id).delete()
 
         db.commit()
         db.refresh(new_order)

@@ -2,8 +2,11 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/auth_reposito
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/login_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/register_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/data/discount_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/data/discount_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_repository_impl.dart';
@@ -53,6 +56,12 @@ final List<SingleChildWidget> Providers = [
     create: (context) => CartRepositoryImpl(context.read<CartApi>()),
   ),
 
+  //discount
+  Provider(create: (context) => DiscountApi()),
+  Provider<DiscountRepository>(
+    create: (context) => DiscountRepositoryImpl(context.read<DiscountApi>()),
+  ),
+
   ///-------------------------------------------------------------------------
 
   // AuthViewModel
@@ -87,6 +96,7 @@ final List<SingleChildWidget> Providers = [
     create: (context) => CartViewmodel(
       context.read<CartRepository>(),
       context.read<ProductRepository>(),
+      context.read<DiscountRepository>(),
     ),
   ),
 ];

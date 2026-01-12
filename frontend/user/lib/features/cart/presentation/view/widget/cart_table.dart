@@ -9,6 +9,8 @@ class CartTable extends StatelessWidget {
   final void Function(int id) onRemove;
   final void Function(int id, int quantity) onUpdateQuantity;
   final Product? Function(int productDetailId) resolveProduct;
+  final bool Function(int cartDetailId) isSelected;
+  final void Function(int cartDetailId, bool selected) onSelectChanged;
 
   const CartTable({
     super.key,
@@ -17,6 +19,8 @@ class CartTable extends StatelessWidget {
     required this.onRemove,
     required this.onUpdateQuantity,
     required this.resolveProduct,
+    required this.isSelected,
+    required this.onSelectChanged,
   });
 
   @override
@@ -24,14 +28,11 @@ class CartTable extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      // padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // Dùng màu surface từ Theme
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colorScheme
-              .outlineVariant, // Dùng outlineVariant cho viền nhẹ nhàng
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,9 +50,7 @@ class CartTable extends StatelessWidget {
               child: Center(
                 child: Text(
                   "Giỏ hàng trống",
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                  ), // Màu chữ phụ
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
               ),
             )
@@ -65,12 +64,16 @@ class CartTable extends StatelessWidget {
                 color: colorScheme.outlineVariant.withOpacity(0.5),
               ),
               itemBuilder: (context, index) {
-                final item = cartDetails[index];
+                final cartDetail = cartDetails[index];
                 return CartRow(
-                  cartDetail: item,
-                  product: resolveProduct(item.productDetailId),
-                  onRemove: () => onRemove(item.id),
-                  onUpdateQuantity: (qty) => onUpdateQuantity(item.id, qty),
+                  cartDetail: cartDetail,
+                  product: resolveProduct(cartDetail.productDetailId),
+                  onRemove: () => onRemove(cartDetail.id),
+                  onUpdateQuantity: (quantity) =>
+                      onUpdateQuantity(cartDetail.id, quantity),
+                  isSelected: isSelected(cartDetail.id),
+                  onSelectedChanged: (value) =>
+                      onSelectChanged(cartDetail.id, value ?? false),
                 );
               },
             ),
