@@ -65,7 +65,7 @@ class OrderService:
             if available_quantity < requested_quantity:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"San pham {product_detail.product.name} khong du hang"
+                    detail=f"Sản phẩm {product_detail.product.name} không đủ hàng"
                 )
 
             cart_details.append((cart_detail, product_detail, requested_quantity))

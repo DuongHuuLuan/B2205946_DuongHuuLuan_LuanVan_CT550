@@ -142,29 +142,41 @@ class VnpayService:
             return {"RspCode": "97", "Message": "Chữ ký không hợp lệ"}
 
         try:
-            order_id = int(params.get("vnp_TxnRef") or 0)
-        except ValueError:
-            return {"RspCode": "01", "Message": "Không tìm thấy đơn hàng"}
-        order = (
-            db.query(Order)
-            .options(joinedload(Order.order_details))
-            .filter(Order.id == order_id)
-            .first()
-        )
-        if not order:
-            return {"RspCode": "01", "Message": "Không tìm thấy đơn hàng"}
+            try:
+                order_id = int(params.get("vnp_TxnRef") or 0)
+            except ValueError:
+                return {"RspCode": "01", "Message": "Định dạng mã đơn hàng không hợp lệ"}
 
-        amount = Decimal(params.get("vnp_Amount") or 0) / Decimal("100")
-        expected_amount = VnpayService._get_order_total(order)
-        if amount != expected_amount:
-            return {"RspCode": "04", "Message": "Số tiền không hợp lệ"}
+            order = (
+                db.query(Order)
+                .options(joinedload(Order.order_details))
+                .filter(Order.id == order_id)
+                .first()
+            )
+            if not order:
+                return {"RspCode": "01", "Message": "Không tìm thấy đơn hàng"}
 
-        VnpayService.record_transaction(db, params)
+            amount = Decimal(params.get("vnp_Amount") or 0) / Decimal("100")
+            expected_amount = VnpayService._get_order_total(order)
+            if amount != expected_amount:
+                return {"RspCode": "04", "Message": "Số tiền không hợp lệ"}
 
-        response_code = params.get("vnp_ResponseCode")
-        transaction_status = params.get("vnp_TransactionStatus")
-        if response_code == "00" and transaction_status == "00":
-            if order.status == OrderStatus.PENDING:
+            if order.status != OrderStatus.PENDING:
+                return {"RspCode": "02", "Message": "Đơn hàng đã được xác nhận trước đó"}
+
+            VnpayService.record_transaction(db, params)
+
+            response_code = params.get("vnp_ResponseCode")
+            transaction_status = params.get("vnp_TransactionStatus")
+            
+            if response_code == "00" and transaction_status == "00":
                 order.status = OrderStatus.SHIPPING
                 db.commit()
-        return {"RspCode": "00", "Message": "Xác nhận thành công"}
+                return {"RspCode": "00", "Message": "Xác nhận thành công"}
+            else:
+                order.status = OrderStatus.CANCELLED # Hoặc trạng thái lỗi bạn quy định
+                db.commit()
+                return {"RspCode": "00", "Message": "Ghi nhận trạng thái thanh toán thất bại"}
+
+        except Exception as e:
+            return {"RspCode": "99", "Message": f"Lỗi hệ thống: {str(e)}"}
