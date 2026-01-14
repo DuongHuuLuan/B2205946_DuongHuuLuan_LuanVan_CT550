@@ -84,7 +84,6 @@ class OrderStatusUpdate(BaseModel):
 class OrderOut(BaseModel):
     id: int
     status: str
-    rank_discount: Decimal
     created_at: datetime
 
     delivery_info: Optional[DeliveryInfoOut]

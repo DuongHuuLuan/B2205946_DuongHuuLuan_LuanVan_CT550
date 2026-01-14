@@ -105,19 +105,12 @@ class OrderService:
                 "quantity": requested_quantity,
                 "price": discounted_unit_price,
             })
-        #tinh rank_discount
-        # chổ này ví dụ đang tính là 5%
-        rank_discount_amount = (total_price * Decimal("0.05")).quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
 
         # tạo order header
         new_order = Order(
             user_id = user_id,
             delivery_info_id = order_in.delivery_info_id,
             payment_method_id = order_in.payment_method_id,
-            rank_discount = rank_discount_amount,
             status = OrderStatus.PENDING
         )
         db.add(new_order)

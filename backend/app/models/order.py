@@ -18,7 +18,6 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     delivery_info_id = Column(Integer, ForeignKey("delivery_info.id"))
     payment_method_id = Column(Integer, ForeignKey("payment_methods.id"))
-    rank_discount = Column(Numeric(10,2), default=0.0)
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -28,6 +27,12 @@ class Order(Base):
     order_details = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     delivery_info = relationship("DeliveryInfo", back_populates="orders")
     payment_method = relationship("PaymentMethod", back_populates="orders")
+    vnpay_transactions = relationship(
+        "VnPayTransaction",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
+
     applied_discounts = relationship(
         "Discount", 
         secondary="order_discounts", 

@@ -35,5 +35,12 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET")
+
+    # VNPAY
+    VNPAY_TMN_CODE: str = os.getenv("VNPAY_TMN_CODE", "")
+    VNPAY_HASH_SECRET: str = os.getenv("VNPAY_HASH_SECRET", "")
+    VNPAY_URL: str = os.getenv("VNPAY_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html")
+    VNPAY_RETURN_URL: str = os.getenv("VNPAY_RETURN_URL", "")
+    VNPAY_VERSION: str = os.getenv("VNPAY_VERSION", "2.1.0")
     
 settings = Settings()

@@ -15,6 +15,7 @@ from app.api.endpoints import warehouse
 from app.api.endpoints import receipt
 from app.api.endpoints import image_url
 from app.api.endpoints import discount
+from app.api.endpoints import vnpay
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
@@ -32,3 +33,4 @@ app.include_router(warehouse.router)
 app.include_router(receipt.router)
 app.include_router(image_url.router)
 app.include_router(discount.router)
+app.include_router(vnpay.router)

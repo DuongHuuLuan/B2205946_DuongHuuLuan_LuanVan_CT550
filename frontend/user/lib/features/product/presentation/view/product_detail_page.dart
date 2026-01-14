@@ -382,20 +382,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  void _showSuccessSnackBar(
-    BuildContext context,
-    String name,
-    ColorScheme colorScheme,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã thêm "$name" vào giỏ hàng'),
-        backgroundColor: colorScheme.secondary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Widget _imagePlaceholder(ColorScheme colorScheme) => Container(
     color: colorScheme.surfaceVariant,
     alignment: Alignment.center,

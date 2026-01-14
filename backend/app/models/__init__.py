@@ -16,3 +16,4 @@ from app.models.evaluate import Evaluate
 from app.models.warehouse import Warehouse, WarehouseDetail
 from app.models.distributor import Distributor
 from app.models.receipt import Receipt, ReceiptDetail
+from app.models.vnpay import VnPayTransaction
