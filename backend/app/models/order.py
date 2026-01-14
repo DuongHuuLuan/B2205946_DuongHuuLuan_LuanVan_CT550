@@ -32,6 +32,11 @@ class Order(Base):
         back_populates="order",
         cascade="all, delete-orphan",
     )
+    ghn_shipments = relationship(
+        "GhnShipment",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
 
     applied_discounts = relationship(
         "Discount", 

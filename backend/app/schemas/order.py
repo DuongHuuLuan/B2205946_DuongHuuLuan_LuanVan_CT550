@@ -10,6 +10,8 @@ class DeliveryInfoBase(BaseModel):
     name: str
     address: str
     phone: str
+    district_id: Optional[int] = None
+    ward_code: Optional[str] = None
     default: bool = False
 
 class DeliveryInfoOut(DeliveryInfoBase):

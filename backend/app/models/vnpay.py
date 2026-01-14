@@ -14,7 +14,7 @@ class VnPayTransaction(Base):
     status = Column(String(32))
     transaction_no = Column(String(32))
     bank_code = Column(String(20))
-    pay_date = Column(String(32))
+    pay_date = Column(String(32))   
     message = Column(String(255))
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

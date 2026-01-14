@@ -10,6 +10,8 @@ class DeliveryInfo(Base):
     name = Column(String(255))
     address = Column(String(255))
     phone = Column(String(20))
+    district_id = Column(Integer, nullable=True)
+    ward_code = Column(String(20), nullable=True)
     default = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
 

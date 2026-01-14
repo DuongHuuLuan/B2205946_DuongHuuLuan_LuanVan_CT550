@@ -12,3 +12,4 @@ from app.schemas.distributor import DistributorCreate,DistributorOut
 from app.schemas.receipt import ReceiptCreate, ReceiptOut, ReceiptDetailCreate
 from app.schemas.warehouse import WarehouseCreate, WarehouseDetailOut, WarehouseOut
 from app.schemas.vnpay import VnpayCreateRequest, VnpayPaymentUrlOut, VnpayTransactionOut
+from app.schemas.ghn import GhnFeeRequest, GhnFeeOut, GhnCreateOrderRequest, GhnShipmentOut
