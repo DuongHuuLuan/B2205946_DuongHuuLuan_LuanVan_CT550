@@ -19,6 +19,10 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/checkout_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/checkout_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/checkout_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/checkout_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_repository_impl.dart';
@@ -62,6 +66,12 @@ final List<SingleChildWidget> Providers = [
     create: (context) => DiscountRepositoryImpl(context.read<DiscountApi>()),
   ),
 
+  //checkout
+  Provider(create: (context) => CheckoutApi()),
+  Provider<CheckoutRepository>(
+    create: (context) => CheckoutRepositoryImpl(context.read<CheckoutApi>()),
+  ),
+
   ///-------------------------------------------------------------------------
 
   // AuthViewModel
@@ -97,6 +107,13 @@ final List<SingleChildWidget> Providers = [
       context.read<CartRepository>(),
       context.read<ProductRepository>(),
       context.read<DiscountRepository>(),
+    ),
+  ),
+
+  //checkout
+  ChangeNotifierProvider(
+    create: (context) => CheckoutViewmodel(
+      context.read<CheckoutRepository>(),
     ),
   ),
 ];

@@ -7,6 +7,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/checkout_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
@@ -122,6 +124,25 @@ class AppRouter {
         ),
 
         GoRoute(path: "/cart", builder: (context, state) => const CartPage()),
+
+        GoRoute(
+          path: "/checkout",
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map) {
+              final details =
+                  (extra["details"] as List<CartDetail>?) ?? const [];
+              final discountPercent =
+                  (extra["discountPercent"] as num?)?.toDouble() ?? 0;
+              return CheckoutPage(
+                cartDetails: details,
+                discountPercent: discountPercent,
+              );
+            }
+            final details = (extra as List<CartDetail>?) ?? const [];
+            return CheckoutPage(cartDetails: details, discountPercent: 0);
+          },
+        ),
 
         GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
       ],

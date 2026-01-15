@@ -12,7 +12,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_de
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 
 class ProductDetailPage extends StatefulWidget {
-  final int productId;
+  final int productId;  
   final void Function(Product product, ProductDetail productDetail, int qty)?
   onAddToCart;
 

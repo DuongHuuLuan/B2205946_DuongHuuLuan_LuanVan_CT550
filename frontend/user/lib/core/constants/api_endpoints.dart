@@ -36,11 +36,28 @@ class ApiEndpoints {
   static const discountCart = "/discounts/discount-cart";
 
   // Order
-  static const orders = "/orders";
+  static const orders = "/orders/";
   static const orderHistory = "/orders/history";
   static String orderDetail(int orderId) => "/orders/$orderId";
   static String orderCancel(int orderId) => "/orders/$orderId/cancel";
   static String orderConfirmDelivery(int orderId) =>
       "/orders/$orderId/confirm-delivery";
   static String orderStatus(int orderId) => "/orders/$orderId/status";
+
+  // Delivery
+  static const delivery = "/delivery/";
+
+  // Payment
+  static const paymentMethods = "/payment/";
+
+  // VNPAY
+  static const vnpayCreatePayment = "/vnpay/create-payment";
+
+  // GHN
+  static const ghnFee = "/ghn/fee";
+  static const ghnCreateOrder = "/ghn/create-order";
+  static const ghnProvinces = "/ghn/provinces";
+  static String ghnDistricts(int provinceId) => "/ghn/districts/$provinceId";
+  static String ghnWards(int districtId) => "/ghn/wards/$districtId";
+  static const ghnServices = "/ghn/services";
 }

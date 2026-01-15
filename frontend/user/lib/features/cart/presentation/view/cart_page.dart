@@ -100,7 +100,25 @@ class _CartPageState extends State<CartPage> {
               discountPercent: _currentDiscountPercent,
             ),
             const SizedBox(height: 16),
-            _CheckoutButton(onPressed: hasSelection ? () {} : null),
+            _CheckoutButton(
+              onPressed: hasSelection
+                  ? () {
+                      final selected = cartDetails
+                          .where(
+                            (detail) =>
+                                _selectedCartDetailIds.contains(detail.id),
+                          )
+                          .toList();
+                      context.go(
+                        "/checkout",
+                        extra: {
+                          "details": selected,
+                          "discountPercent": _currentDiscountPercent,
+                        },
+                      );
+                    }
+                  : null,
+            ),
             const SizedBox(height: 16),
 
             DiscountDropdown(
