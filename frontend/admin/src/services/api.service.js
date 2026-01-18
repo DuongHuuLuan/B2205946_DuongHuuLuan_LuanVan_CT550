@@ -10,7 +10,6 @@ export const createApiClient = (baseURL = "") => {
     timeout: 50000,
     withCredentials: true,
     headers: {
-      // Accept: "application/json",
       Accept: "application/json",
       "ngrok-skip-browser-warning": "69420",
     },

@@ -93,7 +93,20 @@ async function onSubmit(values, actions) {
 
   try {
     const res = await authService.login(values);
-    router.push("/");
+
+    if (res) {
+      console.log("Đăng nhập thành công, chuẩn bị chuyển hướng...");
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Đang chuyển hướng đến trang chủ...',
+        timer: 1500,
+        showCancelButton: false
+      });
+    }
+    await router.push("/");
+    console.log("Đã gọi lệnh router.push");
     return res;
   } catch (e) {
     console.log(e);
@@ -110,6 +123,11 @@ async function onSubmit(values, actions) {
       );
       actions.setErrors(mapped);
     }
+    Swal.fire({
+      icon: 'error',
+      title: 'Thất bại',
+      text: e.message || "Email hoặc mật khẩu không đúng",
+    })
   }
 }
 </script>

@@ -36,3 +36,14 @@ app.include_router(image_url.router)
 app.include_router(discount.router)
 app.include_router(vnpay.router)
 app.include_router(ghn.router)
+
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

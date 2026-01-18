@@ -1,4 +1,3 @@
-// src/services/auth.service.js
 import { createApiClient } from "./api.service";
 
 class AuthService {
@@ -6,23 +5,6 @@ class AuthService {
     this.api = createApiClient(baseUrl);
   }
 
-  // async login(values) {
-  //   const payload = {
-  //     username: values.username,
-  //     password: values.password,
-  //   };
-
-  //   try {
-  //     const res = await this.api.post("/login", payload);
-  //     console.log("Login response:", res);
-  //     localStorage.setItem("currentUser", JSON.stringify(res.data.user));
-  //     localStorage.setItem("access_token", res.data.access_token);
-  //   } catch (err) {
-  //     console.error("Login error:", err);
-  //     throw err;
-  //   }
-  //   return true;
-  // }
   async login(values) {
     const params = new URLSearchParams();
     params.append("username", values.email);
@@ -47,15 +29,6 @@ class AuthService {
     }
   }
 
-  // async logout() {
-  //   try {
-  //     localStorage.removeItem("currentUser");
-  //     localStorage.removeItem("access_token");
-  //     const res = await this.api.post("/logout");
-  //   } catch (err) {
-  //     console.error("Logout error:", err);
-  //   }
-  // }
   async logout() {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("access_token");

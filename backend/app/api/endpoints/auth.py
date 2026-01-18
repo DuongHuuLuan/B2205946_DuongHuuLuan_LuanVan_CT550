@@ -35,6 +35,7 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 @router.post("/login/admin")
 def login_admin(form_data: OAuth2PasswordRequestForm = Depends(),db: Session = Depends(get_db)):
     """ API đăng nhập dành riêng cho ADMIN"""
+    print(f"Đang đăng nhập với  email: {form_data.username}")
     auth_result = auth_service.login_user(db, email=form_data.username,password=form_data.password)
 
     if auth_result["user"].role != "admin":
