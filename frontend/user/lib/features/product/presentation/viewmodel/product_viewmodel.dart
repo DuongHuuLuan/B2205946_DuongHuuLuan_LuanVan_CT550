@@ -50,12 +50,20 @@ class ProductViewmodel extends ChangeNotifier {
     return map;
   }
 
-  Future<void> getAllProduct({int? categoryId}) async {
+  Future<void> getAllProduct({
+    int? categoryId,
+    int? page,
+    int? perPage,
+  }) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
     try {
-      products = await _repository.getAllProduct(categoryId: categoryId);
+      products = await _repository.getAllProduct(
+        categoryId: categoryId,
+        page: page,
+        perPage: perPage,
+      );
     } catch (e) {
       errorMessage = e.toString();
     } finally {

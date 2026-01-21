@@ -1,22 +1,32 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import cloudinary.uploader
 from app.db.session import get_db
-from app.schemas.product import ProductCreate, ProductOut
+from app.schemas.product import ProductCreate, ProductOut, ProductPaginationOut
 from app.services.product_service import ProductService
 from app.services.image_service import ImageService
 from app.models.user import User
 from app.api.deps import require_admin, require_user
 router  = APIRouter(prefix="/products", tags=["Products"])
 
-@router.get("/", response_model=List[ProductOut])
-def getAll_product(db: Session = Depends(get_db)):
+@router.get("/", response_model=ProductPaginationOut)
+def getAll_product(
+    page: int = 1,
+    per_page: Optional[int] = None,
+    q: str = None,
+    db: Session = Depends(get_db),
+):
     """
     API Lấy tất cả sản phẩm
     """
-    return ProductService.getAll_product(db)
+    return ProductService.get_products_paginated(
+        db,
+        page=page,
+        per_page=per_page,
+        keyword=q,
+    )
 
 @router.get("/category/{category_id}", response_model=List[ProductOut])
 def get_product_category(category_id: int, db: Session = Depends(get_db)):
@@ -39,8 +49,6 @@ def create_product(
     if product_in.images:
         ImageService.add_images(db,product_id=new_product.id, images=[img.model_dump() for img in product_in.images])
     
-    # db.refresh(new_product)
-    # return new_product
     return ProductService.get_product_byID(db,new_product.id)
 
 

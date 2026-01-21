@@ -1,5 +1,8 @@
+import math
+from typing import Optional
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
+from app import models
 from app.models.product import Product
 from app.models.category import Category
 from app.schemas.product import ProductCreate
@@ -19,10 +22,6 @@ class ProductService:
         db.refresh(db_product)
         return db_product
 
-
-    @staticmethod
-    def getAll_product(db: Session):
-        return db.query(Product).options(joinedload(Product.product_images)).all()
 
     @staticmethod
     def get_product_byID(db: Session, product_id: int):
@@ -63,3 +62,56 @@ class ProductService:
         db.delete(db_product)
         db.commit()
         return  {"message": "Đã chuyển sản phẩm vào thùng rác"}
+    
+    @staticmethod
+    def get_products_paginated(
+        db: Session,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        keyword: str = None,
+    ):
+        query = db.query(Product).options(
+            joinedload(Product.category),
+            joinedload(Product.product_images),
+            joinedload(Product.product_details)
+        )
+
+        if keyword:
+            query = query.filter(Product.name.ilike(f"%{keyword}%"))
+
+        total_count = query.count()
+
+        if total_count == 0:
+            return {
+                "items": [],
+                "meta": {
+                    "total": 0,
+                    "current_page": 1,
+                    "per_page": per_page or 0,
+                    "last_page": 1,
+                },
+            }
+
+        if per_page is None:
+            per_page = total_count
+            page = 1
+        else:
+            if per_page < 1:
+                per_page = 1
+            if page < 1:
+                page = 1
+
+        skip = (page - 1) * per_page
+        items = query.order_by(Product.id.desc()).offset(skip).limit(per_page).all()
+
+        last_page = math.ceil(total_count / per_page)
+
+        return {
+            "items": items,
+            "meta": {
+                "total": total_count,
+                "current_page": page,
+                "per_page": per_page,
+                "last_page": last_page
+            }
+        }

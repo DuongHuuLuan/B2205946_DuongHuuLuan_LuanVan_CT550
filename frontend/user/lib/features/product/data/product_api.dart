@@ -4,7 +4,11 @@ import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
 import 'package:dio/dio.dart';
 
 class ProductApi {
-  Future<Response> getAllProduct({int? categoryId}) async {
+  Future<Response> getAllProduct({
+    int? categoryId,
+    int? page,
+    int? perPage,
+  }) async {
     try {
       if (categoryId != null) {
         return await DioClient.instance.get(
@@ -12,7 +16,18 @@ class ProductApi {
         );
       }
 
-      return await DioClient.instance.get(ApiEndpoints.products);
+      final params = <String, dynamic>{};
+      if (page != null) {
+        params["page"] = page;
+      }
+      if (perPage != null) {
+        params["per_page"] = perPage;
+      }
+
+      return await DioClient.instance.get(
+        ApiEndpoints.products,
+        queryParameters: params.isEmpty ? null : params,
+      );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }

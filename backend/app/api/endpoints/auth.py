@@ -32,7 +32,7 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản này không có quyền truy cập ứng dụng")
     return auth_result
 
-@router.post("/login/admin")
+@router.post("/login/admin")    
 def login_admin(form_data: OAuth2PasswordRequestForm = Depends(),db: Session = Depends(get_db)):
     """ API đăng nhập dành riêng cho ADMIN"""
     print(f"Đang đăng nhập với  email: {form_data.username}")

@@ -10,13 +10,32 @@ class ProductRepositoryImpl extends ProductRepository {
   ProductRepositoryImpl(this._api);
 
   @override
-  Future<List<Product>> getAllProduct({int? categoryId}) async {
+  Future<List<Product>> getAllProduct({
+    int? categoryId,
+    int? page,
+    int? perPage,
+  }) async {
     try {
-      final response = await _api.getAllProduct(categoryId: categoryId);
-      final raw = response.data is Map
-          ? (response.data["data"] ?? response.data)
-          : response.data;
-      final list = (raw as List).cast<Map<String, dynamic>>();
+      final response = await _api.getAllProduct(
+        categoryId: categoryId,
+        page: page,
+        perPage: perPage,
+      );
+      final data = response.data;
+      dynamic raw;
+      if (data is Map) {
+        if (data["items"] is List) {
+          raw = data["items"];
+        } else if (data["data"] is Map && data["data"]["items"] is List) {
+          raw = data["data"]["items"];
+        } else {
+          raw = data["data"] ?? data;
+        }
+      } else {
+        raw = data;
+      }
+      final list =
+          (raw is List ? raw : <dynamic>[]).cast<Map<String, dynamic>>();
       return list.map(ProductMapper.fromJson).toList();
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
