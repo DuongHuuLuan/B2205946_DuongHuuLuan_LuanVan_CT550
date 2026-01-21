@@ -2,20 +2,15 @@
   <div class="row g-3">
     <!-- Header -->
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
           <h4 class="mb-1">Chỉnh sửa sản phẩm</h4>
           <div class="small opacity-75">
-            Cập nhật thông tin, màu và ảnh sản phẩm
+            Cập nhật thông tin, Kích thước, màu và ảnh sản phẩm
           </div>
         </div>
 
-        <RouterLink
-          class="btn btn-outline-secondary"
-          :to="{ name: 'products.list' }"
-        >
+        <RouterLink class="btn btn-outline-secondary" :to="{ name: 'products.list' }">
           <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </RouterLink>
       </div>
@@ -30,29 +25,17 @@
             <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...
           </div>
 
-          <Form
-            v-else
-            :key="formKey"
-            :initial-values="initialValues"
-            :validation-schema="schema"
-            @submit="onSubmit"
-            v-slot="{ isSubmitting, resetForm }"
-          >
+          <Form v-else :key="formKey" :initial-values="initialValues" :validation-schema="schema" @submit="onSubmit"
+            v-slot="{ isSubmitting, resetForm }">
             <div class="row g-3">
               <!-- name + unit -->
               <div class="col-12 col-md-8">
                 <label class="form-label">Tên</label>
                 <Field name="name" v-slot="{ field, meta, errors }">
-                  <input
-                    v-bind="field"
-                    type="text"
-                    class="form-control bg-transparent"
-                    :class="{
-                      'is-invalid':
-                        (meta.touched && !meta.valid) || errors.length,
-                    }"
-                    placeholder="Ví dụ: Bút bi Thiên Long..."
-                  />
+                  <input v-bind="field" type="text" class="form-control bg-transparent" :class="{
+                    'is-invalid':
+                      (meta.touched && !meta.valid) || errors.length,
+                  }" placeholder="Ví dụ: Nón bảo hiểm Royal M103..." />
                 </Field>
                 <ErrorMessage name="name" class="invalid-feedback d-block" />
               </div>
@@ -60,16 +43,10 @@
               <div class="col-12 col-md-4">
                 <label class="form-label">Đơn vị tính</label>
                 <Field name="unit" v-slot="{ field, meta, errors }">
-                  <input
-                    v-bind="field"
-                    type="text"
-                    class="form-control bg-transparent"
-                    :class="{
-                      'is-invalid':
-                        (meta.touched && !meta.valid) || errors.length,
-                    }"
-                    placeholder="Ví dụ: cây / quyển..."
-                  />
+                  <input v-bind="field" type="text" class="form-control bg-transparent" :class="{
+                    'is-invalid':
+                      (meta.touched && !meta.valid) || errors.length,
+                  }" placeholder="Ví dụ: Chiếc / cái..." />
                 </Field>
                 <ErrorMessage name="unit" class="invalid-feedback d-block" />
               </div>
@@ -78,148 +55,149 @@
               <div class="col-6">
                 <label class="form-label">Danh mục sản phẩm</label>
 
-                <input
-                  class="form-control bg-transparent mb-2"
-                  v-model="categoryKeyword"
-                  placeholder="Gõ để tìm danh mục..."
-                />
+                <input class="form-control bg-transparent mb-2" v-model="categoryKeyword"
+                  placeholder="Gõ để tìm danh mục..." />
 
                 <Field name="category_id" v-slot="{ field, meta, errors }">
-                  <select
-                    v-bind="field"
-                    class="form-select bg-transparent"
-                    :class="{
-                      'is-invalid':
-                        (meta.touched && !meta.valid) || errors.length,
-                    }"
-                    @change="selectedCategoryId = $event.target.value"
-                  >
+                  <select v-bind="field" class="form-select bg-transparent" :class="{
+                    'is-invalid':
+                      (meta.touched && !meta.valid) || errors.length,
+                  }" @change="selectedCategoryId = $event.target.value">
                     <option value="">-- Chọn danh mục --</option>
-                    <option
-                      v-for="c in filteredCategories"
-                      :key="c.id"
-                      :value="c.id"
-                    >
+                    <option v-for="c in filteredCategories" :key="c.id" :value="c.id">
                       {{ c.name }}
                     </option>
                   </select>
                 </Field>
 
-                <ErrorMessage
-                  name="category_id"
-                  class="invalid-feedback d-block"
-                />
+                <ErrorMessage name="category_id" class="invalid-feedback d-block" />
               </div>
 
               <!-- color -->
               <div class="col-6">
                 <label class="form-label">Màu sản phẩm</label>
 
-                <Field
-                  name="color_ids"
-                  v-slot="{ field, meta, errors, handleChange }"
-                >
-                  <select
-                    class="form-select"
-                    :class="{
-                      'is-invalid':
-                        (meta.touched && !meta.valid) || errors.length,
-                    }"
-                    multiple
-                    :name="field.name"
-                    :size="isColorOpen ? 6 : 1"
-                    @focus="isColorOpen = true"
-                    @blur="
-                      (e) => {
-                        isColorOpen = false;
-                        field.onBlur(e);
-                      }
-                    "
-                    @change="(e) => onColorChange(e, handleChange)"
-                  >
+                <Field name="color_ids" v-slot="{ field, meta, errors, handleChange }">
+                  <select class="form-select" :class="{
+                    'is-invalid':
+                      (meta.touched && !meta.valid) || errors.length,
+                  }" multiple :name="field.name" :size="isColorOpen ? 6 : 1" @focus="isColorOpen = true" @blur="
+                    (e) => {
+                      isColorOpen = false;
+                      field.onBlur(e);
+                    }
+                  " @change="(e) => onColorChange(e, handleChange)">
                     <option value="">Không có màu</option>
-                    <option
-                      v-for="c in colors"
-                      :key="c.id"
-                      :value="String(c.id)"
-                      :selected="field.value.includes(String(c.id))"
-                    >
-                      {{ c.color_name }}
+                    <option v-for="c in colors" :key="c.id" :value="String(c.id)"
+                      :selected="field.value.includes(String(c.id))">
+                      {{ c.name }}
                     </option>
                   </select>
                 </Field>
 
-                <ErrorMessage
-                  name="color_ids"
-                  class="invalid-feedback d-block"
-                />
+                <ErrorMessage name="color_ids" class="invalid-feedback d-block" />
               </div>
 
-              <!-- des -->
+              <!-- description -->
               <div class="col-12">
                 <label class="form-label">Mô tả</label>
-                <Field name="des" v-slot="{ field, meta, errors }">
-                  <textarea
-                    v-bind="field"
-                    rows="4"
-                    class="form-control bg-transparent"
-                    :class="{
-                      'is-invalid':
-                        (meta.touched && !meta.valid) || errors.length,
-                    }"
-                    placeholder="Mô tả về sản phẩm..."
-                  ></textarea>
+                <Field name="description" v-slot="{ field, meta, errors }">
+                  <textarea v-bind="field" rows="4" class="form-control bg-transparent" :class="{
+                    'is-invalid':
+                      (meta.touched && !meta.valid) || errors.length,
+                  }" placeholder="Mô tả về sản phẩm..."></textarea>
                 </Field>
-                <ErrorMessage name="des" class="invalid-feedback d-block" />
+                <ErrorMessage name="description" class="invalid-feedback d-block" />
               </div>
 
+
+
+              <!-- variants -->
+              <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                  <label class="form-label mb-0">Biến thể sản phẩm</label>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="addVariant">
+                    <i class="fa-solid fa-plus me-1"></i> Thêm biến thể
+                  </button>
+                </div>
+
+                <div class="table-responsive mt-2">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Màu</th>
+                        <th>Kích thước</th>
+                        <th>Giá</th>
+                        <th class="text-end">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody v-if="variants.length">
+                      <tr v-for="(v, idx) in variants" :key="v.key">
+                        <td>
+                          <select class="form-select" v-model="v.color_id" :disabled="v.isExisting">
+                            <option value="">Chọn màu</option>
+                            <option v-for="c in colors" :key="c.id" :value="String(c.id)">
+                              {{ c.name }}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          <select class="form-select" v-model="v.size_id" :disabled="v.isExisting">
+                            <option value="">Chọn kích thước</option>
+                            <option v-for="s in sizes" :key="s.id" :value="String(s.id)">
+                              {{ s.size }}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          <input v-model="v.price" type="number" min="0" class="form-control bg-transparent"
+                            placeholder="Giá" />
+                        </td>
+                        <td class="text-end">
+                          <button type="button" class="btn btn-sm btn-outline-danger" @click="removeVariant(idx)">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                    <tbody v-else>
+                      <tr>
+                        <td colspan="4" class="text-center opacity-75 py-3">
+                          Chưa có biến thể.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div v-if="variantsError" class="invalid-feedback d-block mt-2">
+                  {{ variantsError }}
+                </div>
+              </div>
               <!-- Existing images -->
               <div class="col-12">
                 <label class="form-label">Ảnh hiện có</label>
 
-                <div
-                  v-if="!existingImagesVisible.length"
-                  class="small opacity-75"
-                >
+                <div v-if="!existingImagesVisible.length" class="small opacity-75">
                   Không có ảnh hiện có.
                 </div>
 
                 <div v-else class="d-flex flex-wrap gap-2 mt-2">
-                  <div
-                    v-for="img in existingImagesVisible"
-                    :key="img.id"
-                    class="img-item"
-                  >
-                    <img
-                      :src="img.replacePreview || img.url"
-                      alt="product-image"
-                    />
+                  <div v-for="img in existingImagesVisible" :key="img.id" class="img-item">
+                    <img :src="img.replacePreview || img.url" alt="product-image" />
 
                     <!-- hidden input replace -->
-                    <input
-                      type="file"
-                      accept="image/*"
-                      class="d-none"
-                      :ref="(el) => setReplaceInputRef(img.id, el)"
-                      @change="(e) => onReplaceExisting(img.id, e)"
-                    />
+                    <input type="file" accept="image/*" class="d-none" :ref="(el) => setReplaceInputRef(img.id, el)"
+                      @change="(e) => onReplaceExisting(img.id, e)" />
 
                     <div class="img-actions">
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-light"
-                        @click="triggerReplace(img.id)"
-                        title="Thay ảnh"
-                      >
+                      <button type="button" class="btn btn-sm btn-light" @click="triggerReplace(img.id)"
+                        title="Thay ảnh">
                         <i class="fa-solid fa-pen-to-square me-1"></i> Thay
                       </button>
 
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-danger"
-                        @click="markDeleteExisting(img.id)"
-                        title="Xóa ảnh"
-                      >
+                      <button type="button" class="btn btn-sm btn-danger" @click="markDeleteExisting(img.id)"
+                        title="Xóa ảnh">
                         <i class="fa-solid fa-trash me-1"></i> Xóa
                       </button>
                     </div>
@@ -230,18 +208,9 @@
                 <div v-if="deletedExistingImages.length" class="mt-3">
                   <div class="small opacity-75 mb-1">Ảnh sẽ bị xóa:</div>
                   <div class="d-flex flex-wrap gap-2">
-                    <div
-                      v-for="img in deletedExistingImages"
-                      :key="'del-' + img.id"
-                      class="img-item img-item--deleted"
-                    >
+                    <div v-for="img in deletedExistingImages" :key="'del-' + img.id" class="img-item img-item--deleted">
                       <img :src="img.url" alt="deleted" />
-                      <button
-                        type="button"
-                        class="img-undo"
-                        @click="undoDeleteExisting(img.id)"
-                        title="Hoàn tác"
-                      >
+                      <button type="button" class="img-undo" @click="undoDeleteExisting(img.id)" title="Hoàn tác">
                         <i class="fa-solid fa-rotate-left"></i>
                       </button>
                     </div>
@@ -257,32 +226,17 @@
               <div class="col-12">
                 <label class="form-label">Thêm ảnh mới</label>
 
-                <input
-                  class="form-control bg-transparent"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  @change="onNewFilesChange"
-                  :class="{ 'is-invalid': imagesError }"
-                />
+                <input class="form-control bg-transparent" type="file" accept="image/*" multiple
+                  @change="onNewFilesChange" :class="{ 'is-invalid': imagesError }" />
 
                 <div class="small opacity-75 mt-2" v-if="!newPreviews.length">
                   Chưa chọn ảnh mới.
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 mt-2" v-else>
-                  <div
-                    v-for="(src, idx) in newPreviews"
-                    :key="src"
-                    class="img-item"
-                  >
+                  <div v-for="(src, idx) in newPreviews" :key="src" class="img-item">
                     <img :src="src" alt="preview-new" />
-                    <button
-                      type="button"
-                      class="img-remove"
-                      @click="removeNewImage(idx)"
-                      title="Xóa ảnh"
-                    >
+                    <button type="button" class="img-remove" @click="removeNewImage(idx)" title="Xóa ảnh">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
@@ -291,21 +245,13 @@
             </div>
 
             <div class="d-flex gap-2 mt-3">
-              <button
-                class="btn btn-accent"
-                type="submit"
-                :disabled="isSubmitting"
-              >
+              <button class="btn btn-accent" type="submit" :disabled="isSubmitting">
                 <i class="fa-solid fa-floppy-disk me-1"></i>
                 {{ isSubmitting ? "Đang lưu..." : "Lưu thay đổi" }}
               </button>
 
-              <button
-                class="btn btn-outline-secondary"
-                type="button"
-                :disabled="isSubmitting"
-                @click="onReset(resetForm)"
-              >
+              <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
+                @click="onReset(resetForm)">
                 <i class="fa-solid fa-rotate-left me-1"></i> Reset
               </button>
             </div>
@@ -326,6 +272,8 @@ import Swal from "sweetalert2";
 import ProductService from "@/services/product.service";
 import CategoryService from "@/services/category.service";
 import ColorService from "@/services/color.service";
+import SizeService from "@/services/size.service";
+import ProductDetailService from "@/services/product-detail.service";
 
 const route = useRoute();
 const router = useRouter();
@@ -336,13 +284,14 @@ const formKey = ref(0);
 
 const categories = ref([]);
 const colors = ref([]);
+const sizes = ref([]);
 
 const categoryKeyword = ref("");
 const selectedCategoryId = ref("");
 
 const initialValues = ref({
   name: "",
-  des: "",
+  description: "",
   unit: "",
   category_id: "",
   color_ids: [], // auto chọn
@@ -352,6 +301,12 @@ const initialValues = ref({
 const originalExistingImages = ref([]); // [{id,url,public_id?}]
 const existingImages = ref([]); // [{id,url,replaceFile?,replacePreview?,toDelete:boolean}]
 const imagesError = ref("");
+const variants = ref([]);
+let variantSeq = 0;
+const variantsError = ref("");
+const removedVariantIds = ref(new Set());
+const originalVariantPrices = ref(new Map());
+const originalVariants = ref([]);
 
 // New images
 const newFiles = ref([]); // File[]
@@ -403,7 +358,7 @@ const schema = yup.object({
     .trim()
     .required("Vui lòng nhập tên sản phẩm")
     .max(150, "Tên tối đa 150 ký tự"),
-  des: yup
+  description: yup
     .string()
     .trim()
     .nullable()
@@ -422,46 +377,83 @@ function revokeAll(urls) {
   (urls || []).forEach((u) => {
     try {
       URL.revokeObjectURL(u);
-    } catch {}
+    } catch { }
   });
 }
 
 // ---- Load data ----
 async function getCategories() {
   const res = await CategoryService.getAll({ per_page: 200 });
-  categories.value = res.data.items;
-  console.log("Loaded categories:", categories.value);
+  categories.value = res
+  console.log("Loaded categories:", res);
 }
 
 async function getColors() {
   const res = await ColorService.getAll();
-  colors.value = res.colors;
-  console.log("Loaded categories:", colors.value);
+  colors.value = Array.isArray(res) ? res : res?.data ?? res?.colors ?? [];
+  console.log("Loaded color:", colors.value);
 }
 
+async function getSizes() {
+  const res = await SizeService.getAll();
+  sizes.value = Array.isArray(res) ? res : res?.data ?? [];
+  console.log("Loaded sizes:", sizes.value);
+}
 
 async function getProduct() {
   try {
     const res = await ProductService.get(id);
-    const p = res.products;
-  console.log(res)
-    const colorIds = p?.colors
-      ? p.colors.map((c) => String(c.id))
-      : []
+    const p = res?.data ?? res;
 
-      console.log("Product colors:", colorIds);
+    let colorIds = Array.from(
+      new Set(
+        (p?.product_details ?? [])
+          .map((detail) => detail?.color?.id ?? detail?.color_id)
+          .filter((value) => value !== null && value !== undefined)
+          .map((value) => String(value))
+      )
+    );
 
-    const imgs = p?.images
-      ? p.images.map((im) => ({
-          id: im.id,
-          url: im.url,
-          public_id: im.public_id,
-        }))
+    if (!colorIds.length) {
+      const imageColorIds = (p?.product_images ?? [])
+        .map((img) => img?.color_id)
+        .filter((value) => value !== null && value !== undefined)
+        .map((value) => String(value));
+      colorIds = Array.from(new Set(imageColorIds));
+    }
+
+    const detailItems = p?.product_details ?? [];
+    variants.value = detailItems.map((d) => {
+      const colorValue = d?.color?.id ?? d?.color_id;
+      const sizeValue = d?.size?.id ?? d?.size_id;
+      return {
+        key: d.id,
+        id: d.id,
+        color_id: colorValue !== undefined && colorValue !== null ? String(colorValue) : "",
+        size_id: sizeValue !== undefined && sizeValue !== null ? String(sizeValue) : "",
+        price: d?.price ?? "",
+        isExisting: true,
+      };
+    });
+    variantSeq = variants.value.length;
+    originalVariantPrices.value = new Map(
+      detailItems.map((d) => [d.id, d.price])
+    );
+    originalVariants.value = variants.value.map((v) => ({ ...v }));
+    removedVariantIds.value = new Set();
+
+    const imgs = p?.product_images
+      ? p.product_images.map((im) => ({
+        id: im.id,
+        url: im.url,
+        public_id: im.public_id,
+        color_id: im.color_id,
+      }))
       : [];
 
     initialValues.value = {
       name: p?.name ?? "",
-      des: p?.des ?? "",
+      description: p?.description ?? "",
       unit: p?.unit ?? "",
       category_id: String(p?.category_id ?? ""),
       color_ids: colorIds,
@@ -486,8 +478,9 @@ async function getProduct() {
 async function fetchAll() {
   loading.value = true;
   try {
-    await Promise.all([getCategories(), getColors(), getProduct()]);
+    await Promise.all([getCategories(), getColors(), getSizes(), getProduct()]);
   } catch (e) {
+    console.log(e)
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
@@ -525,7 +518,7 @@ function markDeleteExisting(imageId) {
   if (img.replacePreview) {
     try {
       URL.revokeObjectURL(img.replacePreview);
-    } catch {}
+    } catch { }
     img.replacePreview = "";
     img.replaceFile = null;
   }
@@ -548,7 +541,7 @@ function onReplaceExisting(imageId, e) {
   if (img.replacePreview) {
     try {
       URL.revokeObjectURL(img.replacePreview);
-    } catch {}
+    } catch { }
   }
 
   img.replaceFile = file;
@@ -580,6 +573,58 @@ function removeNewImage(index) {
   newPreviews.value = newFiles.value.map((f) => URL.createObjectURL(f));
 }
 
+function addVariant() {
+  variantSeq += 1;
+  variants.value.push({
+    key: `new-${variantSeq}`,
+    color_id: "",
+    size_id: "",
+    price: "",
+    isExisting: false,
+  });
+}
+
+function removeVariant(index) {
+  const v = variants.value[index];
+  if (v?.id) {
+    removedVariantIds.value.add(v.id);
+  }
+  variants.value.splice(index, 1);
+}
+
+function collectVariants() {
+  const invalid = [];
+  const newVariants = [];
+  const updates = [];
+  let validCount = 0;
+
+  variants.value.forEach((v) => {
+    const hasAny = v.color_id || v.size_id || v.price !== "";
+    const colorId = v.color_id ? Number(v.color_id) : null;
+    const sizeId = v.size_id ? Number(v.size_id) : null;
+    const price = v.price === "" || v.price === null ? null : Number(v.price);
+
+    const isValid = colorId && sizeId && Number.isFinite(price);
+    if (!isValid && hasAny) {
+      invalid.push(v);
+    }
+
+    if (isValid) {
+      validCount += 1;
+      if (v.id) {
+        const originalPrice = originalVariantPrices.value.get(v.id);
+        if (originalPrice !== price) {
+          updates.push({ id: v.id, price });
+        }
+      } else {
+        newVariants.push({ color_id: colorId, size_id: sizeId, price });
+      }
+    }
+  });
+
+  return { invalid, newVariants, updates, validCount };
+}
+
 // ---- Reset ----
 function onReset(resetFormFn) {
   resetFormFn({ values: { ...initialValues.value } });
@@ -589,7 +634,7 @@ function onReset(resetFormFn) {
     if (img.replacePreview) {
       try {
         URL.revokeObjectURL(img.replacePreview);
-      } catch {}
+      } catch { }
     }
   });
   existingImages.value = originalExistingImages.value.map((x) => ({
@@ -605,12 +650,27 @@ function onReset(resetFormFn) {
   newPreviews.value = [];
 
   imagesError.value = "";
+  variantsError.value = "";
+  variants.value = originalVariants.value.map((v) => ({ ...v }));
+  variantSeq = variants.value.length;
+  removedVariantIds.value = new Set();
 }
 
 // ---- Submit ----
 async function onSubmit(values, { setErrors }) {
   try {
     imagesError.value = "";
+
+    variantsError.value = "";
+    const { invalid, newVariants, updates, validCount } = collectVariants();
+    if (invalid.length) {
+      variantsError.value = "Vui lòng nhập đầy đủ màu, kích thước và giá";
+      return;
+    }
+    if (!validCount) {
+      variantsError.value = "Vui lòng thêm ích nhất một biến thể";
+      return;
+    }
 
     // nếu bạn muốn bắt buộc có ít nhất 1 ảnh sau chỉnh sửa
     const remainExisting = existingImages.value.filter(
@@ -623,9 +683,9 @@ async function onSubmit(values, { setErrors }) {
     }
 
     const fd = new FormData();
-    fd.append("_method", "PUT"); 
+    fd.append("_method", "PUT");
     fd.append("name", values.name);
-    fd.append("des", values.des || "");
+    fd.append("description", values.description || "");
     fd.append("unit", values.unit);
     fd.append("category_id", values.category_id);
 
@@ -634,8 +694,8 @@ async function onSubmit(values, { setErrors }) {
       ? values.color_ids.filter(Boolean)
       : [];
 
-    console.log("COLOR VALUES:", values.color_ids); 
-    console.log("COLOR ID:", colorIds); 
+    console.log("COLOR VALUES:", values.color_ids);
+    console.log("COLOR ID:", colorIds);
     colorIds.forEach((id) => fd.append("color_ids[]", id));
 
     // xóa ảnh: remove_image_ids[]
@@ -655,9 +715,19 @@ async function onSubmit(values, { setErrors }) {
     for (const pair of fd.entries()) {
       console.log(pair[0] + ": ", pair[1]);
     }
-    
+
     await ProductService.update(id, fd);
-    // return;
+
+    const tasks = [];
+    updates.forEach((u) => tasks.push(ProductDetailService.update(u.id, { price: u.price })));
+    newVariants.forEach((v) => tasks.push(ProductDetailService.create(id, v)));
+    removedVariantIds.value.forEach((variantId) =>
+      tasks.push(ProductDetailService.delete(variantId))
+    );
+
+    if (tasks.length) {
+      await Promise.all(tasks);
+    }
 
     await Swal.fire("Thành công!", "Cập nhật sản phẩm thành công!", "success");
     router.push({ name: "products.list" });
@@ -703,6 +773,7 @@ onMounted(async () => {
   border: 1px solid var(--hover-border-color);
   color: var(--dark);
 }
+
 .btn-accent:hover {
   filter: var(--brightness);
 }
@@ -717,6 +788,7 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
   background: rgba(255, 255, 255, 0.03);
 }
+
 .img-item img {
   width: 100%;
   height: 100%;
@@ -748,6 +820,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
 }
+
 .img-remove:hover {
   filter: brightness(1.1);
 }
@@ -756,6 +829,7 @@ onMounted(async () => {
   opacity: 0.75;
   filter: grayscale(0.2);
 }
+
 .img-undo {
   position: absolute;
   top: 6px;
@@ -770,6 +844,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
 }
+
 .img-undo:hover {
   filter: brightness(1.1);
 }

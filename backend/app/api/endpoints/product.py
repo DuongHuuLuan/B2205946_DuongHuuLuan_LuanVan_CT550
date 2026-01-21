@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Dict, List, Optional
+from pydantic import ValidationError
 
 import cloudinary.uploader
 from app.db.session import get_db
@@ -10,6 +11,130 @@ from app.services.image_service import ImageService
 from app.models.user import User
 from app.api.deps import require_admin, require_user
 router  = APIRouter(prefix="/products", tags=["Products"])
+
+def _parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_int_list(values):
+    result = []
+    for value in values or []:
+        parsed = _parse_int(value)
+        if parsed is not None:
+            result.append(parsed)
+    return result
+
+
+def _extract_uploads(values):
+    return [v for v in (values or []) if isinstance(v, UploadFile)]
+
+
+def _extract_replace_images(form) -> Dict[int, UploadFile]:
+    replace_map = {}
+    for key, value in form.items():
+        if not isinstance(value, UploadFile):
+            continue
+        if not key.startswith("replace_images[") or not key.endswith("]"):
+            continue
+        image_id = _parse_int(key[len("replace_images[") : -1])
+        if image_id is None:
+            continue
+        replace_map[image_id] = value
+    return replace_map
+
+
+def _parse_form_product_fields(form):
+    def _get_str(key):
+        value = form.get(key)
+        if isinstance(value, UploadFile):
+            return None
+        if value is None:
+            return None
+        value = str(value).strip()
+        return value or None
+
+    description = _get_str("description") or _get_str("des")
+    return {
+        "name": _get_str("name"),
+        "description": description,
+        "unit": _get_str("unit"),
+        "category_id": _parse_int(_get_str("category_id")),
+    }
+
+
+def _upload_images(files):
+    uploaded = []
+    for f in files:
+        result = cloudinary.uploader.upload(
+            f.file,
+            folder="helmet_shop/products",
+        )
+        uploaded.append({"url": result["secure_url"], "public_id": result["public_id"]})
+    return uploaded
+
+
+async def _update_product_from_request(product_id: int, request: Request, db: Session):
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        payload = _parse_form_product_fields(form)
+        existing = ProductService.get_product_byID(db, product_id)
+
+        if not payload.get("name"):
+            payload["name"] = existing.name
+        if payload.get("description") is None:
+            payload["description"] = existing.description
+        if not payload.get("unit"):
+            payload["unit"] = existing.unit
+        if payload.get("category_id") is None:
+            payload["category_id"] = existing.category_id
+
+        try:
+            product_in = ProductCreate(**payload)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors())
+
+        ProductService.update_product(db, product_id, product_in)
+
+        replace_images = _extract_replace_images(form)
+        remove_ids = _parse_int_list(form.getlist("remove_image_ids[]"))
+        if replace_images:
+            replace_ids = set(replace_images.keys())
+            remove_ids = [image_id for image_id in remove_ids if image_id not in replace_ids]
+
+        for image_id in remove_ids:
+            ImageService.delete_image(db, image_id)
+
+        for image_id, file in replace_images.items():
+            ImageService.replace_image(db, image_id, file, product_id=product_id)
+
+        new_files = _extract_uploads(form.getlist("images[]"))
+        uploaded = _upload_images(new_files)
+        if uploaded:
+            ImageService.add_images(db, product_id=product_id, images=uploaded)
+
+        return ProductService.get_product_byID(db, product_id)
+
+    data = await request.json()
+    try:
+        product_in = ProductCreate(**data)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+
+    ProductService.update_product(db, product_id, product_in)
+
+    if product_in.images is not None:
+        ImageService.deleteAll_image(db, product_id)
+        ImageService.add_images(
+            db,
+            product_id=product_id,
+            images=[img.model_dump() for img in product_in.images],
+        )
+
+    return ProductService.get_product_byID(db, product_id)
 
 @router.get("/", response_model=ProductPaginationOut)
 def getAll_product(
@@ -37,19 +162,51 @@ def get_product_category(category_id: int, db: Session = Depends(get_db)):
     return products
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
-def create_product(
-    product_in: ProductCreate, 
-    db: Session = Depends(get_db), 
-    current_admin: User = Depends(require_admin)):
+async def create_product(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
     """
-    API tạo sản phẩm mới
+    API tao san pham moi
     """
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        payload = _parse_form_product_fields(form)
+
+        if not payload.get("name") or not payload.get("unit") or payload.get("category_id") is None:
+            raise HTTPException(status_code=422, detail="Missing required fields")
+
+        try:
+            product_in = ProductCreate(**payload)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors())
+
+        new_product = ProductService.create_product(db, product_in)
+
+        files = _extract_uploads(form.getlist("images[]"))
+        uploaded = _upload_images(files)
+        if uploaded:
+            ImageService.add_images(db, product_id=new_product.id, images=uploaded)
+
+        return ProductService.get_product_byID(db, new_product.id)
+
+    data = await request.json()
+    try:
+        product_in = ProductCreate(**data)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
 
     new_product = ProductService.create_product(db, product_in)
     if product_in.images:
-        ImageService.add_images(db,product_id=new_product.id, images=[img.model_dump() for img in product_in.images])
-    
-    return ProductService.get_product_byID(db,new_product.id)
+        ImageService.add_images(
+            db,
+            product_id=new_product.id,
+            images=[img.model_dump() for img in product_in.images],
+        )
+
+    return ProductService.get_product_byID(db, new_product.id)
 
 
 @router.get("/{product_id}", response_model=ProductOut)
@@ -60,18 +217,27 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return ProductService.get_product_byID(db,product_id)
 
 
-@router.put("/{product_id}", response_model= ProductOut)
-def update_product(product_id: int,product_in: ProductCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
+@router.put("/{product_id}", response_model=ProductOut)
+async def update_product(
+    product_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
     """
-    API cập nhật sản phẩm
+    API cap nhat san pham
     """
-    update_product =  ProductService.update_product(db,product_id,product_in)
+    return await _update_product_from_request(product_id, request, db)
 
-    if product_in.images is not None:
-        ImageService.deleteAll_image(db,product_id)
-        ImageService.add_images(db, product_id, images=[img.model_dump() for img in product_in.images])
-    
-    return ProductService.get_product_byID(db, product_id)
+
+@router.post("/{product_id}", response_model=ProductOut)
+async def update_product_post(
+    product_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return await _update_product_from_request(product_id, request, db)
 
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 def delete_product(product_id: int, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):

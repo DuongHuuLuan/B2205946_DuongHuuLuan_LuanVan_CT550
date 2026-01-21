@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models import *
 from app.schemas import *
+from app.schemas.product_detail import SizeUpdate
 
 
 class ProductDetailService:
@@ -27,8 +28,38 @@ class ProductDetailService:
         return db_size
 
     @staticmethod
+    def update_size(db: Session, size_id: int, size_in: SizeUpdate):
+        db_size = db.query(Size).filter(Size.id == size_id).first()
+        if not db_size:
+            raise HTTPException(status_code=404, detail="Không tìm thấy size")
+        
+        update_data = size_in.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_size, key, value)
+
+        db.commit()
+        db.refresh(db_size)
+        return db_size
+
+    @staticmethod
     def get_all_sizes(db: Session):
         return db.query(Size).all()
+
+    
+    @staticmethod
+    def delete_size(db: Session, size_id: int):
+        db_size = db.query(Size).filter(Size.id == size_id).first()
+
+        if not db_size:
+            raise HTTPException(status_code=404, detail="Không tìm thấy size")
+        
+        used = db.query(ProductDetail).filter(ProductDetail.size_id == size_id).first()
+        if used:
+            raise HTTPException(status_code=400, detail="Size đang được sử dụng")
+        
+        db.delete(db_size)
+        db.commit()
+        return {"message": "Đã xóa size thành công"}
 
     @staticmethod
     def create_product_detail(db: Session, product_detail_in: ProductDetailCreate, product_id: int):
@@ -55,9 +86,9 @@ class ProductDetailService:
 
     @staticmethod
     def update_product_detail(db: Session, product_detail_id: int, product_detail_in: ProductDetailUpdate):
-        db_product_detail = db.query(ProductDetail).filter(ProductDetail.id == product_detail_in).first()
+        db_product_detail = db.query(ProductDetail).filter(ProductDetail.id == product_detail_id).first()
         if not db_product_detail:
-            raise HTTPException(status_code=404, detail="Khong tim thay bien the san pham")
+            raise HTTPException(status_code=404, detail="Không tìm thấy biến thể sản phẩm")
 
         update_data = product_detail_in.model_dump(exclude_unset=True)
         for key, value in update_data.items():
@@ -71,7 +102,7 @@ class ProductDetailService:
     def delete_product_detail(db: Session, product_detail_id: int):
         db_product_detail = db.query(ProductDetail).filter(ProductDetail.id == product_detail_id).first()
         if not db_product_detail:
-            raise HTTPException(status_code=404, detail="Khong tim thay bien the san pham can xoa")
+            raise HTTPException(status_code=404, detail="Không tìm thấy biến thế sản phẩm cần xóa")
         db.delete(db_product_detail)
         db.commit()
-        return {"message": "Da xoa bien the san pham thanh cong"}
+        return {"message": "Đã xóa biến thế sản phẩm thành công"}

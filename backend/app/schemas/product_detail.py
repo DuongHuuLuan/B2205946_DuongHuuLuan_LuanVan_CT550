@@ -26,6 +26,8 @@ class SizeBase(BaseModel):
 class SizeCreate(SizeBase):
     pass
 
+class SizeUpdate(BaseModel):
+    size: Optional[str] = None
 
 class SizeOut(SizeBase):
     id: int

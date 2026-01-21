@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 import cloudinary.uploader
 from app.models.product import Product
 from app.models.image_url import ImageURL
@@ -54,3 +54,33 @@ class ImageService:
         db.query(ImageURL).filter(ImageURL.product_id == product_id).delete()
         db.commit()
         return {"message": "Đã xóa toàn bộ ảnh của sản phẩm"}
+
+    @staticmethod
+    def replace_image(
+        db: Session,
+        image_id: int,
+        new_file: UploadFile,
+        product_id: Optional[int] = None,
+    ):
+        query = db.query(ImageURL).filter(ImageURL.id == image_id)
+        if product_id is not None:
+            query = query.filter(ImageURL.product_id == product_id)
+        db_image = query.first()
+        if not db_image:
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        old_public_id = db_image.public_id
+        result = cloudinary.uploader.upload(
+            new_file.file,
+            folder="helmet_shop/products",
+        )
+
+        db_image.url = result["secure_url"]
+        db_image.public_id = result["public_id"]
+        db.commit()
+        db.refresh(db_image)
+
+        if old_public_id:
+            cloudinary.uploader.destroy(old_public_id)
+
+        return db_image

@@ -9,45 +9,78 @@ from app.api.deps import require_admin
 
 router = APIRouter(prefix="/product-details", tags=["Product Details"])
 
-@router.post("/colors", response_model= ColorOut, status_code=status.HTTP_201_CREATED)
-def create_color(color_in: ColorCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
-    """
-    API tạo màu sắc mới (ADMIN)
-    """
-    return ProductDetailService.create_color(db,color_in)
-@router.get("/colors", response_model= List[ColorOut])
-def get_all_colors(db: Session = Depends(get_db)):
-    """ Lấy danh sách tất cả màu """
-    return ProductDetailService.get_all_colors(db)          
 
-@router.post("/sizes", response_model= SizeOut, status_code=status.HTTP_201_CREATED)
-def create_size(size_in: SizeCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
-    """ API tạo kích thước mới (ADMIN)"""
+@router.post("/colors", response_model=ColorOut, status_code=status.HTTP_201_CREATED)
+def create_color(
+    color_in: ColorCreate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return ProductDetailService.create_color(db, color_in)
+
+
+@router.get("/colors", response_model=List[ColorOut])
+def get_all_colors(db: Session = Depends(get_db)):
+    return ProductDetailService.get_all_colors(db)
+
+
+@router.post("/sizes", response_model=SizeOut, status_code=status.HTTP_201_CREATED)
+def create_size(
+    size_in: SizeCreate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
     return ProductDetailService.create_size(db, size_in)
 
-@router.get("/sizes", response_model= List[SizeOut])
+
+@router.get("/sizes", response_model=List[SizeOut])
 def get_all_sizes(db: Session = Depends(get_db)):
-    """API lấy tất cả các size"""
     return ProductDetailService.get_all_sizes(db)
 
-@router.post("/product-details/{product_id}", response_model= ProductDetailOut)
-def add_product_detail(product_id: int, product_detail_in: ProductDetailCreate, db: Session = Depends(get_db), current_admin: User = Depends(require_admin)):
-    """Gán một biến thể (Màu + Size + Tồn kho) cho một sản phẩm cụ thể """
-    return ProductDetailService.create_product_detail(db,product_detail_in, product_id)
 
-@router.put("/product-details/{product_detail_id}", response_model=ProductDetailOut)
+@router.put("/sizes/{size_id}", response_model=SizeOut)
+def update_size(
+    size_id: int,
+    size_in: SizeUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return ProductDetailService.update_size(db, size_id, size_in)
+
+
+@router.delete("/sizes/{size_id}", status_code=status.HTTP_200_OK)
+def delete_size(
+    size_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return ProductDetailService.delete_size(db, size_id)
+
+
+@router.post("/{product_id}", response_model=ProductDetailOut)
+def add_product_detail(
+    product_id: int,
+    product_detail_in: ProductDetailCreate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return ProductDetailService.create_product_detail(db, product_detail_in, product_id)
+
+
+@router.put("/{product_detail_id}", response_model=ProductDetailOut)
 def update_product_detail(
     product_detail_id: int,
-    new_quantity: int,
+    product_detail_in: ProductDetailUpdate,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(require_admin)
+    current_admin: User = Depends(require_admin),
 ):
-    return ProductDetailService.update_product_detail(db, product_detail_id, new_quantity)
+    return ProductDetailService.update_product_detail(db, product_detail_id, product_detail_in)
 
-@router.delete("/product-detailsy/{product_detail_id}", status_code=status.HTTP_200_OK)
+
+@router.delete("/{product_detail_id}", status_code=status.HTTP_200_OK)
 def delete_product_detail(
     product_detail_id: int,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(require_admin)
+    current_admin: User = Depends(require_admin),
 ):
-    return ProductDetailService.delete_product_detail(db,product_detail_id)
+    return ProductDetailService.delete_product_detail(db, product_detail_id)
