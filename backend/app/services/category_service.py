@@ -1,6 +1,10 @@
+import math
+from typing import Optional
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.category import Category
+from app.models.product import Product
 from app.schemas.category import CategoryCreate
 class CategoryService:
     @staticmethod
@@ -14,10 +18,73 @@ class CategoryService:
         db.refresh(db_category)
         return db_category
     
-    @staticmethod
-    def getAll_categories(db: Session):
-        return db.query(Category).all()
+    # @staticmethod
+    # def getAll_categories(db: Session):
+    #     return db.query(Category).all()
     
+    @staticmethod
+    def getAll_categories(
+        db: Session,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        keyword: str = None
+    ):
+        query = db.query(Category)
+        if keyword:
+            query = query.filter(Category.name.ilike(f"%{keyword}%"))
+
+        
+        total_count = query.count()
+
+        if total_count == 0:
+            return {
+                "items": [],
+                "meta": {
+                    "total": 0,
+                    "current_page": 1,
+                    "per_page": per_page or 0,
+                    "last_page": 1,
+                },
+            }
+
+        if per_page is None:
+            per_page = total_count
+            page = 1
+        else:
+            if per_page < 1:
+                per_page = 1
+            if page < 1:
+                page = 1
+
+        
+        skip = (page - 1) * per_page
+        items_query = (
+            query.outerjoin(Product, Product.category_id == Category.id)
+            .with_entities(Category, func.count(Product.id).label("products_count"))
+            .group_by(Category.id)
+            .order_by(Category.id.desc())
+            .offset(skip)
+            .limit(per_page)
+        )
+
+        items = []
+        for category, count in items_query:
+            setattr(category, "products_count", count)
+            items.append(category)
+
+        
+        last_page = math.ceil(total_count/per_page)
+
+        return {
+            "items": items,
+            "meta": {
+                "total": total_count,
+                "current_page": page,
+                "per_page": per_page,
+                "last_page": last_page,
+            },
+        }
+
 
     @staticmethod
     def get_categories_id(db: Session, category_id: int):

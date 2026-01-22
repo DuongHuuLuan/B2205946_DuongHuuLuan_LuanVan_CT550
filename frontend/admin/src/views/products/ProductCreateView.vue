@@ -206,7 +206,7 @@ const categories = ref([]);
 const getCategories = async () => {
   const res = await CategoryService.getAll({ per_page: 200 });
   console.log("Fetched categories:", res);
-  categories.value = res;
+  categories.value = res.items;
 };
 
 const categoryKeyword = ref("");

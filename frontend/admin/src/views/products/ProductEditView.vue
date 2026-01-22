@@ -384,7 +384,7 @@ function revokeAll(urls) {
 // ---- Load data ----
 async function getCategories() {
   const res = await CategoryService.getAll({ per_page: 200 });
-  categories.value = res
+  categories.value = res.items
   console.log("Loaded categories:", res);
 }
 

@@ -13,8 +13,9 @@ class CategoryRepositoryImpl implements CategoryRepository {
   Future<List<Category>> getAll() async {
     try {
       final response = await _api.getAll();
-      final list = (response.data as List).cast<Map<String, dynamic>>();
-      return list.map(CategoryMapper.fromJson).toList();
+      final data = response.data as Map<String, dynamic>;
+      final List items = data["items"] ?? [];
+      return items.map((item) => CategoryMapper.fromJson(item)).toList();
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }
@@ -41,4 +42,3 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
   }
 }
-

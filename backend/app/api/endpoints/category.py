@@ -1,22 +1,26 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.db.session import get_db
 from app.models.user import User
 from app.api.deps import require_admin, require_user
-from app.schemas.category import CategoryCreate, CategoryOut
+from app.schemas.category import CategoryCreate, CategoryOut, CategoryPaginationOut
 from app.services.category_service import CategoryService
 from app.services.product_service import ProductService
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-@router.get("/", response_model=List[CategoryOut])
-def getAll_category(db: Session = Depends(get_db)):
+@router.get("/", response_model=CategoryPaginationOut)
+def getAll_category(
+    page: int = 1,
+    per_page: Optional[int] = None,
+    q: str = None,
+    db: Session = Depends(get_db)):
     """
     API lấy danh sách tất cả danh mục
     """
-    return CategoryService.getAll_categories(db)
+    return CategoryService.getAll_categories(db, page=page, per_page=per_page, keyword=q)
 
 @router.get("/{category_id}", response_model=CategoryOut)
 def get_category_id(category_id: int ,db: Session = Depends(get_db)):
