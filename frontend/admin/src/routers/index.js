@@ -9,11 +9,11 @@ import CategoryCreateView from "../views/categories/CategoryCreateView.vue";
 import CategoryDetailView from "../views/categories/CategoryDetailView.vue";
 import CategoryEditView from "../views/categories/CategoryEditView.vue";
 
-// Supplier pages
-import SupplierListView from "../views/suppliers/SupplierListView.vue";
-import SupplierCreateView from "../views/suppliers/SupplierCreateView.vue";
-import SupplierEditView from "../views/suppliers/SupplierEditView.vue";
-import SupplierDetailView from "../views/suppliers/SupplierDetailView.vue";
+// Distributor pages
+import DistributorListView from "../views/distributors/DistributorListView.vue";
+import DistributorCreateView from "../views/distributors/DistributorCreateView.vue";
+import DistributorEditView from "../views/distributors/DistributorEditView.vue";
+import DistributorDetailView from "../views/distributors/DistributorDetailView.vue";
 
 // Tier pages
 import TierListView from "../views/tiers/TierListView.vue";
@@ -26,6 +26,12 @@ import ProductListView from "../views/products/ProductListView.vue";
 import ProductCreateView from "../views/products/ProductCreateView.vue";
 import ProductEditView from "../views/products/ProductEditView.vue";
 import ProductDetailView from "../views/products/ProductDetailView.vue";
+
+// Size pages
+import SizeListView from "../views/sizes/SizeListView.vue";
+import SizeCreateView from "../views/sizes/SizeCreateView.vue";
+import SizeEditView from "../views/sizes/SizeEditView.vue";
+import SizeDetailView from "../views/sizes/SizeDetailView.vue";
 
 // Warehouse pages
 import WarehouseListView from "../views/warehouses/WarehouseListView.vue";
@@ -104,36 +110,36 @@ const routes = [
         props: true,
       },
 
-      //   Suppliers
+      //  Distributors
       {
-        path: "/suppliers",
-        name: "suppliers.list",
-        component: SupplierListView,
+        path: "/distributors",
+        name: "distributors.list",
+        component: DistributorListView,
         meta: {
           title: "Nhà cung cấp",
         },
       },
       {
-        path: "/suppliers/create",
-        name: "suppliers.create",
-        component: SupplierCreateView,
+        path: "/distributors/create",
+        name: "distributors.create",
+        component: DistributorCreateView,
         meta: {
           title: "Tạo nhà cung cấp",
         },
       },
       {
-        path: "/suppliers/:id/edit",
-        name: "suppliers.edit",
-        component: SupplierEditView,
+        path: "/distributors/:id/edit",
+        name: "distributors.edit",
+        component: DistributorEditView,
         meta: {
           title: "Chỉnh sửa nhà cung cấp",
         },
         props: true,
       },
       {
-        path: "/suppliers/:id",
-        name: "suppliers.detail",
-        component: SupplierDetailView,
+        path: "/distributors/:id",
+        name: "distributors.detail",
+        component: DistributorDetailView,
         meta: {
           title: "Chi tiết nhà cung cấp",
         },
@@ -192,6 +198,33 @@ const routes = [
         name: "products.detail",
         component: ProductDetailView,
         meta: { title: "Chi tiết sản phẩm" },
+        props: true,
+      },
+
+      // Sizes
+      {
+        path: "/sizes",
+        name: "sizes.list",
+        component: SizeListView,
+        meta: { title: "Kích thước" },
+      },
+      {
+        path: "/sizes/create",
+        name: "sizes.create",
+        component: SizeCreateView,
+        meta: { title: "Tạo kích thước" },
+      },
+      {
+        path: "/sizes/:id/edit",
+        name: "sizes.edit",
+        component: SizeEditView,
+        meta: { title: "Chỉnh sửa kích thước" },
+      },
+      {
+        path: "/sizes/:id",
+        name: "sizes.detail",
+        component: SizeDetailView,
+        meta: { title: "Chi tiết kích thước" },
         props: true,
       },
 

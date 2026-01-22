@@ -12,6 +12,8 @@ class Warehouse(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
+    details = relationship("WarehouseDetail", back_populates="warehouse")
+
 
 class WarehouseDetail(Base):    
     __tablename__ = "warehouse_details"
@@ -21,3 +23,8 @@ class WarehouseDetail(Base):
     color_id = Column(Integer, ForeignKey("colors.id"))
     size_id = Column(Integer, ForeignKey("sizes.id"))
     quantity = Column(Integer, default=0) 
+
+    warehouse = relationship("Warehouse", back_populates="details")
+    product = relationship("Product")
+    color = relationship("Color")
+    size = relationship("Size")

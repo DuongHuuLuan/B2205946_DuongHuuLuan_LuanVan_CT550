@@ -20,6 +20,8 @@ class Receipt(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     details = relationship("ReceiptDetail", back_populates="receipt")
+    warehouse = relationship("Warehouse")
+    distributor = relationship("Distributor")
 
 
 class ReceiptDetail(Base):
@@ -33,3 +35,6 @@ class ReceiptDetail(Base):
     purchase_price = Column(Numeric(10, 2), nullable=False)
 
     receipt = relationship("Receipt", back_populates="details")
+    product = relationship("Product")
+    color = relationship("Color")
+    size = relationship("Size")
