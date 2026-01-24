@@ -57,6 +57,11 @@ import DiscountCreateView from "../views/discounts/DiscountCreateView.vue";
 import DiscountEditView from "../views/discounts/DiscountEditView.vue";
 import DiscountDetailView from "../views/discounts/DiscountDetailView.vue";
 
+// User pages
+import UserListView from "../views/users/UserListView.vue";
+import UserEditView from "../views/users/UserEditView.vue";
+import UserDetailView from "../views/users/UserDetailView.vue";
+
 import AuthService from "@/services/auth.service";
 
 const routes = [
@@ -333,6 +338,28 @@ const routes = [
         name: "discounts.detail",
         component: DiscountDetailView,
         meta: { title: "Chi tiết khuyến mãi" },
+        props: true,
+      },
+
+      // Users
+      {
+        path: "/users",
+        name: "users.list",
+        component: UserListView,
+        meta: { title: "Tai khoan" },
+      },
+      {
+        path: "/users/:id/edit",
+        name: "users.edit",
+        component: UserEditView,
+        meta: { title: "Chinh sua tai khoan" },
+        props: true,
+      },
+      {
+        path: "/users/:id",
+        name: "users.detail",
+        component: UserDetailView,
+        meta: { title: "Chi tiet tai khoan" },
         props: true,
       },
     ],

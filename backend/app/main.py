@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import app.core.cloudinary
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import auth
+from app.api.endpoints import user
 from app.api.endpoints import product
 from app.api.endpoints import category
 from app.api.endpoints import product_detail
@@ -21,6 +22,7 @@ from app.api.endpoints import ghn
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
 app.include_router(auth.router)
+app.include_router(user.router)
 app.include_router(product.router)
 app.include_router(category.router)
 app.include_router(product_detail.router)
@@ -43,7 +45,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

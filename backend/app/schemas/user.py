@@ -1,24 +1,45 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+from app.models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
     username: str
 
-# schema dùng cho đăng ký (cần mật khẩu)
 class UserCreate(UserBase):
     password: str
 
-#schema dùng để đổi mật khẩu
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str = Field(..., min_length=6)
 
-# schema dùng để trả về dữ liệu cho Frontend (Bảo mật, không trả về password)
 class UserOut(UserBase):
     id: int
     created_at: datetime
 
     class Config:
-        from_attributes = True # cho phép Pydantic đọc dữ liệu từ SQLAlchemy Model
+        from_attributes = True
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    role: Optional[UserRole] = None
+
+class UserAdminOut(UserBase):
+    id: int
+    role: UserRole
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class PaginationMeta(BaseModel):
+    total: int
+    current_page: int
+    per_page: int
+    last_page: int
+
+class UserPaginationOut(BaseModel):
+    items: List[UserAdminOut]
+    meta: PaginationMeta
