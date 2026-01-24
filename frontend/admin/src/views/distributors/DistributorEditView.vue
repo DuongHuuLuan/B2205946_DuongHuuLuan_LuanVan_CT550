@@ -48,14 +48,14 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Số điện thoại liên lạc</label>
+              <label class="form-label">Email nhà cung cấp</label>
 
-              <Field name="contact_number" v-slot="{ field, meta }">
+              <Field name="email" v-slot="{ field, meta }">
                 <input v-bind="field" type="text" class="form-control bg-transparent"
-                  :class="{ 'is-invalid': meta.touched && !meta.valid }" placeholder="Ví dụ: 090xxxxxxx" />
+                  :class="{ 'is-invalid': meta.touched && !meta.valid }" placeholder="Ví dụ: ncc@gmail.com" />
               </Field>
 
-              <ErrorMessage name="contact_number" class="invalid-feedback d-block" />
+              <ErrorMessage name="email" class="invalid-feedback d-block" />
             </div>
 
             <div class="d-flex gap-2">
@@ -92,8 +92,8 @@ const id = route.params.id;
 const loading = ref(true);
 const formKey = ref(0);
 
-const initialValues = ref({ name: "", address: "", contact_number: "" });
-const original = ref({ name: "", address: "", contact_number: "" });
+const initialValues = ref({ name: "", address: "", email: "" });
+const original = ref({ name: "", address: "", email: "" });
 
 const schema = yup.object({
   name: yup
@@ -108,11 +108,11 @@ const schema = yup.object({
     .required("Vui lòng nhập địa chỉ nhà cung cấp")
     .min(5, "Địa chỉ tối thiểu 5 ký tự")
     .max(255, "Địa chỉ tối đa 255 ký tự"),
-  contact_number: yup
+  email: yup
     .string()
     .trim()
     .required("Vui lòng nhập số điện thoại liên lạc")
-    .matches(/^[0-9+()\-\s]{8,20}$/, "Số điện thoại không hợp lệ"),
+    .email("Email không hợp lệ"),
 });
 
 async function fetchDistributor() {
@@ -124,7 +124,7 @@ async function fetchDistributor() {
     const values = {
       name: data?.name ?? "",
       address: data?.address ?? "",
-      contact_number: data?.contact_number ?? "",
+      email: data?.email ?? "",
     };
 
     original.value = { ...values };
@@ -153,7 +153,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
     await DistributorService.update(id, {
       name: values.name,
       address: values.address,
-      contact_number: values.contact_number,
+      email: values.email,
     });
 
     await Swal.fire(

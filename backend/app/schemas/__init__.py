@@ -8,7 +8,7 @@ from app.schemas.cart import CartDetailCreate,CartDetailUpdate,CartDetailOut,Car
 from app.schemas.order import OrderDetailOut, OrderCreate, OrderOut, OrderItemCreate
 from app.schemas.discount import DiscountOut
 from app.schemas.evaluate import EvaluateCreate, EvaluateOut
-from app.schemas.distributor import DistributorCreate,DistributorOut
+from app.schemas.distributor import DistributorCreate,DistributorOut, DistributorPaginationOut
 from app.schemas.receipt import (
     ReceiptCreate,
     ReceiptOut,

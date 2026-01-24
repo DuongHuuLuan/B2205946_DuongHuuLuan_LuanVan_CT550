@@ -2,21 +2,41 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.api.deps import require_admin
-from typing import List
-from app.models.distributor import Distributor
+from typing import Optional
 from app.models.user import User
-from app.schemas.distributor import DistributorCreate, DistributorOut
+from app.schemas.distributor import DistributorCreate, DistributorOut, DistributorPaginationOut
 from app.services.distriburtor_service import DistributorService
 
 router = APIRouter(prefix="/distributors", tags=["Distributors"])
 
-@router.get("/", response_model=List[DistributorOut])
+@router.get("/", response_model=DistributorPaginationOut)
 def get_all(
+    page: int = 1,
+    per_page: Optional[int] = None,
+    q: str = None,
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin)
 ):
     """ Lấy tất cả nhà cung cấp"""
-    return DistributorService.get_all(db)
+    return DistributorService.get_all(db, page=page, per_page=per_page, keyword=q)
+
+@router.get("/{distributor_id}", response_model=DistributorOut)
+def get_distributor_id(
+    distributor_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin)
+):
+    """Lay thong tin chi tiet nha cung cap"""
+    return DistributorService.get_id(db, distributor_id)
+
+@router.get("/{distributor_id}", response_model=DistributorOut)
+def get_id(
+    distributor_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User  = Depends(require_admin)
+):
+    """API lấy một nhà cung cấp theo id"""
+    return DistributorService.get_id(db, distributor_id)
 
 @router.post("/", response_model=DistributorOut, status_code=status.HTTP_201_CREATED)
 def create_distributor(

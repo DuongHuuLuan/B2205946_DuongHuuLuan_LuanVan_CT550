@@ -72,7 +72,7 @@
                   <div>
                     <div class="fw-semibold">Danh sách sản phẩm nhập</div>
                     <div class="small opacity-75">
-                      Chọn sản phẩm → chọn màu (nếu có) → nhập số lượng & giá
+                      Chọn sản phẩm → chọn màu + kích thước → nhập số lượng & giá
                       nhập
                     </div>
                   </div>
@@ -151,7 +151,7 @@
                                 }" @change="handleChange">
                                 <!-- Co mau => bat buoc chon -->
                                 <option v-if="getColorsForRow(f.value).length" value="">
-                                  -- Chon mau --
+                                  -- Chọn màu --
                                 </option>
 
                                 <option v-for="c in getColorsForRow(f.value)" :key="c.id" :value="String(c.id)">
@@ -160,7 +160,7 @@
 
                                 <!-- Khong co mau -->
                                 <option v-if="!getColorsForRow(f.value).length" value="">
-                                  Khong co mau
+                                  Không có màu
                                 </option>
                               </select>
                             </Field>
@@ -178,7 +178,7 @@
                                 }" @change="handleChange">
                                 <!-- Co size => bat buoc chon -->
                                 <option v-if="getSizesForRow(f.value).length" value="">
-                                  -- Chon size --
+                                  -- Chọn kích thước --
                                 </option>
 
                                 <option v-for="s in getSizesForRow(f.value)" :key="s.id" :value="String(s.id)">
@@ -187,7 +187,7 @@
 
                                 <!-- Khong co size -->
                                 <option v-if="!getSizesForRow(f.value).length" value="">
-                                  Khong co size
+                                  Không có kích thước
                                 </option>
                               </select>
                             </Field>
@@ -392,7 +392,7 @@ function removeRow(rowKey, setFieldValue, values) {
 }
 
 function resetAll(setFieldValue) {
-  setFieldValue("supplier_id", "");
+  setFieldValue("distributor_id", "");
   setFieldValue("warehouse_id", "");
   setFieldValue("items", JSON.parse(JSON.stringify(initialValues.items)));
 }
@@ -507,15 +507,12 @@ async function onSubmit(values, { setErrors }) {
 
 onMounted(async () => {
   const distributorRes = await DistributorService.getAll({ per_page: 200 });
-  // const supplierPayload = supplierRes?.data ?? supplierRes;
   distributors.value = distributorRes.items || [];
 
   const warehouseRes = await WarehouseService.getAll({ per_page: 200 });
-  // const warehousePayload = warehouseRes?.data ?? warehouseRes;
   warehouses.value = warehouseRes.items || [];
 
   const productRes = await ProductService.getAll({ per_page: 200 });
-  // const productPayload = productRes?.data ?? productRes;
   products.value = productRes.items || [];
 });
 </script>

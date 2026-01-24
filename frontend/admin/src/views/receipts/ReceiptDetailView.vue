@@ -111,7 +111,7 @@
                           {{
                             it?.color?.name ||
                             it?.color_name ||
-                            "Khong co mau"
+                            "Không có màu"
                           }}
                         </div>
                       </td>

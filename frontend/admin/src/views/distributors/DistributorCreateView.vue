@@ -99,8 +99,8 @@ const schema = yup.object({
   email: yup
     .string()
     .trim()
-    .required("Vui lòng nhập số điện thoại liên lạc")
-    .matches(/^[0-9+()\-\s]{8,20}$/, "Số điện thoại không hợp lệ"),
+    .required("Vui lòng nhập email nhà cung cấp")
+    .email("Email không hợp lệ"),
 });
 
 function onReset(resetFormFn) {

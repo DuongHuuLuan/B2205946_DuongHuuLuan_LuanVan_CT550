@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import List, Optional
 from app.models import *
 
 class DistributorBase(BaseModel):
@@ -15,4 +15,16 @@ class DistributorOut(DistributorBase):
 
     class Config:
         from_attributes = True
+
+
+class PaginationMeta(BaseModel):
+    total: int
+    current_page: int
+    per_page: int
+    last_page: int
+
+
+class DistributorPaginationOut(BaseModel):
+    items: List[DistributorOut]
+    meta: PaginationMeta
 

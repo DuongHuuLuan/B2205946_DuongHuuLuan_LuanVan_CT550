@@ -2,18 +2,13 @@
   <div class="row g-3">
     <!-- Header -->
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
           <h4 class="mb-1">Chỉnh sửa danh mục</h4>
           <div class="small opacity-75">Cập nhật tên danh mục</div>
         </div>
 
-        <RouterLink
-          class="btn btn-outline-secondary"
-          :to="{ name: 'categories.list' }"
-        >
+        <RouterLink class="btn btn-outline-secondary" :to="{ name: 'categories.list' }">
           <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </RouterLink>
       </div>
@@ -29,46 +24,28 @@
           </div>
 
           <!-- Form (mount lại khi formKey đổi) -->
-          <Form
-            v-else
-            :key="formKey"
-            :initial-values="initialValues"
-            :validation-schema="schema"
-            @submit="onSubmit"
-            v-slot="{ isSubmitting, resetForm }"
-          >
+          <Form v-else :key="formKey" :initial-values="initialValues" :validation-schema="schema" @submit="onSubmit"
+            v-slot="{ isSubmitting, resetForm }">
             <div class="mb-3">
               <label class="form-label">Tên danh mục</label>
 
               <Field name="name" v-slot="{ field, meta }">
-                <input
-                  v-bind="field"
-                  type="text"
-                  class="form-control bg-transparent"
+                <input v-bind="field" type="text" class="form-control bg-transparent"
                   :class="{ 'is-invalid': meta.touched && !meta.valid }"
-                  placeholder="Ví dụ: Bút, Vở, Sổ tay..."
-                />
+                  placeholder="Ví dụ: Mũ nữa đầu, mũ lật hàm..." />
               </Field>
 
               <ErrorMessage name="name" class="invalid-feedback d-block" />
             </div>
 
             <div class="d-flex gap-2">
-              <button
-                class="btn btn-accent"
-                type="submit"
-                :disabled="isSubmitting"
-              >
+              <button class="btn btn-accent" type="submit" :disabled="isSubmitting">
                 <i class="fa-solid fa-floppy-disk me-1"></i>
                 {{ isSubmitting ? "Đang lưu..." : "Lưu thay đổi" }}
               </button>
 
-              <button
-                class="btn btn-outline-secondary"
-                type="button"
-                :disabled="isSubmitting"
-                @click="onReset(resetForm)"
-              >
+              <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
+                @click="onReset(resetForm)">
                 <i class="fa-solid fa-rotate-left me-1"></i> Reset
               </button>
             </div>
@@ -181,6 +158,7 @@ onMounted(fetchCategory);
   border: 1px solid var(--hover-border-color);
   color: var(--dark);
 }
+
 .btn-accent:hover {
   filter: var(--brightness);
 }

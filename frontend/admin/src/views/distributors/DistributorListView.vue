@@ -52,7 +52,7 @@
                 <tr>
                   <th class="ps-3" style="width: 140px">Mã NCC</th>
                   <th>Tên nhà cung cấp</th>
-                  <th>Số điện thoại</th>
+                  <th>Email</th>
                   <th>Địa chỉ</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
@@ -70,7 +70,7 @@
 
                   <td>
                     <span class="opacity-75">{{
-                      s.contact_number || "--"
+                      s.email || "--"
                     }}</span>
                   </td>
 
@@ -157,11 +157,10 @@ async function fetchDistributors() {
       per_page: perPage,
     });
 
-    console.log(res);
 
-    const list = res?.data?.items ?? res?.data ?? res?.items ?? [];
+    const list = res.items ?? [];
     items.value = Array.isArray(list) ? list : [];
-    meta.value = res?.data?.meta ?? {
+    meta.value = res.meta ?? {
       current_page: 1,
       per_page: perPage,
       total: 0,
@@ -190,7 +189,6 @@ watch(keyword, async () => {
 });
 
 watch(page, async () => {
-  console.log(page.value);
   await fetchDistributors();
 });
 
