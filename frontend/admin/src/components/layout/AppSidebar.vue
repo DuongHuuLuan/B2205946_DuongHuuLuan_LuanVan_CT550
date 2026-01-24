@@ -25,6 +25,11 @@
         <i class="fa-solid fa-boxes-stacked me-2"></i>
         <span v-if="!collapsed">Sản phẩm</span>
       </RouterLink>
+      <!-- 
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('sizes.') }" to="/sizes">
+        <i class="fa-solid fa-ruler-combined me-2"></i>
+        <span v-if="!collapsed">Kích thước</span>
+      </RouterLink> -->
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('warehouses.') }"
         to="/warehouses">
@@ -43,7 +48,8 @@
         <span v-if="!collapsed">Danh mục</span>
       </RouterLink>
 
-      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('suppliers.') }" to="/suppliers">
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('distributors.') }"
+        to="/distributors">
         <i class="fa-solid fa-truck me-2"></i>
         <span v-if="!collapsed">Nhà cung cấp</span>
       </RouterLink>

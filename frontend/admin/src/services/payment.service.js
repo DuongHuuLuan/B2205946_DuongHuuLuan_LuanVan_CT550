@@ -1,7 +1,7 @@
 import { createApiClient } from "./api.service";
 
-class DiscountService {
-  constructor(baseUrl = "/discounts") {
+class PaymentService {
+  constructor(baseUrl = "/payment/admin") {
     this.api = createApiClient(baseUrl);
   }
 
@@ -30,4 +30,4 @@ class DiscountService {
   }
 }
 
-export default new DiscountService();
+export default new PaymentService();

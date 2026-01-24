@@ -21,15 +21,6 @@ def get_all(
     return DistributorService.get_all(db, page=page, per_page=per_page, keyword=q)
 
 @router.get("/{distributor_id}", response_model=DistributorOut)
-def get_distributor_id(
-    distributor_id: int,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(require_admin)
-):
-    """Lay thong tin chi tiet nha cung cap"""
-    return DistributorService.get_id(db, distributor_id)
-
-@router.get("/{distributor_id}", response_model=DistributorOut)
 def get_id(
     distributor_id: int,
     db: Session = Depends(get_db),

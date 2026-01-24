@@ -29,6 +29,30 @@ class PaymentMethodOut(BaseModel):
     class Config:
         from_attributes = True
 
+
+class PaymentMethodBase(BaseModel):
+    name: str
+
+
+class PaymentMethodCreate(PaymentMethodBase):
+    pass
+
+
+class PaymentMethodUpdate(BaseModel):
+    name: Optional[str] = None
+
+
+class PaymentPaginationMeta(BaseModel):
+    total: int
+    current_page: int
+    per_page: int
+    last_page: int
+
+
+class PaymentMethodPaginationOut(BaseModel):
+    items: List[PaymentMethodOut]
+    meta: PaymentPaginationMeta
+
 #schema cho OrderDetail
 class OrderDetailOut(BaseModel):
     id: int

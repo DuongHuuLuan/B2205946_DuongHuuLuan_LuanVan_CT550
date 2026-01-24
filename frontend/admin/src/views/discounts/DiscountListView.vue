@@ -4,11 +4,11 @@
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Nhà cung cấp</h4>
-          <div class="small opacity-75">Quản lý danh sách nhà cung cấp</div>
+          <h4 class="mb-1">Khuyến mãi</h4>
+          <div class="small opacity-75">Quản lý danh sách khuyến mãi</div>
         </div>
 
-        <RouterLink class="icon-btn icon-add" :to="{ name: 'distributors.create' }" title="Thêm nhà cung cấp">
+        <RouterLink class="icon-btn icon-add" :to="{ name: 'discounts.create' }" title="Thêm khuyến mãi">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
@@ -25,7 +25,7 @@
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input v-model="keyword" type="text" class="form-control bg-transparent"
-                  placeholder="Tìm theo tên nhà cung cấp..." />
+                  placeholder="Tìm theo mô tả khuyến mãi..." />
                 <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -50,44 +50,58 @@
             <table class="table table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th class="ps-3" style="width: 140px">Mã NCC</th>
-                  <th>Tên nhà cung cấp</th>
-                  <th>Email</th>
-                  <th>Địa chỉ</th>
+                  <th class="ps-3" style="width: 160px">Mã khuyến mãi</th>
+                  <th>Mô tả</th>
+                  <th class="text-end" style="width: 140px">Phần trăm</th>
+                  <th class="text-end" style="width: 160px">Bắt đầu</th>
+                  <th class="text-end" style="width: 160px">Kết thúc</th>
+                  <th class="text-end" style="width: 180px">Trạng thái</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
               <tbody v-if="items.length">
-                <tr v-for="s in items" :key="s.id">
+                <tr v-for="d in items" :key="d.id">
                   <td class="ps-3">
-                    <span class="code-pill">S{{ s.id }}</span>
+                    <span class="code-pill">D{{ d.id }}</span>
                   </td>
 
-                  <td>
-                    <RouterLink class="name-link" :to="{ name: 'distributors.detail', params: { id: s.id } }">
-                      <div class="fw-semibold">{{ s.name }}</div>
+                  <td class="ps-3">
+                    <RouterLink class="name-link" :to="{ name: 'discounts.detail', params: { id: d.id } }">
+                      <div class="fw-semibold">
+                        {{ d.description || d.name || "-" }}
+                      </div>
                     </RouterLink>
                   </td>
 
-                  <td>
-                    <span class="opacity-75">{{
-                      s.email || "--"
-                    }}</span>
+                  <td class="text-end">
+                    <span class="badge percent-badge">
+                      {{ (d.percent ?? 0) + "%" }}
+                    </span>
                   </td>
 
-                  <td>
-                    <span class="opacity-75">{{ s.address || "--" }}</span>
+                  <td class="text-end">
+                    <span class="small opacity-75">{{ formatDate(d.start_at) }}</span>
+                  </td>
+
+                  <td class="text-end">
+                    <span class="small opacity-75">{{ formatDate(d.end_at) }}</span>
+                  </td>
+
+                  <td class="text-end">
+                    <span class="badge" :class="statusBadgeClass(d.status)">
+                      {{ statusLabel(d.status) }}
+                    </span>
                   </td>
 
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
-                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'distributors.edit', params: { id: s.id } }"
+                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'discounts.edit', params: { id: d.id } }"
                         title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(s.id)">
+                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(d.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -97,10 +111,10 @@
 
               <tbody v-else>
                 <tr>
-                  <td colspan="5" class="text-center py-5">
+                  <td colspan="7" class="text-center py-5">
                     <div class="opacity-75">
                       <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
-                      Không có nhà cung cấp phù hợp.
+                      Không có khuyến mãi phù hợp.
                     </div>
                   </td>
                 </tr>
@@ -111,7 +125,8 @@
           <!-- Pagination -->
           <div class="d-flex justify-content-between align-items-center p-3 border-top" v-if="meta.total">
             <div class="small opacity-75">
-              Hiển thị {{ (meta.current_page - 1) * meta.per_page + 1 }}
+              Hiển thị
+              {{ (meta.current_page - 1) * meta.per_page + 1 }}
               -
               {{ Math.min(meta.current_page * meta.per_page, meta.total) }}
               /
@@ -140,28 +155,62 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import Swal from "sweetalert2";
-import DistributorService from "@/services/distributor.service";
+import DiscountService from "../../services/discount.service";
 
 const keyword = ref("");
 const page = ref(1);
 const perPage = 8;
 
-const meta = ref({ current_page: 1, per_page: 10, total: 0, last_page: 1 });
 const items = ref([]);
+const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
 
-async function fetchDistributors() {
+function statusLabel(status) {
+  switch (status) {
+    case "active":
+      return "Đang bật";
+    case "disabled":
+      return "Đang tắt";
+    case "expired":
+      return "hết hạn";
+    default:
+      return "-";
+  }
+}
+
+function statusBadgeClass(status) {
+  switch (status) {
+    case "active":
+      return "status-actived";
+    case "disabled":
+      return "status-disabled";
+    case "expired":
+      return "status-expired";
+    default:
+      return "bg-secondary-subtle text-secondary";
+  }
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  // hỗ trợ ISO string / timestamp / yyyy-mm-dd
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("vi-VN");
+}
+
+async function fetchDiscounts() {
   loading.value = true;
   try {
-    const res = await DistributorService.getAll({
+    const res = await DiscountService.getAll({
       q: keyword.value.trim() || undefined,
       page: page.value,
       per_page: perPage,
     });
 
-
     const list = res.items ?? [];
     items.value = Array.isArray(list) ? list : [];
+
     meta.value = res.meta ?? {
       current_page: 1,
       per_page: perPage,
@@ -169,34 +218,32 @@ async function fetchDistributors() {
       last_page: 1,
     };
   } catch (e) {
-    console.error(e);
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Không thể tải nhà cung cấp. Vui lòng thử lại!";
+      "Không thể tải khuyến mãi. Vui lòng thử lại!";
     Swal.fire("Lỗi", msg, "error");
   } finally {
     loading.value = false;
   }
 }
 
-// Pagination
 onMounted(async () => {
-  await fetchDistributors();
+  await fetchDiscounts();
 });
 
 watch(keyword, async () => {
   page.value = 1;
-  await fetchDistributors();
+  await fetchDiscounts();
 });
 
 watch(page, async () => {
-  await fetchDistributors();
+  await fetchDiscounts();
 });
 
 async function onDeleteClick(id) {
   const result = await Swal.fire({
-    title: "Xóa nhà cung cấp này?",
+    title: "Xóa khuyến mãi này?",
     text: "Không thể hoàn tác!",
     icon: "warning",
     showCancelButton: true,
@@ -204,18 +251,18 @@ async function onDeleteClick(id) {
     cancelButtonText: "Hủy",
   });
 
-  if (!result.isConfirmed) return;
-
-  try {
-    await DistributorService.delete(id);
-    await fetchDistributors();
-    Swal.fire({ title: "Xóa thành công", icon: "success" });
-  } catch (e) {
-    await Swal.fire({
-      title: "Lỗi",
-      text: e?.response?.data?.message || "Không thể xóa",
-      icon: "error",
-    });
+  if (result.isConfirmed) {
+    try {
+      await DiscountService.delete(id);
+      await fetchDiscounts();
+      Swal.fire({ title: "Xóa thành công", icon: "success" });
+    } catch (err) {
+      await Swal.fire({
+        title: "Lỗi",
+        text: err?.response?.data?.message || "Không thể xóa",
+        icon: "error",
+      });
+    }
   }
 }
 </script>
@@ -228,17 +275,39 @@ async function onDeleteClick(id) {
   color: var(--font-color);
 }
 
-.code-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  background: color-mix(in srgb, var(--main-color) 14%, transparent);
+.name-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+}
+
+.percent-badge {
+  background: color-mix(in srgb, var(--main-color) 10%, transparent);
   border: 1px solid var(--hover-border-color);
   color: var(--font-color);
+  font-weight: 700;
+}
+
+/* Status badges */
+.status-actived {
+  background: color-mix(in srgb, #16a34a 18%, transparent);
+  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
+  color: var(--font-color);
+  font-weight: 700;
+}
+
+.status-disabled {
+  background: color-mix(in srgb, #ef4444 18%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  color: var(--font-color);
+  font-weight: 700;
+}
+
+.status-expired {
+  background: color-mix(in srgb, #64748b 18%, transparent);
+  border: 1px solid color-mix(in srgb, #64748b 45%, transparent);
+  color: var(--font-color);
+  font-weight: 700;
 }
 
 /* Icon buttons */
@@ -262,9 +331,6 @@ async function onDeleteClick(id) {
 
 .icon-add {
   color: #16a34a;
-  width: 42px;
-  height: 42px;
-  border-radius: 1rem;
 }
 
 .icon-edit {
@@ -273,5 +339,11 @@ async function onDeleteClick(id) {
 
 .icon-delete {
   color: #ef4444;
+}
+
+.icon-add {
+  width: 42px;
+  height: 42px;
+  border-radius: 1rem;
 }
 </style>

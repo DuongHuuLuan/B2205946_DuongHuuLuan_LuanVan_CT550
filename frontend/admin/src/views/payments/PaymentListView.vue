@@ -1,26 +1,18 @@
 <template>
   <div class="row g-3">
-    <!-- Header -->
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
           <h4 class="mb-1">Phương thức thanh toán</h4>
           <div class="small opacity-75">Quản lý danh sách phương thức</div>
         </div>
 
-        <RouterLink
-          class="icon-btn icon-add"
-          :to="{ name: 'payments.create' }"
-          title="Thêm phương thức"
-        >
+        <RouterLink class="icon-btn icon-add" :to="{ name: 'payments.create' }" title="Them phuong thuc">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
     </div>
 
-    <!-- Toolbar -->
     <div class="col-12">
       <div class="card card-soft">
         <div class="card-body">
@@ -30,29 +22,16 @@
                 <span class="input-group-text bg-transparent">
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
-                <input
-                  v-model="keyword"
-                  type="text"
-                  class="form-control bg-transparent"
-                  placeholder="Tìm theo tên phương thức..."
-                />
-                <button
-                  class="btn btn-outline-secondary"
-                  @click="keyword = ''"
-                  v-if="keyword"
-                  title="Clear"
-                >
+                <input v-model="keyword" type="text" class="form-control bg-transparent"
+                  placeholder="Tìm theo tên phương thức..." />
+                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
               </div>
             </div>
 
-            <div
-              class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2"
-            >
-              <span
-                class="badge bg-secondary-subtle text-secondary align-self-center"
-              >
+            <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
+              <span class="badge bg-secondary-subtle text-secondary align-self-center">
                 Tổng: {{ meta.total }}
               </span>
             </div>
@@ -61,7 +40,6 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="col-12">
       <div class="card card-soft">
         <div class="card-body p-0">
@@ -71,7 +49,6 @@
                 <tr>
                   <th class="ps-3" style="width: 180px">Mã phương thức</th>
                   <th>Tên phương thức</th>
-                  <th class="text-end" style="width: 180px">Trạng thái</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
@@ -83,35 +60,19 @@
                   </td>
 
                   <td class="ps-3">
-                    <RouterLink
-                      class="name-link"
-                      :to="{ name: 'payments.detail', params: { id: p.id } }"
-                    >
+                    <RouterLink class="name-link" :to="{ name: 'payments.detail', params: { id: p.id } }">
                       <div class="fw-semibold">{{ p.name }}</div>
                     </RouterLink>
                   </td>
 
-                  <td class="text-end">
-                    <span class="badge" :class="statusBadgeClass(p.status)">
-                      {{ statusLabel(p.status) }}
-                    </span>
-                  </td>
-
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
-                      <RouterLink
-                        class="icon-btn icon-edit"
-                        :to="{ name: 'payments.edit', params: { id: p.id } }"
-                        title="Chỉnh sửa"
-                      >
+                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'payments.edit', params: { id: p.id } }"
+                        title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button
-                        class="icon-btn icon-delete"
-                        title="Xoá"
-                        @click="onDeleteClick(p.id)"
-                      >
+                      <button class="icon-btn icon-delete" title="Xoa" @click="onDeleteClick(p.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -121,11 +82,9 @@
 
               <tbody v-else>
                 <tr>
-                  <td colspan="4" class="text-center py-5">
+                  <td colspan="3" class="text-center py-5">
                     <div class="opacity-75">
-                      <i
-                        class="fa-regular fa-folder-open fs-4 d-block mb-2"
-                      ></i>
+                      <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
                       Không có phương thức phù hợp.
                     </div>
                   </td>
@@ -134,13 +93,9 @@
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div
-            class="d-flex justify-content-between align-items-center p-3 border-top"
-            v-if="meta.total"
-          >
+          <div class="d-flex justify-content-between align-items-center p-3 border-top" v-if="meta.total">
             <div class="small opacity-75">
-              Hiển thị
+              hiển thị
               {{ (meta.current_page - 1) * meta.per_page + 1 }}
               -
               {{ Math.min(meta.current_page * meta.per_page, meta.total) }}
@@ -149,21 +104,14 @@
             </div>
 
             <div class="btn-group">
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                :disabled="page === 1"
-                @click="page--"
-              >
+              <button class="btn btn-outline-secondary btn-sm" :disabled="page === 1" @click="page--">
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               <button class="btn btn-outline-secondary btn-sm" disabled>
                 Trang {{ page }}
               </button>
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                :disabled="meta.current_page >= meta.last_page"
-                @click="page++"
-              >
+              <button class="btn btn-outline-secondary btn-sm" :disabled="meta.current_page >= meta.last_page"
+                @click="page++">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
@@ -177,7 +125,7 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import Swal from "sweetalert2";
-import PaymentService from "../../services/payment.service";
+import PaymentService from "@/services/payment.service";
 
 const keyword = ref("");
 const page = ref(1);
@@ -186,28 +134,6 @@ const perPage = 8;
 const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
-
-function statusLabel(status) {
-  switch (status) {
-    case "actived":
-      return "Đang bật";
-    case "disabled":
-      return "Đang tắt";
-    default:
-      return "-";
-  }
-}
-
-function statusBadgeClass(status) {
-  switch (status) {
-    case "actived":
-      return "status-actived";
-    case "disabled":
-      return "status-disabled";
-    default:
-      return "bg-secondary-subtle text-secondary";
-  }
-}
 
 async function fetchPayments() {
   loading.value = true;
@@ -218,10 +144,10 @@ async function fetchPayments() {
       per_page: perPage,
     });
 
-    const list = res?.data?.items ?? res?.data ?? res?.items ?? [];
+    const list = res.items ?? [];
     items.value = Array.isArray(list) ? list : [];
 
-    meta.value = res?.data?.meta ?? {
+    meta.value = res.meta ?? {
       current_page: 1,
       per_page: perPage,
       total: 0,
@@ -231,7 +157,7 @@ async function fetchPayments() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Không thể tải phương thức. Vui lòng thử lại!";
+      "Không thể tải phương thức thanh toán. Vui lòng thử lại!";
     Swal.fire("Lỗi", msg, "error");
   } finally {
     loading.value = false;
@@ -253,7 +179,7 @@ watch(page, async () => {
 
 async function onDeleteClick(id) {
   const result = await Swal.fire({
-    title: "Xóa phương thức này?",
+    title: "Xóa phương thức thanh toán này?",
     text: "Không thể hoàn tác!",
     icon: "warning",
     showCancelButton: true,
@@ -291,22 +217,19 @@ async function onDeleteClick(id) {
   display: inline-block;
 }
 
-/* Status badges */
-.status-actived {
-  background: color-mix(in srgb, #16a34a 18%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
-  color: var(--font-color);
+.code-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.75rem;
   font-weight: 700;
+  letter-spacing: 0.2px;
+  background: color-mix(in srgb, var(--main-color) 14%, transparent);
+  border: 1px solid var(--hover-border-color);
+  color: var(--font-color);
 }
 
-.status-disabled {
-  background: color-mix(in srgb, #ef4444 18%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-/* Icon buttons */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -328,9 +251,11 @@ async function onDeleteClick(id) {
 .icon-add {
   color: #16a34a;
 }
+
 .icon-edit {
   color: #f59e0b;
 }
+
 .icon-delete {
   color: #ef4444;
 }

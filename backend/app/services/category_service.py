@@ -17,10 +17,7 @@ class CategoryService:
         db.commit()
         db.refresh(db_category)
         return db_category
-    
-    # @staticmethod
-    # def getAll_categories(db: Session):
-    #     return db.query(Category).all()
+
     
     @staticmethod
     def getAll_categories(
@@ -89,6 +86,15 @@ class CategoryService:
     @staticmethod
     def get_categories_id(db: Session, category_id: int):
         category = db.query(Category).filter(Category.id == category_id).first()
+        if not category:
+            raise HTTPException(status_code=404, detail="Không tìm thấy danh mục")
+        products_count = (
+            db.query(func.count(Product.id))
+            .filter(Product.category_id == category.id)
+            .scalar()
+            or 0
+        )
+        setattr(category, "products_count", products_count)
         return category
     
 
