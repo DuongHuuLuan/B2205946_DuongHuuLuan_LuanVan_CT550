@@ -114,8 +114,21 @@ class OrderOut(BaseModel):
 
     delivery_info: Optional[DeliveryInfoOut]
     payment_method: Optional[PaymentMethodOut]
+    user: Optional[UserOut] = None
 
     order_details: List[OrderDetailOut] = []
 
     class Config:
         from_attributes = True
+
+
+class OrderPaginationMeta(BaseModel):
+    total: int
+    current_page: int
+    per_page: int
+    last_page: int
+
+
+class OrderPaginationOut(BaseModel):
+    items: List[OrderOut]
+    meta: OrderPaginationMeta

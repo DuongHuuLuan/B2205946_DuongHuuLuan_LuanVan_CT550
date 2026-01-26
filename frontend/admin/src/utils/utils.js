@@ -22,6 +22,7 @@ const getProductThumb = (product) => {
 const statusLabel = (s) => {
   const v = String(s || "").toLowerCase();
   if (v === "pending") return "Đang duyệt";
+  if (v === "shipping") return "Đang giao";
   if (v === "completed") return "Hoàn thành";
   if (v === "canceled" || v === "cancelled") return "Đã hủy";
   return "—";
@@ -30,6 +31,7 @@ const statusLabel = (s) => {
 const statusBadgeClass = (s) => {
   const v = String(s || "").toLowerCase();
   if (v === "pending") return "badge-pending";
+  if (v === "shipping") return "badge-shipping";
   if (v === "completed") return "badge-completed";
   if (v === "canceled" || v === "cancelled") return "badge-canceled";
   return "badge-secondary";
@@ -39,6 +41,8 @@ const statusTableBadgeClass = (status) => {
   switch (status) {
     case "pending":
       return "status-pending";
+    case "shipping":
+      return "status-shipping";
     case "completed":
       return "status-completed";
     case "canceled":

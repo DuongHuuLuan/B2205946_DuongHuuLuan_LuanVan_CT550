@@ -110,8 +110,6 @@
                 <ErrorMessage name="description" class="invalid-feedback d-block" />
               </div>
 
-
-
               <!-- variants -->
               <div class="col-12">
                 <div class="d-flex align-items-center justify-content-between">
@@ -127,6 +125,7 @@
                       <tr>
                         <th>Màu</th>
                         <th>Kích thước</th>
+                        <th>Ảnh</th>
                         <th>Giá</th>
                         <th class="text-end">Thao tác</th>
                       </tr>
@@ -150,6 +149,18 @@
                           </select>
                         </td>
                         <td>
+                          <div class="d-flex flex-column gap-2">
+                            <input type="file" accept="image/*" class="form-control form-control-sm"
+                              @change="(e) => onVariantImageChange(v, e)" />
+                            <div v-if="v.image_preview || v.image_url" class="variant-thumb">
+                              <img :src="v.image_preview || v.image_url" alt="variant" />
+                              <button type="button" class="img-remove" @click="clearVariantImage(v)" title="Xóa ảnh">
+                                <i class="fa-solid fa-xmark"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
                           <input v-model="v.price" type="number" min="0" class="form-control bg-transparent"
                             placeholder="Giá" />
                         </td>
@@ -162,7 +173,7 @@
                     </tbody>
                     <tbody v-else>
                       <tr>
-                        <td colspan="4" class="text-center opacity-75 py-3">
+                        <td colspan="5" class="text-center opacity-75 py-3">
                           Chưa có biến thể.
                         </td>
                       </tr>
@@ -174,74 +185,7 @@
                   {{ variantsError }}
                 </div>
               </div>
-              <!-- Existing images -->
-              <div class="col-12">
-                <label class="form-label">Ảnh hiện có</label>
 
-                <div v-if="!existingImagesVisible.length" class="small opacity-75">
-                  Không có ảnh hiện có.
-                </div>
-
-                <div v-else class="d-flex flex-wrap gap-2 mt-2">
-                  <div v-for="img in existingImagesVisible" :key="img.id" class="img-item">
-                    <img :src="img.replacePreview || img.url" alt="product-image" />
-
-                    <!-- hidden input replace -->
-                    <input type="file" accept="image/*" class="d-none" :ref="(el) => setReplaceInputRef(img.id, el)"
-                      @change="(e) => onReplaceExisting(img.id, e)" />
-
-                    <div class="img-actions">
-                      <button type="button" class="btn btn-sm btn-light" @click="triggerReplace(img.id)"
-                        title="Thay ảnh">
-                        <i class="fa-solid fa-pen-to-square me-1"></i> Thay
-                      </button>
-
-                      <button type="button" class="btn btn-sm btn-danger" @click="markDeleteExisting(img.id)"
-                        title="Xóa ảnh">
-                        <i class="fa-solid fa-trash me-1"></i> Xóa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Deleted list (undo) -->
-                <div v-if="deletedExistingImages.length" class="mt-3">
-                  <div class="small opacity-75 mb-1">Ảnh sẽ bị xóa:</div>
-                  <div class="d-flex flex-wrap gap-2">
-                    <div v-for="img in deletedExistingImages" :key="'del-' + img.id" class="img-item img-item--deleted">
-                      <img :src="img.url" alt="deleted" />
-                      <button type="button" class="img-undo" @click="undoDeleteExisting(img.id)" title="Hoàn tác">
-                        <i class="fa-solid fa-rotate-left"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="imagesError" class="invalid-feedback d-block mt-2">
-                  {{ imagesError }}
-                </div>
-              </div>
-
-              <!-- Add new images -->
-              <div class="col-12">
-                <label class="form-label">Thêm ảnh mới</label>
-
-                <input class="form-control bg-transparent" type="file" accept="image/*" multiple
-                  @change="onNewFilesChange" :class="{ 'is-invalid': imagesError }" />
-
-                <div class="small opacity-75 mt-2" v-if="!newPreviews.length">
-                  Chưa chọn ảnh mới.
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 mt-2" v-else>
-                  <div v-for="(src, idx) in newPreviews" :key="src" class="img-item">
-                    <img :src="src" alt="preview-new" />
-                    <button type="button" class="img-remove" @click="removeNewImage(idx)" title="Xóa ảnh">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div class="d-flex gap-2 mt-3">
@@ -252,7 +196,7 @@
 
               <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
                 @click="onReset(resetForm)">
-                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                <i class="fa-solid fa-rotate-left me-1"></i> Làm mới
               </button>
             </div>
           </Form>
@@ -298,33 +242,34 @@ const initialValues = ref({
 });
 
 // giữ bản gốc để reset ảnh
-const originalExistingImages = ref([]); // [{id,url,public_id?}]
-const existingImages = ref([]); // [{id,url,replaceFile?,replacePreview?,toDelete:boolean}]
-const imagesError = ref("");
 const variants = ref([]);
 let variantSeq = 0;
 const variantsError = ref("");
+
+function clearVariantImage(variant) {
+  if (variant?.image_preview) {
+    URL.revokeObjectURL(variant.image_preview);
+  }
+  variant.image_preview = "";
+  variant.image_file = null;
+}
+
+function onVariantImageChange(variant, e) {
+  const file = (e.target.files || [])[0] || null;
+  clearVariantImage(variant);
+  if (file) {
+    variant.image_file = file;
+    variant.image_preview = URL.createObjectURL(file);
+  }
+}
+
 const removedVariantIds = ref(new Set());
 const originalVariantPrices = ref(new Map());
 const originalVariants = ref([]);
 
 // New images
-const newFiles = ref([]); // File[]
-const newPreviews = ref([]); // string[]
 
 const isColorOpen = ref(false);
-
-// refs cho input replace theo imageId
-const replaceInputMap = ref(new Map());
-function setReplaceInputRef(imageId, el) {
-  if (!imageId) return;
-  if (el) replaceInputMap.value.set(imageId, el);
-  else replaceInputMap.value.delete(imageId);
-}
-function triggerReplace(imageId) {
-  const el = replaceInputMap.value.get(imageId);
-  el?.click();
-}
 
 const filteredCategories = computed(() => {
   const kw = categoryKeyword.value.trim().toLowerCase();
@@ -344,13 +289,6 @@ const filteredCategories = computed(() => {
   }
   return arr;
 });
-
-const existingImagesVisible = computed(() =>
-  existingImages.value.filter((x) => !x.toDelete)
-);
-const deletedExistingImages = computed(() =>
-  existingImages.value.filter((x) => x.toDelete)
-);
 
 const schema = yup.object({
   name: yup
@@ -373,14 +311,6 @@ const schema = yup.object({
   color_ids: yup.array().default([]), // để không bị undefined
 });
 
-function revokeAll(urls) {
-  (urls || []).forEach((u) => {
-    try {
-      URL.revokeObjectURL(u);
-    } catch { }
-  });
-}
-
 // ---- Load data ----
 async function getCategories() {
   const res = await CategoryService.getAll({ per_page: 200 });
@@ -401,78 +331,82 @@ async function getSizes() {
 }
 
 async function getProduct() {
-  try {
-    const res = await ProductService.get(id);
-    const p = res?.data ?? res;
+  return (async () => {
+    try {
+      const res = await ProductService.get(id);
+      const p = res?.data ?? res;
 
-    let colorIds = Array.from(
-      new Set(
-        (p?.product_details ?? [])
-          .map((detail) => detail?.color?.id ?? detail?.color_id)
+      let colorIds = Array.from(
+        new Set(
+          (p?.product_details ?? [])
+            .map((detail) => detail?.color?.id ?? detail?.color_id)
+            .filter((value) => value !== null && value !== undefined)
+            .map((value) => String(value))
+        )
+      );
+
+      if (!colorIds.length) {
+        const imageColorIds = (p?.product_images ?? [])
+          .map((img) => img?.color_id)
           .filter((value) => value !== null && value !== undefined)
-          .map((value) => String(value))
-      )
-    );
+          .map((value) => String(value));
+        colorIds = Array.from(new Set(imageColorIds));
+      }
 
-    if (!colorIds.length) {
-      const imageColorIds = (p?.product_images ?? [])
-        .map((img) => img?.color_id)
-        .filter((value) => value !== null && value !== undefined)
-        .map((value) => String(value));
-      colorIds = Array.from(new Set(imageColorIds));
-    }
+      const imageMap = new Map();
+      (p?.product_images ?? []).forEach((im) => {
+        if (im?.color_id === null || im?.color_id === undefined) return;
+        const key = String(im.color_id);
+        if (!imageMap.has(key)) {
+          imageMap.set(key, im);
+        }
+      });
 
-    const detailItems = p?.product_details ?? [];
-    variants.value = detailItems.map((d) => {
-      const colorValue = d?.color?.id ?? d?.color_id;
-      const sizeValue = d?.size?.id ?? d?.size_id;
-      return {
-        key: d.id,
-        id: d.id,
-        color_id: colorValue !== undefined && colorValue !== null ? String(colorValue) : "",
-        size_id: sizeValue !== undefined && sizeValue !== null ? String(sizeValue) : "",
-        price: d?.price ?? "",
-        isExisting: true,
+      const detailItems = p?.product_details ?? [];
+      variants.value = detailItems.map((d) => {
+        const colorValue = d?.color?.id ?? d?.color_id;
+        const sizeValue = d?.size?.id ?? d?.size_id;
+        const colorKey =
+          colorValue !== undefined && colorValue !== null
+            ? String(colorValue)
+            : "";
+        const image = colorKey ? imageMap.get(colorKey) : null;
+        return {
+          key: d.id,
+          id: d.id,
+          color_id: colorKey,
+          size_id:
+            sizeValue !== undefined && sizeValue !== null ? String(sizeValue) : "",
+          price: d?.price ?? "",
+          isExisting: true,
+          image_id: image?.id ?? null,
+          image_url: image?.url ?? "",
+          image_file: null,
+          image_preview: "",
+        };
+      });
+      variantSeq = variants.value.length;
+      originalVariantPrices.value = new Map(
+        detailItems.map((d) => [d.id, d.price])
+      );
+      originalVariants.value = variants.value.map((v) => ({ ...v }));
+      removedVariantIds.value = new Set();
+
+      initialValues.value = {
+        name: p?.name ?? "",
+        description: p?.description ?? "",
+        unit: p?.unit ?? "",
+        category_id: String(p?.category_id ?? ""),
+        color_ids: colorIds,
       };
-    });
-    variantSeq = variants.value.length;
-    originalVariantPrices.value = new Map(
-      detailItems.map((d) => [d.id, d.price])
-    );
-    originalVariants.value = variants.value.map((v) => ({ ...v }));
-    removedVariantIds.value = new Set();
 
-    const imgs = p?.product_images
-      ? p.product_images.map((im) => ({
-        id: im.id,
-        url: im.url,
-        public_id: im.public_id,
-        color_id: im.color_id,
-      }))
-      : [];
+      selectedCategoryId.value = initialValues.value.category_id;
 
-    initialValues.value = {
-      name: p?.name ?? "",
-      description: p?.description ?? "",
-      unit: p?.unit ?? "",
-      category_id: String(p?.category_id ?? ""),
-      color_ids: colorIds,
-    };
-
-    selectedCategoryId.value = initialValues.value.category_id;
-
-    originalExistingImages.value = imgs;
-    existingImages.value = imgs.map((x) => ({
-      ...x,
-      replaceFile: null,
-      replacePreview: "",
-      toDelete: false,
-    }));
-
-    formKey.value += 1;
-  } catch (e) {
-    console.log(e);
-  }
+      formKey.value += 1;
+    } catch (e) {
+      console.log(e);
+    }
+  })();
 }
 
 async function fetchAll() {
@@ -508,71 +442,6 @@ function onColorChange(e, handleChange) {
   handleChange(selected);
 }
 
-// ---- Existing images actions ----
-function markDeleteExisting(imageId) {
-  const img = existingImages.value.find((x) => x.id === imageId);
-  if (!img) return;
-  img.toDelete = true;
-
-  // nếu đang replace preview thì revoke luôn để tránh leak
-  if (img.replacePreview) {
-    try {
-      URL.revokeObjectURL(img.replacePreview);
-    } catch { }
-    img.replacePreview = "";
-    img.replaceFile = null;
-  }
-}
-
-function undoDeleteExisting(imageId) {
-  const img = existingImages.value.find((x) => x.id === imageId);
-  if (!img) return;
-  img.toDelete = false;
-}
-
-function onReplaceExisting(imageId, e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  const img = existingImages.value.find((x) => x.id === imageId);
-  if (!img) return;
-
-  // revoke preview cũ
-  if (img.replacePreview) {
-    try {
-      URL.revokeObjectURL(img.replacePreview);
-    } catch { }
-  }
-
-  img.replaceFile = file;
-  img.replacePreview = URL.createObjectURL(file);
-
-  // nếu ảnh đang bị đánh dấu xóa thì bỏ xóa (vì user đang thay)
-  img.toDelete = false;
-
-  // reset input để chọn lại cùng file vẫn trigger change
-  e.target.value = "";
-}
-
-// ---- New images actions ----
-function onNewFilesChange(e) {
-  imagesError.value = "";
-  const selected = Array.from(e.target.files || []);
-  newFiles.value = selected;
-
-  revokeAll(newPreviews.value);
-  newPreviews.value = selected.map((f) => URL.createObjectURL(f));
-}
-
-function removeNewImage(index) {
-  const arr = [...newFiles.value];
-  arr.splice(index, 1);
-  newFiles.value = arr;
-
-  revokeAll(newPreviews.value);
-  newPreviews.value = newFiles.value.map((f) => URL.createObjectURL(f));
-}
-
 function addVariant() {
   variantSeq += 1;
   variants.value.push({
@@ -581,11 +450,18 @@ function addVariant() {
     size_id: "",
     price: "",
     isExisting: false,
+    image_id: null,
+    image_url: "",
+    image_file: null,
+    image_preview: "",
   });
 }
 
 function removeVariant(index) {
   const v = variants.value[index];
+  if (v) {
+    clearVariantImage(v);
+  }
   if (v?.id) {
     removedVariantIds.value.add(v.id);
   }
@@ -596,10 +472,12 @@ function collectVariants() {
   const invalid = [];
   const newVariants = [];
   const updates = [];
+  const missingImage = [];
+  const imageUploads = [];
   let validCount = 0;
 
   variants.value.forEach((v) => {
-    const hasAny = v.color_id || v.size_id || v.price !== "";
+    const hasAny = v.color_id || v.size_id || v.price !== "" || v.image_file;
     const colorId = v.color_id ? Number(v.color_id) : null;
     const sizeId = v.size_id ? Number(v.size_id) : null;
     const price = v.price === "" || v.price === null ? null : Number(v.price);
@@ -611,6 +489,18 @@ function collectVariants() {
 
     if (isValid) {
       validCount += 1;
+      if (!v.image_url && !v.image_file) {
+        missingImage.push(v);
+      }
+
+      if (v.image_file) {
+        imageUploads.push({
+          file: v.image_file,
+          color_id: colorId,
+          image_id: v.image_id,
+        });
+      }
+
       if (v.id) {
         const originalPrice = originalVariantPrices.value.get(v.id);
         if (originalPrice !== price) {
@@ -622,63 +512,39 @@ function collectVariants() {
     }
   });
 
-  return { invalid, newVariants, updates, validCount };
+  return { invalid, newVariants, updates, validCount, missingImage, imageUploads };
 }
 
 // ---- Reset ----
 function onReset(resetFormFn) {
   resetFormFn({ values: { ...initialValues.value } });
 
-  // reset images về bản gốc
-  existingImages.value.forEach((img) => {
-    if (img.replacePreview) {
-      try {
-        URL.revokeObjectURL(img.replacePreview);
-      } catch { }
-    }
-  });
-  existingImages.value = originalExistingImages.value.map((x) => ({
-    ...x,
-    replaceFile: null,
-    replacePreview: "",
-    toDelete: false,
+  variants.value.forEach((v) => clearVariantImage(v));
+  variants.value = originalVariants.value.map((v) => ({
+    ...v,
+    image_file: null,
+    image_preview: "",
   }));
-
-  // reset new images
-  revokeAll(newPreviews.value);
-  newFiles.value = [];
-  newPreviews.value = [];
-
-  imagesError.value = "";
-  variantsError.value = "";
-  variants.value = originalVariants.value.map((v) => ({ ...v }));
   variantSeq = variants.value.length;
+  variantsError.value = "";
   removedVariantIds.value = new Set();
 }
 
 // ---- Submit ----
 async function onSubmit(values, { setErrors }) {
   try {
-    imagesError.value = "";
-
     variantsError.value = "";
-    const { invalid, newVariants, updates, validCount } = collectVariants();
+    const { invalid, newVariants, updates, validCount, missingImage, imageUploads } = collectVariants();
     if (invalid.length) {
-      variantsError.value = "Vui lòng nhập đầy đủ màu, kích thước và giá";
+      variantsError.value = "Vui lòng nhập đầy đủ màu, kích thước, và giá";
+      return;
+    }
+    if (missingImage.length) {
+      variantsError.value = "Vui lòng chọn ảnh cho từng biến thể";
       return;
     }
     if (!validCount) {
-      variantsError.value = "Vui lòng thêm ích nhất một biến thể";
-      return;
-    }
-
-    // nếu bạn muốn bắt buộc có ít nhất 1 ảnh sau chỉnh sửa
-    const remainExisting = existingImages.value.filter(
-      (x) => !x.toDelete
-    ).length;
-    const addedNew = newFiles.value.length;
-    if (remainExisting + addedNew === 0) {
-      imagesError.value = "Vui lòng giữ hoặc thêm ít nhất 1 ảnh";
+      variantsError.value = "Vui lòng thêm ít nhất một biến thể";
       return;
     }
 
@@ -689,27 +555,19 @@ async function onSubmit(values, { setErrors }) {
     fd.append("unit", values.unit);
     fd.append("category_id", values.category_id);
 
-    // color_ids[] (lọc bỏ "" nếu chọn “Không có màu”)
     const colorIds = Array.isArray(values.color_ids)
       ? values.color_ids.filter(Boolean)
       : [];
-
-    console.log("COLOR VALUES:", values.color_ids);
-    console.log("COLOR ID:", colorIds);
     colorIds.forEach((id) => fd.append("color_ids[]", id));
 
-    // xóa ảnh: remove_image_ids[]
-    existingImages.value
-      .filter((x) => x.toDelete)
-      .forEach((x) => fd.append("remove_image_ids[]", String(x.id)));
-
-    // thay ảnh theo từng ảnh: replace_images[<id>]
-    existingImages.value
-      .filter((x) => x.replaceFile && !x.toDelete)
-      .forEach((x) => fd.append(`replace_images[${x.id}]`, x.replaceFile));
-
-    // thêm ảnh mới: images[]
-    newFiles.value.forEach((f) => fd.append("images[]", f));
+    imageUploads.forEach((img) => {
+      if (img.image_id) {
+        fd.append(`replace_images[${img.image_id}]`, img.file);
+      } else {
+        fd.append("images[]", img.file);
+        fd.append("image_color_ids[]", img.color_id);
+      }
+    });
 
     console.log("FormData entries:");
     for (const pair of fd.entries()) {
@@ -732,7 +590,7 @@ async function onSubmit(values, { setErrors }) {
     await Swal.fire("Thành công!", "Cập nhật sản phẩm thành công!", "success");
     router.push({ name: "products.list" });
   } catch (e) {
-    console.log(e)
+    console.log(e);
     const status = e?.response?.status;
     const data = e?.response?.data;
 
@@ -776,6 +634,23 @@ onMounted(async () => {
 
 .btn-accent:hover {
   filter: var(--brightness);
+}
+
+/* variant image */
+.variant-thumb {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.variant-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* image blocks */

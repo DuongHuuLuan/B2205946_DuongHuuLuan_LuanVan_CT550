@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.db.session import get_db
 from app.models import *
@@ -20,6 +20,34 @@ def create_order(
 ):
     """API thực hiện đặt hàng từ giỏ hàng của người dùng"""
     return OrderService.create_order(db=db,user_id=current_user.id,order_in=order_in)
+
+    ##ADMIN
+@router.get("/", response_model=OrderPaginationOut)
+def get_admin_orders(
+    page: int = 1,
+    per_page: Optional[int] = None,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    """API lấy tất cả đơn hàng"""
+    return OrderService.get_admin_orders(
+        db=db,
+        page=page,
+        per_page=per_page,
+        keyword=q,
+        status=status,
+    )
+
+@router.get("/admin/{order_id}", response_model=OrderOut)
+def get_admin_order_detail(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    """API lấy đơn hàng cụ thể theo ID"""
+    return OrderService.get_admin_order_by_id(db=db, order_id=order_id)
 
 @router.get("/history", response_model=List[OrderOut])
 def get_orders(

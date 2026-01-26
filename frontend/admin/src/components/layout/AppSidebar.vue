@@ -54,10 +54,10 @@
         <span v-if="!collapsed">Nhà cung cấp</span>
       </RouterLink>
 
-      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('tiers.') }" to="/tiers">
+      <!-- <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('tiers.') }" to="/tiers">
         <i class="fa-solid fa-layer-group me-2"></i>
         <span v-if="!collapsed">Cấp tài khoản</span>
-      </RouterLink>
+      </RouterLink> -->
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('promotions.') }"
         to="/discounts">

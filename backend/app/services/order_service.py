@@ -1,11 +1,13 @@
+import math
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from fastapi import HTTPException, status
 from app.models import *
 from app.models.discount import OrderDiscount
 from app.models.order import OrderStatus
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
-from typing import List
+from typing import List, Optional
 from decimal import Decimal, ROUND_HALF_UP
 
 class OrderService:
@@ -180,6 +182,115 @@ class OrderService:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
         return order
     
+    @staticmethod
+    def get_admin_orders(
+        db: Session,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        keyword: Optional[str] = None,
+        status: Optional[str] = None,
+    ):
+        query = db.query(Order)
+
+        if keyword:
+            like = f"%{keyword}%"
+            conditions = [User.email.ilike(like), User.username.ilike(like)]
+            if keyword.isdigit():
+                conditions.append(Order.id == int(keyword))
+            query = query.join(User, Order.user_id == User.id).filter(or_(*conditions))
+
+        if status:
+            try:
+                status_value = OrderStatus(status.strip().lower())
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Trạng thái không hợp lệ",
+                ) from exc
+            query = query.filter(Order.status == status_value)
+
+        total_count = query.count()
+        if total_count == 0:
+            return {
+                "items": [],
+                "meta": {
+                    "total": 0,
+                    "current_page": 1,
+                    "per_page": per_page or 0,
+                    "last_page": 1,
+                },
+            }
+
+        if per_page is None:
+            per_page = total_count
+            page = 1
+        else:
+            if per_page < 1:
+                per_page = 1
+            if page < 1:
+                page = 1
+
+        skip = (page - 1) * per_page
+        items = (
+            query.options(
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.product)
+                .joinedload(Product.product_images),
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.color),
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.size),
+                joinedload(Order.delivery_info),
+                joinedload(Order.payment_method),
+                joinedload(Order.user),
+            )
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(per_page)
+            .all()
+        )
+
+        last_page = math.ceil(total_count / per_page)
+        return {
+            "items": items,
+            "meta": {
+                "total": total_count,
+                "current_page": page,
+                "per_page": per_page,
+                "last_page": last_page,
+            },
+        }
+
+    @staticmethod
+    def get_admin_order_by_id(db: Session, order_id: int):
+        order = (
+            db.query(Order)
+            .options(
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.product)
+                .joinedload(Product.product_images),
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.color),
+                joinedload(Order.order_details)
+                .joinedload(OrderDetail.product_detail)
+                .joinedload(ProductDetail.size),
+                joinedload(Order.delivery_info),
+                joinedload(Order.payment_method),
+                joinedload(Order.user),
+            )
+            .filter(Order.id == order_id)
+            .first()
+        )
+
+        if not order:
+            raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
+        return order
+
     #cập nhật trạng thái(AMDIN)
     @staticmethod
     def update_status(db: Session, order_id: int, status: OrderStatus):

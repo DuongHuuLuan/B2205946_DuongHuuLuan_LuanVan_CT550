@@ -13,7 +13,7 @@ from app.api.deps import require_admin, require_user
 router  = APIRouter(prefix="/products", tags=["Products"])
 
 def _parse_int(value):
-    try:
+    try:    
         return int(value)
     except (TypeError, ValueError):
         return None
@@ -29,8 +29,7 @@ def _parse_int_list(values):
 
 
 def _extract_uploads(values):
-    return [v for v in (values or []) if isinstance(v, UploadFile)]
-
+    return [v for v in (values or []) if hasattr(v, "file")]
 
 def _extract_replace_images(form) -> Dict[int, UploadFile]:
     replace_map = {}
@@ -65,14 +64,22 @@ def _parse_form_product_fields(form):
     }
 
 
-def _upload_images(files):
+def _upload_images(files, color_ids=None):
     uploaded = []
-    for f in files:
+    color_ids = color_ids or []
+    for idx, f in enumerate(files):
         result = cloudinary.uploader.upload(
             f.file,
             folder="helmet_shop/products",
         )
-        uploaded.append({"url": result["secure_url"], "public_id": result["public_id"]})
+        color_id = color_ids[idx] if idx < len(color_ids) else None
+        uploaded.append(
+            {
+                "url": result["secure_url"],
+                "public_id": result["public_id"],
+                "color_id": color_id,
+            }
+        )
     return uploaded
 
 
@@ -112,7 +119,8 @@ async def _update_product_from_request(product_id: int, request: Request, db: Se
             ImageService.replace_image(db, image_id, file, product_id=product_id)
 
         new_files = _extract_uploads(form.getlist("images[]"))
-        uploaded = _upload_images(new_files)
+        color_ids = _parse_int_list(form.getlist("image_color_ids[]"))
+        uploaded = _upload_images(new_files, color_ids)
         if uploaded:
             ImageService.add_images(db, product_id=product_id, images=uploaded)
 
@@ -173,6 +181,9 @@ async def create_product(
     content_type = request.headers.get("content-type", "")
     if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
         form = await request.form()
+        print(f"DEBUG FORM KEYS: {list(form.keys())}")
+        print(f"DEBUG IMAGES: {form.getlist('images[]')}")
+
         payload = _parse_form_product_fields(form)
 
         if not payload.get("name") or not payload.get("unit") or payload.get("category_id") is None:
@@ -186,7 +197,8 @@ async def create_product(
         new_product = ProductService.create_product(db, product_in)
 
         files = _extract_uploads(form.getlist("images[]"))
-        uploaded = _upload_images(files)
+        color_ids = _parse_int_list(form.getlist("image_color_ids[]"))
+        uploaded = _upload_images(files, color_ids)
         if uploaded:
             ImageService.add_images(db, product_id=new_product.id, images=uploaded)
 

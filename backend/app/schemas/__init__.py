@@ -5,7 +5,13 @@ from app.schemas.image_url import ImageUrlOut, ImageURLBase, ImageURLCreate
 from app.schemas.product import ProductBase, ProductCreate, ProductOut
 from app.schemas.product_detail import ProductDetailCreate, ProductDetailUpdate, ProductDetailOut, ColorCreate, ColorOut, SizeCreate, SizeOut, SizeUpdate
 from app.schemas.cart import CartDetailCreate,CartDetailUpdate,CartDetailOut,CartOut
-from app.schemas.order import OrderDetailOut, OrderCreate, OrderOut, OrderItemCreate
+from app.schemas.order import (
+    OrderDetailOut,
+    OrderCreate,
+    OrderOut,
+    OrderItemCreate,
+    OrderPaginationOut,
+)
 from app.schemas.discount import DiscountOut
 from app.schemas.evaluate import EvaluateCreate, EvaluateOut
 from app.schemas.distributor import DistributorCreate,DistributorOut, DistributorPaginationOut

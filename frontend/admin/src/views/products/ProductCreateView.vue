@@ -96,6 +96,7 @@
                       <tr>
                         <th>Màu</th>
                         <th>Kích thước</th>
+                        <th>Ảnh</th>
                         <th>Giá</th>
                         <th class="text-end">Thao tác</th>
                       </tr>
@@ -119,6 +120,18 @@
                           </select>
                         </td>
                         <td>
+                          <div class="d-flex flex-column gap-2">
+                            <input type="file" accept="image/*" class="form-control form-control-sm"
+                              @change="(e) => onVariantImageChange(v, e)" />
+                            <div v-if="v.image_preview" class="variant-thumb">
+                              <img :src="v.image_preview" alt="variant" />
+                              <button type="button" class="img-remove" @click="clearVariantImage(v)" title="Xóa ảnh">
+                                <i class="fa-solid fa-xmark"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
                           <input v-model="v.price" type="number" min="0" class="form-control bg-transparent"
                             placeholder="Giá" />
                         </td>
@@ -131,7 +144,7 @@
                     </tbody>
                     <tbody v-else>
                       <tr>
-                        <td colspan="4" class="text-center opacity-75 py-3">
+                        <td colspan="5" class="text-center opacity-75 py-3">
                           Chưa có biến thể.
                         </td>
                       </tr>
@@ -141,30 +154,6 @@
 
                 <div v-if="variantsError" class="invalid-feedback d-block mt-2">
                   {{ variantsError }}
-                </div>
-              </div>
-              <!-- images -->
-              <div class="col-12">
-                <label class="form-label">Ảnh sản phẩm</label>
-
-                <input class="form-control bg-transparent" type="file" accept="image/*" multiple @change="onFilesChange"
-                  :class="{ 'is-invalid': imagesError }" name="files" />
-
-                <div class="small opacity-75 mt-2" v-if="!previews.length">
-                  Chưa chọn ảnh.
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 mt-2" v-else>
-                  <div v-for="(src, idx) in previews" :key="src" class="img-item">
-                    <img :src="src" alt="preview" />
-                    <button type="button" class="img-remove" @click="removeImage(idx)" title="Xóa ảnh">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                </div>
-
-                <div v-if="imagesError" class="invalid-feedback d-block mt-2">
-                  {{ imagesError }}
                 </div>
               </div>
             </div>
@@ -177,7 +166,7 @@
 
               <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
                 @click="onReset(resetForm)">
-                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                <i class="fa-solid fa-rotate-left me-1"></i> Làm mới
               </button>
             </div>
           </Form>
@@ -231,14 +220,37 @@ const filteredCategories = computed(() => {
 
   return arr;
 });
-
-const files = ref([]); // File[]
-const previews = ref([]); // string[]
-const imagesError = ref("");
 const sizes = ref([]);
-const variants = ref([{ key: 1, color_id: "", size_id: "", price: "" }]);
+const variants = ref([{ key: 1, color_id: "", size_id: "", price: "", image_file: null, image_preview: "" }]);
 let variantSeq = 1;
 const variantsError = ref("");
+
+function clearVariantImage(variant) {
+  if (variant?.image_preview) {
+    URL.revokeObjectURL(variant.image_preview);
+  }
+  variant.image_preview = "";
+  variant.image_file = null;
+}
+
+function onVariantImageChange(variant, e) {
+  const file = (e.target.files || [])[0] || null;
+  clearVariantImage(variant);
+  if (file) {
+    variant.image_file = file;
+    variant.image_preview = URL.createObjectURL(file);
+  }
+}
+
+function resetVariants() {
+  variants.value.forEach((v) => clearVariantImage(v));
+  variants.value = [
+    { key: 1, color_id: "", size_id: "", price: "", image_file: null, image_preview: "" },
+  ];
+  variantSeq = 1;
+  variantsError.value = "";
+}
+
 
 const schema = yup.object({
   name: yup
@@ -260,40 +272,39 @@ const schema = yup.object({
   category_id: yup.string().required("Vui lòng chọn danh mục sản phẩm"),
 });
 
-function onFilesChange(e) {
-  imagesError.value = "";
-  const selected = Array.from(e.target.files || []);
-  files.value = selected;
 
-  // preview
-  previews.value.forEach((u) => URL.revokeObjectURL(u));
-  previews.value = selected.map((f) => URL.createObjectURL(f));
-}
 
-function removeImage(index) {
-  const arr = [...files.value];
-  arr.splice(index, 1);
-  files.value = arr;
 
-  previews.value.forEach((u) => URL.revokeObjectURL(u));
-  previews.value = files.value.map((f) => URL.createObjectURL(f));
-}
 
 function addVariant() {
   variantSeq += 1;
-  variants.value.push({ key: variantSeq, color_id: "", size_id: "", price: "" });
+  variants.value.push({
+    key: variantSeq,
+    color_id: "",
+    size_id: "",
+    price: "",
+    image_file: null,
+    image_preview: "",
+  });
 }
 
+
 function removeVariant(index) {
+  const item = variants.value[index];
+  if (item) {
+    clearVariantImage(item);
+  }
   variants.value.splice(index, 1);
 }
+
 
 function collectVariants() {
   const valid = [];
   const invalid = [];
+  const missingImage = [];
 
   variants.value.forEach((v) => {
-    const hasAny = v.color_id || v.size_id || v.price !== "";
+    const hasAny = v.color_id || v.size_id || v.price !== "" || v.image_file;
     const colorId = v.color_id ? Number(v.color_id) : null;
     const sizeId = v.size_id ? Number(v.size_id) : null;
     const price = v.price === "" || v.price === null ? null : Number(v.price);
@@ -301,14 +312,22 @@ function collectVariants() {
     const isValid = colorId && sizeId && Number.isFinite(price);
     if (!isValid && hasAny) {
       invalid.push(v);
+      return;
     }
+
+    if (isValid && !v.image_file) {
+      missingImage.push(v);
+      return;
+    }
+
     if (isValid) {
-      valid.push({ color_id: colorId, size_id: sizeId, price });
+      valid.push({ color_id: colorId, size_id: sizeId, price, image_file: v.image_file });
     }
   });
 
-  return { valid, invalid };
+  return { valid, invalid, missingImage };
 }
+
 
 function onReset(resetFormFn) {
   resetFormFn({
@@ -321,31 +340,29 @@ function onReset(resetFormFn) {
       files: [],
     },
   });
-  files.value = [];
-  previews.value.forEach((u) => URL.revokeObjectURL(u));
-  previews.value = [];
-  imagesError.value = "";
-  variants.value = [{ key: 1, color_id: "", size_id: "", price: "" }];
-  variantSeq = 1;
-  variantsError.value = "";
+  resetVariants();
 }
+
 
 async function onSubmit(values, { resetForm, setErrors }) {
   try {
-    console.log(files.value);
     variantsError.value = "";
-    const { valid: validVariants, invalid: invalidVariants } = collectVariants();
+    const {
+      valid: validVariants,
+      invalid: invalidVariants,
+      missingImage,
+    } = collectVariants();
+
     if (invalidVariants.length) {
-      variantsError.value = "Vui lòng nhập đầy đủ màu sắc, kích thước và giá";
+      variantsError.value = "Vui lòng chọn màu sắc, kích thước là gì?";
+      return;
+    }
+    if (missingImage.length) {
+      variantsError.value = "Vui lòng chọn ảnh cho từng biến thể";
       return;
     }
     if (!validVariants.length) {
-      variantsError.value = "Vui lòng thêm ích nhất một biến thể";
-      return;
-    }
-
-    if (files.value.length == 0) {
-      imagesError.value = "Vui lòng chọn ít nhất 1 ảnh";
+      variantsError.value = "Vui lòng thêm ít nhất một biến thể";
       return;
     }
 
@@ -358,7 +375,11 @@ async function onSubmit(values, { resetForm, setErrors }) {
     if (colorIds.length != 0 && colorIds[0] !== "") {
       colorIds.forEach((id) => fd.append("color_ids[]", id));
     }
-    files.value.forEach((f) => fd.append("images[]", f));
+
+    validVariants.forEach((v) => {
+      fd.append("images[]", v.image_file);
+      fd.append("image_color_ids[]", v.color_id);
+    });
 
     console.log("FormData entries:");
     for (const pair of fd.entries()) {
@@ -369,15 +390,19 @@ async function onSubmit(values, { resetForm, setErrors }) {
 
     if (productId) {
       await Promise.all(
-        validVariants.map((v) => ProductDetailService.create(productId, v))
+        validVariants.map((v) =>
+          ProductDetailService.create(productId, {
+            color_id: v.color_id,
+            size_id: v.size_id,
+            price: v.price,
+          })
+        )
       );
     }
 
     await Swal.fire("Thành công!", "Tạo sản phẩm thành công!", "success");
     resetForm({ values: { name: "", description: "", unit: "", category_id: "" } });
-    onReset(() => { });
-
-    // router.push({ name: "products.list" });
+    resetVariants();
   } catch (e) {
     console.log("Error response data:", e);
     const status = e?.response?.status;
@@ -462,16 +487,17 @@ onMounted(async () => {
 }
 
 /* preview */
-.img-item {
+.variant-thumb {
   position: relative;
-  width: 12rem;
-  border-radius: 0.75rem;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.6rem;
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: rgba(255, 255, 255, 0.03);
 }
 
-.img-item img {
+.variant-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;

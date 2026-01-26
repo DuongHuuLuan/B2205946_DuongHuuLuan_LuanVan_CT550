@@ -45,6 +45,11 @@ import ReceiptCreateView from "../views/receipts/ReceiptCreateView.vue";
 import ReceiptEditView from "../views/receipts/ReceiptEditView.vue";
 import ReceiptDetailView from "../views/receipts/ReceiptDetailView.vue";
 
+// Order pages
+import OrderListView from "../views/orders/OrderListView.vue";
+import OrderEditView from "../views/orders/OrderEditView.vue";
+import OrderDetailView from "../views/orders/OrderDetailView.vue";
+
 // Payment pages
 import PaymentListView from "../views/payments/PaymentListView.vue";
 import PaymentCreateView from "../views/payments/PaymentCreateView.vue";
@@ -346,20 +351,42 @@ const routes = [
         path: "/users",
         name: "users.list",
         component: UserListView,
-        meta: { title: "Tai khoan" },
+        meta: { title: "Tài khoản" },
       },
       {
         path: "/users/:id/edit",
         name: "users.edit",
         component: UserEditView,
-        meta: { title: "Chinh sua tai khoan" },
+        meta: { title: "Chỉnh sửa tài khoản" },
         props: true,
       },
       {
         path: "/users/:id",
         name: "users.detail",
         component: UserDetailView,
-        meta: { title: "Chi tiet tai khoan" },
+        meta: { title: "Chi tiết tài khoản" },
+        props: true,
+      },
+
+      // Orders
+      {
+        path: "/orders",
+        name: "orders.list",
+        component: OrderListView,
+        meta: { title: "Đơn hàng" },
+      },
+      {
+        path: "/orders/:id/edit",
+        name: "orders.edit",
+        component: OrderEditView,
+        meta: { title: "Cập nhật đơn hàng" },
+        props: true,
+      },
+      {
+        path: "/orders/:id",
+        name: "orders.detail",
+        component: OrderDetailView,
+        meta: { title: "Chi tiết đơn hàng" },
         props: true,
       },
     ],
