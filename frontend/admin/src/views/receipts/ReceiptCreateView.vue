@@ -32,7 +32,7 @@
               <div class="col-12 col-md-6">
                 <label class="form-label">Nhà cung cấp</label>
 
-                <Field name="supplier_id" v-slot="{ field, meta, errors }">
+                <Field name="distributor_id" v-slot="{ field, meta, errors }">
                   <select v-bind="field" class="form-select bg-transparent" :class="{
                     'is-invalid':
                       (meta.touched && !meta.valid) || errors.length,
@@ -44,7 +44,7 @@
                   </select>
                 </Field>
 
-                <ErrorMessage name="supplier_id" class="invalid-feedback d-block" />
+                <ErrorMessage name="distributor_id" class="invalid-feedback d-block" />
               </div>
 
               <!-- Warehouse -->
@@ -341,7 +341,7 @@ const schema = computed(() =>
             .string()
             .test(
               "size-required-by-product",
-              "Vui long chon size",
+              "Vui lòng chọn kích thước",
               function (val) {
                 const pid = this.parent?.product_id;
                 if (!pid) return true;
@@ -373,7 +373,6 @@ const schema = computed(() =>
 
 function makeRow() {
   return {
-    // _key: crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     product_id: "",
     color_id: "",
     size_id: "",
