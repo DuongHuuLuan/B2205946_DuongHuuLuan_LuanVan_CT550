@@ -179,11 +179,10 @@ async function fetchProducts() {
       per_page: perPage,
     });
 
-    const payload = res?.data ?? res;
-    const list = payload?.items ?? payload ?? [];
+    const list = res.items ?? [];
     items.value = Array.isArray(list) ? list : [];
 
-    meta.value = payload?.meta ?? {
+    meta.value = res.meta ?? {
       current_page: 1,
       per_page: perPage,
       total: 0,

@@ -81,7 +81,7 @@ async function fetchOrder() {
   loading.value = true;
   try {
     const res = await OrderService.get(id);
-    order.value = res?.data ?? res ?? null;
+    order.value = res ?? null;
     status.value = order.value?.status || "pending";
   } catch (e) {
     const msg =

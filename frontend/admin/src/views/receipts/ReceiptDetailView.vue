@@ -248,7 +248,7 @@ async function fetchReceipt() {
   loading.value = true;
   try {
     const res = await ReceiptService.get(id);
-    const data = res?.data ?? res ?? {};
+    const data = res ?? {};
 
     receipt.value = data;
     console.log(res);

@@ -89,9 +89,9 @@ async function fetchCategory() {
   loading.value = true;
   try {
     const res = await CategoryService.get(id);
-    const data = res?.data ?? res;
+    const data = res;
 
-    const name = data?.name ?? "";
+    const name = data.name ?? "";
 
     originalName.value = name;
     initialValues.value = { name };

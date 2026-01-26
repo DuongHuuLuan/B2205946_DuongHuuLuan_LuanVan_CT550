@@ -81,9 +81,9 @@ async function fetchPayment() {
   loading.value = true;
   try {
     const res = await PaymentService.get(id);
-    const data = res?.data ?? res;
+    const data = res;
 
-    const mapped = { name: data?.name ?? "" };
+    const mapped = { name: data.name ?? "" };
     initialValues.value = mapped;
     originalValues.value = { ...mapped };
     formKey.value += 1;

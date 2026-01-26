@@ -6,12 +6,6 @@ const formatMoney = (number) => {
   }
 };
 
-// const getProductThumb = (product) => {
-//   if (!product) return "";
-//   const first = product?.images?.[0]?.url || "";
-//   return first || "";
-// };
-
 const getProductThumb = (product) => {
   if (!product) return "";
   const images = product?.images || product?.product_images || [];
@@ -24,7 +18,7 @@ const statusLabel = (s) => {
   if (v === "pending") return "Đang duyệt";
   if (v === "shipping") return "Đang giao";
   if (v === "completed") return "Hoàn thành";
-  if (v === "canceled" || v === "cancelled") return "Đã hủy";
+  if (v === "cancelled") return "Đã hủy";
   return "—";
 };
 
@@ -33,7 +27,7 @@ const statusBadgeClass = (s) => {
   if (v === "pending") return "badge-pending";
   if (v === "shipping") return "badge-shipping";
   if (v === "completed") return "badge-completed";
-  if (v === "canceled" || v === "cancelled") return "badge-canceled";
+  if (v === "cancelled") return "badge-canceled";
   return "badge-secondary";
 };
 
@@ -45,7 +39,6 @@ const statusTableBadgeClass = (status) => {
       return "status-shipping";
     case "completed":
       return "status-completed";
-    case "canceled":
     case "cancelled":
       return "status-canceled";
     default:

@@ -216,7 +216,7 @@ async function fetchOrder() {
   loading.value = true;
   try {
     const res = await OrderService.get(id);
-    order.value = res?.data ?? res ?? null;
+    order.value = res ?? null;
   } catch (e) {
     const msg =
       e?.response?.data?.message ||

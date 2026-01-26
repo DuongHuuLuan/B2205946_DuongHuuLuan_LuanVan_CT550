@@ -97,7 +97,7 @@ async function fetchDiscount() {
   loading.value = true;
   try {
     const res = await DiscountService.get(props.id);
-    discount.value = res?.data ?? res;
+    discount.value = res;
   } catch (e) {
     const msg =
       e?.response?.data?.message ||

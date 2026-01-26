@@ -106,14 +106,14 @@ const router = useRouter();
 const loading = ref(true);
 const product = ref(null);
 
-const images = computed(() => product.value?.product_images ?? []);
-const details = computed(() => product.value?.product_details ?? []);
+const images = computed(() => product.value.product_images ?? []);
+const details = computed(() => product.value.product_details ?? []);
 
 async function fetchProduct() {
   loading.value = true;
   try {
     const res = await ProductService.get(props.id);
-    product.value = res?.data ?? res;
+    product.value = res;
   } catch (e) {
     const msg =
       e?.response?.data?.message ||

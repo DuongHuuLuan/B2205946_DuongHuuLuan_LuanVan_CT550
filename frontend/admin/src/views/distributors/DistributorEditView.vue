@@ -119,12 +119,12 @@ async function fetchDistributor() {
   loading.value = true;
   try {
     const res = await DistributorService.get(id);
-    const data = res?.data ?? res;
+    const data = res;
 
     const values = {
-      name: data?.name ?? "",
-      address: data?.address ?? "",
-      email: data?.email ?? "",
+      name: data.name ?? "",
+      address: data.address ?? "",
+      email: data.email ?? "",
     };
 
     original.value = { ...values };

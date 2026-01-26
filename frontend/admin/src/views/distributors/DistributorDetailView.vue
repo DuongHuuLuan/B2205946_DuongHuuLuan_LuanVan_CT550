@@ -65,7 +65,7 @@ async function fetchDistributor() {
   loading.value = true;
   try {
     const res = await DistributorService.get(props.id);
-    distributor.value = res?.data ?? res;
+    distributor.value = res;
   } catch (e) {
     const msg =
       e?.response?.data?.message ||

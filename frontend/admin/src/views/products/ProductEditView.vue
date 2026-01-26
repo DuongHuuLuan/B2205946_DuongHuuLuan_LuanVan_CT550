@@ -320,13 +320,13 @@ async function getCategories() {
 
 async function getColors() {
   const res = await ColorService.getAll();
-  colors.value = Array.isArray(res) ? res : res?.data ?? res?.colors ?? [];
+  colors.value = Array.isArray(res) ? res : [];
   console.log("Loaded color:", colors.value);
 }
 
 async function getSizes() {
   const res = await SizeService.getAll();
-  sizes.value = Array.isArray(res) ? res : res?.data ?? [];
+  sizes.value = Array.isArray(res) ? res : [];
   console.log("Loaded sizes:", sizes.value);
 }
 
@@ -334,12 +334,12 @@ async function getProduct() {
   return (async () => {
     try {
       const res = await ProductService.get(id);
-      const p = res?.data ?? res;
+      const p = res;
 
       let colorIds = Array.from(
         new Set(
-          (p?.product_details ?? [])
-            .map((detail) => detail?.color?.id ?? detail?.color_id)
+          (p.product_details ?? [])
+            .map((detail) => detail.color?.id ?? detail.color_id)
             .filter((value) => value !== null && value !== undefined)
             .map((value) => String(value))
         )
@@ -362,7 +362,7 @@ async function getProduct() {
         }
       });
 
-      const detailItems = p?.product_details ?? [];
+      const detailItems = p.product_details ?? [];
       variants.value = detailItems.map((d) => {
         const colorValue = d?.color?.id ?? d?.color_id;
         const sizeValue = d?.size?.id ?? d?.size_id;

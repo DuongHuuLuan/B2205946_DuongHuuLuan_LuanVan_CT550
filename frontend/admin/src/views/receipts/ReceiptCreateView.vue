@@ -402,7 +402,7 @@ function findProductById(productId) {
 
 function getColorsForRow(row) {
   const p = findProductById(row.product_id);
-  const details = p?.product_details || [];
+  const details = p.product_details || [];
   const map = new Map();
   details.forEach((d) => {
     if (d?.color) {
@@ -414,7 +414,7 @@ function getColorsForRow(row) {
 
 function getSizesForRow(row) {
   const p = findProductById(row.product_id);
-  const details = p?.product_details || [];
+  const details = p.product_details || [];
   const colorId = row?.color_id;
   const filtered = colorId
     ? details.filter((d) => String(d?.color?.id ?? d?.color_id) === String(colorId))

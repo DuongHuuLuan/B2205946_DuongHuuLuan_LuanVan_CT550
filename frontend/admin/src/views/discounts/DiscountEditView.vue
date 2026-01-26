@@ -184,8 +184,8 @@ async function fetchData() {
       CategoryService.getAll({ per_page: 200 }),
     ]);
 
-    const data = discountRes?.data ?? discountRes;
-    categories.value = categoriesRes?.items ?? [];
+    const data = discountRes;
+    categories.value = categoriesRes.items ?? [];
 
     const mapped = {
       name: data?.name ?? "",

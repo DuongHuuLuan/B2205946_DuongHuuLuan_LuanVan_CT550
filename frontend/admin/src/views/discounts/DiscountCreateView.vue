@@ -134,7 +134,7 @@ const schema = yup.object({
 async function fetchCategories() {
   try {
     const res = await CategoryService.getAll({ per_page: 200 });
-    categories.value = res?.items ?? [];
+    categories.value = res.items ?? [];
   } catch (e) {
     categories.value = [];
   }

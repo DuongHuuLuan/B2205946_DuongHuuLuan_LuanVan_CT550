@@ -59,7 +59,7 @@ async function fetchPayment() {
   loading.value = true;
   try {
     const res = await PaymentService.get(props.id);
-    payment.value = res?.data ?? res;
+    payment.value = res;
   } catch (e) {
     const msg =
       e?.response?.data?.message ||

@@ -81,11 +81,11 @@
 
 
 
-              <!-- variants -->
+              <!-- product_details -->
               <div class="col-12">
                 <div class="d-flex align-items-center justify-content-between">
                   <label class="form-label mb-0">Biến thể sản phẩm</label>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="addVariant">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="addProduct_detail">
                     <i class="fa-solid fa-plus me-1"></i> Thêm biến thể
                   </button>
                 </div>
@@ -101,8 +101,8 @@
                         <th class="text-end">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody v-if="variants.length">
-                      <tr v-for="(v, idx) in variants" :key="v.key">
+                    <tbody v-if="product_details.length">
+                      <tr v-for="(v, idx) in product_details" :key="v.key">
                         <td>
                           <select class="form-select" v-model="v.color_id">
                             <option value="">Chọn màu</option>
@@ -122,10 +122,11 @@
                         <td>
                           <div class="d-flex flex-column gap-2">
                             <input type="file" accept="image/*" class="form-control form-control-sm"
-                              @change="(e) => onVariantImageChange(v, e)" />
-                            <div v-if="v.image_preview" class="variant-thumb">
-                              <img :src="v.image_preview" alt="variant" />
-                              <button type="button" class="img-remove" @click="clearVariantImage(v)" title="Xóa ảnh">
+                              @change="(e) => onProduct_detailImageChange(v, e)" />
+                            <div v-if="v.image_preview" class="product_detail-thumb">
+                              <img :src="v.image_preview" alt="product_detail" />
+                              <button type="button" class="img-remove" @click="clearProduct_detailImage(v)"
+                                title="Xóa ảnh">
                                 <i class="fa-solid fa-xmark"></i>
                               </button>
                             </div>
@@ -136,7 +137,8 @@
                             placeholder="Giá" />
                         </td>
                         <td class="text-end">
-                          <button type="button" class="btn btn-sm btn-outline-danger" @click="removeVariant(idx)">
+                          <button type="button" class="btn btn-sm btn-outline-danger"
+                            @click="removeProduct_detail(idx)">
                             <i class="fa-solid fa-trash"></i>
                           </button>
                         </td>
@@ -152,8 +154,8 @@
                   </table>
                 </div>
 
-                <div v-if="variantsError" class="invalid-feedback d-block mt-2">
-                  {{ variantsError }}
+                <div v-if="product_detailsError" class="invalid-feedback d-block mt-2">
+                  {{ product_detailsError }}
                 </div>
               </div>
             </div>
@@ -221,34 +223,34 @@ const filteredCategories = computed(() => {
   return arr;
 });
 const sizes = ref([]);
-const variants = ref([{ key: 1, color_id: "", size_id: "", price: "", image_file: null, image_preview: "" }]);
-let variantSeq = 1;
-const variantsError = ref("");
+const product_details = ref([{ key: 1, color_id: "", size_id: "", price: "", image_file: null, image_preview: "" }]);
+let product_detailSeq = 1;
+const product_detailsError = ref("");
 
-function clearVariantImage(variant) {
-  if (variant?.image_preview) {
-    URL.revokeObjectURL(variant.image_preview);
+function clearProduct_detailImage(product_detail) {
+  if (product_detail?.image_preview) {
+    URL.revokeObjectURL(product_detail.image_preview);
   }
-  variant.image_preview = "";
-  variant.image_file = null;
+  product_detail.image_preview = "";
+  product_detail.image_file = null;
 }
 
-function onVariantImageChange(variant, e) {
+function onProduct_detailImageChange(product_detail, e) {
   const file = (e.target.files || [])[0] || null;
-  clearVariantImage(variant);
+  clearProduct_detailImage(product_detail);
   if (file) {
-    variant.image_file = file;
-    variant.image_preview = URL.createObjectURL(file);
+    product_detail.image_file = file;
+    product_detail.image_preview = URL.createObjectURL(file);
   }
 }
 
-function resetVariants() {
-  variants.value.forEach((v) => clearVariantImage(v));
-  variants.value = [
+function resetProduct_details() {
+  product_details.value.forEach((v) => clearProduct_detailImage(v));
+  product_details.value = [
     { key: 1, color_id: "", size_id: "", price: "", image_file: null, image_preview: "" },
   ];
-  variantSeq = 1;
-  variantsError.value = "";
+  product_detailSeq = 1;
+  product_detailsError.value = "";
 }
 
 
@@ -276,10 +278,10 @@ const schema = yup.object({
 
 
 
-function addVariant() {
-  variantSeq += 1;
-  variants.value.push({
-    key: variantSeq,
+function addProduct_detail() {
+  product_detailSeq += 1;
+  product_details.value.push({
+    key: product_detailSeq,
     color_id: "",
     size_id: "",
     price: "",
@@ -289,21 +291,21 @@ function addVariant() {
 }
 
 
-function removeVariant(index) {
-  const item = variants.value[index];
+function removeProduct_detail(index) {
+  const item = product_details.value[index];
   if (item) {
-    clearVariantImage(item);
+    clearProduct_detailImage(item);
   }
-  variants.value.splice(index, 1);
+  product_details.value.splice(index, 1);
 }
 
 
-function collectVariants() {
+function collectProduct_details() {
   const valid = [];
   const invalid = [];
   const missingImage = [];
 
-  variants.value.forEach((v) => {
+  product_details.value.forEach((v) => {
     const hasAny = v.color_id || v.size_id || v.price !== "" || v.image_file;
     const colorId = v.color_id ? Number(v.color_id) : null;
     const sizeId = v.size_id ? Number(v.size_id) : null;
@@ -340,29 +342,29 @@ function onReset(resetFormFn) {
       files: [],
     },
   });
-  resetVariants();
+  resetProduct_details();
 }
 
 
 async function onSubmit(values, { resetForm, setErrors }) {
   try {
-    variantsError.value = "";
+    product_detailsError.value = "";
     const {
-      valid: validVariants,
-      invalid: invalidVariants,
+      valid: validProduct_details,
+      invalid: invalidProduct_details,
       missingImage,
-    } = collectVariants();
+    } = collectProduct_details();
 
-    if (invalidVariants.length) {
-      variantsError.value = "Vui lòng chọn màu sắc, kích thước là gì?";
+    if (invalidProduct_details.length) {
+      product_detailsError.value = "Vui lòng chọn màu sắc, kích thước là gì?";
       return;
     }
     if (missingImage.length) {
-      variantsError.value = "Vui lòng chọn ảnh cho từng biến thể";
+      product_detailsError.value = "Vui lòng chọn ảnh cho từng biến thể";
       return;
     }
-    if (!validVariants.length) {
-      variantsError.value = "Vui lòng thêm ít nhất một biến thể";
+    if (!validproduct_details.length) {
+      product_detailsError.value = "Vui lòng thêm ít nhất một biến thể";
       return;
     }
 
@@ -376,7 +378,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
       colorIds.forEach((id) => fd.append("color_ids[]", id));
     }
 
-    validVariants.forEach((v) => {
+    validProduct_details.forEach((v) => {
       fd.append("images[]", v.image_file);
       fd.append("image_color_ids[]", v.color_id);
     });
@@ -390,7 +392,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
 
     if (productId) {
       await Promise.all(
-        validVariants.map((v) =>
+        validProduct_details.map((v) =>
           ProductDetailService.create(productId, {
             color_id: v.color_id,
             size_id: v.size_id,
@@ -402,7 +404,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
 
     await Swal.fire("Thành công!", "Tạo sản phẩm thành công!", "success");
     resetForm({ values: { name: "", description: "", unit: "", category_id: "" } });
-    resetVariants();
+    resetProduct_details();
   } catch (e) {
     console.log("Error response data:", e);
     const status = e?.response?.status;
@@ -487,7 +489,7 @@ onMounted(async () => {
 }
 
 /* preview */
-.variant-thumb {
+.product_detail-thumb {
   position: relative;
   width: 5rem;
   height: 5rem;
@@ -497,7 +499,7 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.variant-thumb img {
+.product_detail-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
