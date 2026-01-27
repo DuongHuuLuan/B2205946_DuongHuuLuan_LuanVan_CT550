@@ -2,9 +2,7 @@
   <div class="row g-3">
     <!-- Header -->
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
           <h4 class="mb-1">Tạo kho</h4>
           <div class="small opacity-75">Nhập vào thông tin kho để tạo mới</div>
@@ -20,50 +18,23 @@
     <div class="col-12">
       <div class="card card-soft">
         <div class="card-body">
-          <Form
-            :validation-schema="schema"
-            :initial-values="initialValues"
-            @submit="onSubmit"
-            v-slot="{ isSubmitting, resetForm }"
-          >
+          <Form :validation-schema="schema" :initial-values="initialValues" @submit="onSubmit"
+            v-slot="{ isSubmitting, resetForm }">
             <div class="row g-3">
               <!-- address -->
               <div class="col-12">
                 <label class="form-label">Địa chỉ kho</label>
 
                 <Field name="address" v-slot="{ field, meta, errors }">
-                  <input
-                    v-bind="field"
-                    type="text"
-                    class="form-control bg-transparent"
+                  <input v-bind="field" type="text" class="form-control bg-transparent"
                     :class="{ 'is-invalid': (meta.touched && !meta.valid) || errors.length }"
-                    placeholder="Ví dụ: 12 Nguyễn Trãi, P. Bến Thành, Q1..."
-                  />
+                    placeholder="Ví dụ: 12 Nguyễn Trãi, P. Bến Thành, Q1..." />
                 </Field>
 
                 <ErrorMessage name="address" class="invalid-feedback d-block" />
               </div>
 
-              <!-- capacity -->
-              <div class="col-12 col-md-6">
-                <label class="form-label">Dung tích kho</label>
 
-                <Field name="capacity" v-slot="{ field, meta, errors }">
-                  <input
-                    v-bind="field"
-                    type="number"
-                    inputmode="numeric"
-                    min="1"
-                    step="1"
-                    class="form-control bg-transparent"
-                    :class="{ 'is-invalid': (meta.touched && !meta.valid) || errors.length }"
-                    placeholder="Ví dụ: 1000"
-                  />
-                </Field>
-
-                <ErrorMessage name="capacity" class="invalid-feedback d-block" />
-                <div class="small opacity-75 mt-1">Phải là số nguyên lớn hơn 0.</div>
-              </div>
             </div>
 
             <div class="d-flex gap-2 mt-3">
@@ -72,12 +43,8 @@
                 {{ isSubmitting ? "Đang tạo..." : "Tạo kho" }}
               </button>
 
-              <button
-                class="btn btn-outline-secondary"
-                type="button"
-                :disabled="isSubmitting"
-                @click="onReset(resetForm)"
-              >
+              <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
+                @click="onReset(resetForm)">
                 <i class="fa-solid fa-rotate-left me-1"></i> Reset
               </button>
             </div>
@@ -101,7 +68,6 @@ const router = useRouter();
 
 const initialValues = {
   address: "",
-  capacity: 1,
 };
 
 const schema = yup.object({
@@ -110,12 +76,6 @@ const schema = yup.object({
     .trim()
     .required("Vui lòng nhập địa chỉ kho")
     .max(255, "Địa chỉ tối đa 255 ký tự"),
-  capacity: yup
-    .number()
-    .typeError("Dung tích phải là số")
-    .integer("Dung tích phải là số nguyên")
-    .moreThan(0, "Dung tích phải lớn hơn 0")
-    .required("Vui lòng nhập dung tích kho"),
 });
 
 function onReset(resetFormFn) {
@@ -127,7 +87,6 @@ async function onSubmit(values, { resetForm, setErrors }) {
     // chuẩn hóa payload
     const payload = {
       address: values.address?.trim(),
-      capacity: Number(values.capacity),
     };
 
     await WarehouseService.create(payload);
@@ -172,6 +131,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
   border: 1px solid var(--hover-border-color);
   color: var(--dark);
 }
+
 .btn-accent:hover {
   filter: var(--brightness);
 }

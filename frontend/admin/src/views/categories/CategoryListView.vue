@@ -51,7 +51,7 @@
               <thead>
                 <tr>
                   <th class="ps-3" style="width: 160px">Mã danh mục</th>
-                  <th>Tên danh mục</th>
+                  <th class="ps-5">Tên danh mục</th>
                   <th class="text-end">Số sản phẩm</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
@@ -59,22 +59,19 @@
 
               <tbody v-if="items.length">
                 <tr v-for="c in items" :key="c.id">
-                  <!-- Code -->
                   <td class="ps-3">
                     <span class="code-pill">C{{ c.id }}</span>
                   </td>
-                  <!-- Name (click to detail) -->
-                  <td class="ps-3">
+                  <td class="ps-5">
                     <RouterLink class="name-link" :to="{ name: 'categories.detail', params: { id: c.id } }">
                       <div class="fw-semibold">{{ c.name }}</div>
                     </RouterLink>
                   </td>
 
-                  <td class="text-end">
+                  <td class="text-end pe-5">
                     <span class="badge count-badge">{{ c.products_count }}</span>
                   </td>
 
-                  <!-- Actions: edit + delete icons -->
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'categories.edit', params: { id: c.id } }"

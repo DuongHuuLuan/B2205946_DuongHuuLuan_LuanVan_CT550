@@ -61,35 +61,30 @@
 
               <tbody v-if="items.length">
                 <tr v-for="r in items" :key="r.id">
-                  <!-- Code -->
                   <td class="ps-3">
                     <span class="code-pill">R{{ r.id }}</span>
                   </td>
 
-                  <!-- Warehouse (click to detail) -->
                   <td class="ps-3">
                     <RouterLink class="name-link" :to="{ name: 'receipts.detail', params: { id: r.id } }">
                       <div class="fw-semibold">
-                        {{ r?.warehouse?.address || "-" }}
+                        {{ r.warehouse?.address || "-" }}
                       </div>
                     </RouterLink>
                   </td>
 
-                  <!-- Distributor -->
                   <td>
                     <div class="fw-semibold">
-                      {{ r?.distributor?.name || "-" }}
+                      {{ r.distributor?.name || "-" }}
                     </div>
                   </td>
 
-                  <!-- Product count (fake for now) -->
-                  <td class="text-end">
+                  <td class="text-center ps-5">
                     <span class="badge count-badge">
-                      {{ r?.items_count ?? 8 }}
+                      {{ r.items_count ?? 8 }}
                     </span>
                   </td>
 
-                  <!-- Status -->
                   <td class="text-end">
                     <span class="badge" :class="statusTableBadgeClass(r?.status)">
                       {{ statusLabel(r?.status) }}

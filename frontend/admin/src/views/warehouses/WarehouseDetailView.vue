@@ -36,13 +36,6 @@
               </div>
 
               <div class="col-12 col-md-2">
-                <label class="form-label">Dung tích</label>
-                <div class="form-control bg-transparent">
-                  {{ warehouse?.capacity ?? "—" }}
-                </div>
-              </div>
-
-              <div class="col-12 col-md-2">
                 <label class="form-label">SL tồn kho</label>
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge badge-completed">{{
@@ -56,17 +49,6 @@
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge badge-pending">{{
                     warehouse?.pending_quantity ?? 0
-                  }}</span>
-                </div>
-              </div>
-
-              <div class="col-12 col-md-2">
-                <label class="form-label">Còn trống</label>
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge badge-completed">{{
-                    warehouse.capacity -
-                    warehouse?.total_quantity -
-                    warehouse.pending_quantity ?? 0
                   }}</span>
                 </div>
               </div>
@@ -98,17 +80,17 @@
             <div class="mt-3">
               <div class="fw-semibold">Tồn kho theo sản phẩm</div>
               <div class="small opacity-75">
-                Danh sach ton kho theo san pham
+                Danh sách tồn kho theo sản phẩm
               </div>
 
               <div class="table-responsive mt-2">
                 <table class="table align-middle mb-0">
                   <thead>
                     <tr class="small opacity-75">
-                      <th style="min-width: 360px">San pham</th>
-                      <th style="min-width: 200px">Mau</th>
-                      <th style="min-width: 160px">Size</th>
-                      <th style="width: 140px">SL</th>
+                      <th style="min-width: 360px">Sản phẩm</th>
+                      <th style="min-width: 200px">Màu</th>
+                      <th style="min-width: 160px">Kích thước</th>
+                      <th style="width: 140px">Số lượng</th>
                     </tr>
                   </thead>
 

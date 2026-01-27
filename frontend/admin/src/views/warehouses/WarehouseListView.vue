@@ -52,7 +52,6 @@
                 <tr>
                   <th class="ps-3" style="width: 160px">Mã kho</th>
                   <th>Địa chỉ</th>
-                  <th class="text-end" style="width: 160px">Dung tích</th>
                   <th class="text-end" style="width: 160px">Số sản phẩm</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
@@ -60,33 +59,22 @@
 
               <tbody v-if="items.length">
                 <tr v-for="w in items" :key="w.id">
-                  <!-- Code -->
                   <td class="ps-3">
                     <span class="code-pill">W{{ w.id }}</span>
                   </td>
 
-                  <!-- Address (click to detail) -->
-                  <td class="ps-3">
+                  <td class="ps-0 py-2">
                     <RouterLink class="name-link" :to="{ name: 'warehouses.detail', params: { id: w.id } }">
                       <div class="fw-semibold">{{ w.address }}</div>
                     </RouterLink>
                   </td>
 
-                  <!-- Capacity -->
-                  <td class="text-end">
-                    <span class="badge capacity-badge">
-                      {{ w.capacity ?? "-" }}
-                    </span>
-                  </td>
-
-                  <!-- Product count (fake for now) -->
-                  <td class="text-end">
+                  <td class="text-center ps-5">
                     <span class="badge count-badge">
                       {{ w.products_count ?? 12 }}
                     </span>
                   </td>
 
-                  <!-- Actions -->
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'warehouses.edit', params: { id: w.id } }"
@@ -104,7 +92,7 @@
 
               <tbody v-else>
                 <tr>
-                  <td colspan="5" class="text-center py-5">
+                  <td colspan="4" class="text-center py-5">
                     <div class="opacity-75">
                       <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
                       Không có kho phù hợp.
@@ -241,12 +229,7 @@ async function onDeleteClick(warehouseId) {
 }
 
 /* Badges */
-.capacity-badge {
-  background: color-mix(in srgb, var(--main-color) 10%, transparent);
-  border: 1px solid var(--hover-border-color);
-  color: var(--font-color);
-  font-weight: 600;
-}
+
 
 .count-badge {
   background: color-mix(in srgb, var(--main-color) 14%, transparent);

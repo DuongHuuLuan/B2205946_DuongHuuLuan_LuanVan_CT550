@@ -52,7 +52,7 @@
                 <tr>
                   <th class="ps-3" style="width: 140px">Mã SP</th>
                   <th style="width: 110px">Ảnh</th>
-                  <th>Tên SP</th>
+                  <th class="ps-5">Tên Sản Phẩm</th>
                   <th style="width: 180px">Đơn vị tính</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
@@ -60,13 +60,11 @@
 
               <tbody v-if="items.length">
                 <tr v-for="p in items" :key="p.id">
-                  <!-- Code -->
                   <td class="ps-3">
                     <span class="code-pill">P{{ p.id }}</span>
                   </td>
 
-                  <!-- Image -->
-                  <td>
+                  <td class="text-start ps-0" style="width: 50px;">
                     <div class="thumb-wrap">
                       <img v-if="getFirstImage(p)" :src="getFirstImage(p)" class="thumb" :alt="p.name || 'product'" />
                       <div v-else class="thumb thumb-placeholder">
@@ -75,8 +73,7 @@
                     </div>
                   </td>
 
-                  <!-- Name (click to detail) -->
-                  <td class="ps-3">
+                  <td class="ps-5">
                     <RouterLink class="name-link" :to="{ name: 'products.detail', params: { id: p.id } }">
                       <div class="fw-semibold">{{ p.name }}</div>
                       <div class="small opacity-75">
@@ -263,7 +260,9 @@ async function onDeleteClick(productId) {
 /* Thumb */
 .thumb-wrap {
   display: flex;
-  align-items: center;
+  align-items: start;
+  justify-content: flex-start;
+  margin-left: 0;
 }
 
 .thumb {

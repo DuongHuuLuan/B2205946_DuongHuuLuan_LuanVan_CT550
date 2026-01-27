@@ -59,9 +59,9 @@
                                     <th>Người đặt</th>
                                     <th>Thanh toán</th>
                                     <th style="width: 160px">Trạng thái</th>
-                                    <th class="text-end" style="width: 160px">Ngày tạo</th>
+                                    <th class="text-center pe-3" style="width: 160px">Ngày tạo</th>
                                     <th class="text-end" style="width: 160px">Tổng tiền</th>
-                                    <th class="text-end pe-3" style="width: 140px">Thao tác</th>
+                                    <th class="text-end pe-4" style="width: 140px">Thao tác</th>
                                 </tr>
                             </thead>
 

@@ -51,7 +51,7 @@
               <thead>
                 <tr>
                   <th class="ps-3" style="width: 160px">Mã khuyến mãi</th>
-                  <th>Mô tả</th>
+                  <th class="ps-3">Mô tả</th>
                   <th class="text-end" style="width: 140px">Phần trăm</th>
                   <th class="text-end" style="width: 160px">Bắt đầu</th>
                   <th class="text-end" style="width: 160px">Kết thúc</th>
@@ -74,7 +74,7 @@
                     </RouterLink>
                   </td>
 
-                  <td class="text-end">
+                  <td class="text-end pe-3">
                     <span class="badge percent-badge">
                       {{ (d.percent ?? 0) + "%" }}
                     </span>

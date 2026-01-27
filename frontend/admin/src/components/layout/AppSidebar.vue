@@ -1,13 +1,17 @@
 <template>
   <aside class="sidebar p-3" :style="{ width: collapsed ? '84px' : '280px' }">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <div class="d-flex align-items-center gap-2 me-3">
-        <span class="badge rounded-pill brand-badge">SS</span>
-        <span v-if="!collapsed" class="fw-semibold">RoyalStore</span>
+      <div class="d-flex align-items-center gap-2 overflow-hidden">
+        <div class="logo-wrapper flex-shrink-0">
+          <img src="@/assets/logo1.jpeg" alt="Logo" class="brand-logo" />
+        </div>
+        <span v-if="!collapsed" class="fw-bold text-nowrap brand-name">
+          RoyalStore
+        </span>
       </div>
 
-      <button class="btn btn-sm btn-outline-secondary" @click="$emit('toggle')">
-        <i class="fa-solid fa-arrow-left"></i>
+      <button class="btn btn-sm btn-toggle-sidebar" @click="$emit('toggle')">
+        <i class="fa-solid" :class="collapsed ? 'fa-arrow-right' : 'fa-arrow-left'"></i>
       </button>
     </div>
 
@@ -25,11 +29,6 @@
         <i class="fa-solid fa-boxes-stacked me-2"></i>
         <span v-if="!collapsed">Sản phẩm</span>
       </RouterLink>
-      <!-- 
-      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('sizes.') }" to="/sizes">
-        <i class="fa-solid fa-ruler-combined me-2"></i>
-        <span v-if="!collapsed">Kích thước</span>
-      </RouterLink> -->
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('warehouses.') }"
         to="/warehouses">
@@ -155,5 +154,44 @@ const onLogout = async () => {
 .nav-link.active {
   background: color-mix(in srgb, var(--main-color) 18%, transparent);
   border-color: var(--hover-border-color);
+}
+
+.logo-wrapper {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dark);
+  /* Màu nền tối giống logo của bạn */
+  border-radius: 50%;
+  padding: 2px;
+  border: 1px solid var(--main-color);
+}
+
+.brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.brand-name {
+  color: var(--font-color);
+  font-size: 1.15rem;
+  letter-spacing: -0.5px;
+}
+
+/* Tùy chỉnh nút toggle cho đẹp hơn */
+.btn-toggle-sidebar {
+  border: 1px solid var(--border-color);
+  color: var(--font-extra-color);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.btn-toggle-sidebar:hover {
+  background: var(--hover-background-color);
+  color: var(--main-color);
 }
 </style>

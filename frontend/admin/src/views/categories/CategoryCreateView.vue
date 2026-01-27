@@ -39,7 +39,7 @@
 
               <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
                 @click="onReset(resetForm)">
-                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                <i class="fa-solid fa-rotate-left me-1"></i> Làm mới
               </button>
             </div>
           </Form>
