@@ -1,6 +1,7 @@
 ﻿import 'dart:math';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -122,11 +123,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: AspectRatio(
                       aspectRatio: 1,
                       child: mainUrl != null
-                          ? Image.network(
-                              mainUrl,
+                          ? CachedNetworkImage(
+                              imageUrl: mainUrl,
                               fit: BoxFit
                                   .contain, // Contain giúp thấy toàn bộ mũ
-                              errorBuilder: (_, __, ___) =>
+                              placeholder: (context, url) =>
+                                  _imagePlaceholder(colorScheme),
+                              errorWidget: (context, url, error) =>
                                   _imagePlaceholder(colorScheme),
                             )
                           : _imagePlaceholder(colorScheme),
@@ -175,7 +178,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       Icons.image,
                                       color: colorScheme.outline,
                                     )
-                                  : Image.network(thumbUrl, fit: BoxFit.cover),
+                                  : CachedNetworkImage(
+                                      imageUrl: thumbUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Icon(
+                                        Icons.image,
+                                        color: colorScheme.outline,
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(
+                                            Icons.image,
+                                            color: colorScheme.outline,
+                                          ),
+                                    ),
                             ),
                           );
                         },

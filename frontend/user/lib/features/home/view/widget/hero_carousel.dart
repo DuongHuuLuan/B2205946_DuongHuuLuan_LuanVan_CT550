@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HeroCarousel extends StatefulWidget {
   final List<String> imageUrls;
@@ -74,7 +75,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
                   image: DecorationImage(
                     image: isAsset
                         ? AssetImage(url) as ImageProvider
-                        : NetworkImage(url),
+                        : CachedNetworkImageProvider(url),
                     fit: BoxFit.cover,
                   ),
                 ),

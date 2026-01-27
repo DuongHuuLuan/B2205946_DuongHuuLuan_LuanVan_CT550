@@ -2,6 +2,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // Giữ nguyên các import domain của bạn
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -165,15 +166,13 @@ class _ProductCardState extends State<ProductCard> {
               child: AspectRatio(
                 aspectRatio: 1,
                 child: mainUrl != null
-                    ? Image.network(
-                        mainUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: mainUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
+                        placeholder: (context, url) =>
+                            _imageLoading(colorScheme),
+                        errorWidget: (context, url, error) =>
                             _imagePlaceholder(colorScheme),
-                        loadingBuilder: (context, child, progress) =>
-                            progress == null
-                            ? child
-                            : _imageLoading(colorScheme),
                       )
                     : _imagePlaceholder(colorScheme),
               ),
@@ -206,10 +205,12 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: Image.network(
-                            t.url,
+                          child: CachedNetworkImage(
+                            imageUrl: t.url,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            placeholder: (context, url) =>
+                                Container(color: colorScheme.surfaceVariant),
+                            errorWidget: (context, url, error) =>
                                 Container(color: colorScheme.surfaceVariant),
                           ),
                         ),
@@ -245,10 +246,12 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: Image.network(
-                            url,
+                          child: CachedNetworkImage(
+                            imageUrl: url,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            placeholder: (context, url) =>
+                                Container(color: colorScheme.surfaceVariant),
+                            errorWidget: (context, url, error) =>
                                 Container(color: colorScheme.surfaceVariant),
                           ),
                         ),

@@ -1,7 +1,8 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProductRow extends StatelessWidget {
   final CartDetail detail;
@@ -32,7 +33,7 @@ class ProductRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 image: productImageUrl != null
                     ? DecorationImage(
-                        image: NetworkImage(productImageUrl),
+                        image: CachedNetworkImageProvider(productImageUrl),
                         fit: BoxFit.cover,
                       )
                     : null,

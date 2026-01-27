@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 
@@ -115,9 +116,28 @@ class _CategoryStripState extends State<CategoryStrip> {
                             child: AspectRatio(
                               aspectRatio: 1,
                               child: (thumb != null && thumb.isNotEmpty)
-                                  ? Image.network(thumb, fit: BoxFit.cover)
+                                  ? CachedNetworkImage(
+                                      imageUrl: thumb,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        color: colorScheme.surfaceVariant,
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Icons.image,
+                                          size: 32,
+                                          color: colorScheme.onSurfaceVariant
+                                              .withOpacity(0.5),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
+                                            color: colorScheme.surfaceVariant,
+                                            alignment: Alignment.center,
+                                          ),
+                                    )
                                   : Container(
-                                      color: colorScheme.surfaceVariant,
+                                      color: colorScheme.surfaceVariant
+                                          .withOpacity(0.5),
                                       child: Icon(
                                         Icons.image,
                                         size: 40,
@@ -135,8 +155,7 @@ class _CategoryStripState extends State<CategoryStrip> {
                             decoration: BoxDecoration(
                               border: Border(
                                 top: BorderSide(
-                                  color: colorScheme
-                                      .secondary, // Viền phân cách nhẹ nhàng
+                                  color: colorScheme.secondary,
                                   width: 1.5,
                                 ),
                               ),

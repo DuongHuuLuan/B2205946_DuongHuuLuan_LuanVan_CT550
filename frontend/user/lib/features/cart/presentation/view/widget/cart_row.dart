@@ -1,8 +1,9 @@
-import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CartRow extends StatelessWidget {
   final CartDetail cartDetail;
@@ -143,12 +144,13 @@ class _ProductImage extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        url!,
+      child: CachedNetworkImage(
+        imageUrl: url!,
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _ImagePlaceholder(),
+        placeholder: (context, url) => _ImagePlaceholder(),
+        errorWidget: (context, url, error) => _ImagePlaceholder(),
       ),
     );
   }

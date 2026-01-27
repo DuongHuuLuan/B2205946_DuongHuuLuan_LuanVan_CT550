@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -295,12 +296,22 @@ class _DrawerImage extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        url!,
+      child: CachedNetworkImage(
+        imageUrl: url!,
         width: 72,
         height: 72,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
+        placeholder: (context, url) => Container(
+          width: 72,
+          height: 72,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.shopping_bag),
+        ),
+        errorWidget: (context, url, error) => Container(
           width: 72,
           height: 72,
           alignment: Alignment.center,
