@@ -80,7 +80,6 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
   void didUpdateWidget(covariant CategoryProductSection oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // products load xong sẽ đổi -> update lại arrows
     if (oldWidget.products.length != widget.products.length) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _updateArrows());
     }

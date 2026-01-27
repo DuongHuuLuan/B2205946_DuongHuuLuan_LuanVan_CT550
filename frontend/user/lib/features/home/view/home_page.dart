@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-// Import viewmodels và widgets của bạn
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category_strip.dart';
@@ -21,15 +20,36 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final ScrollController _scrollController = ScrollController();
+  static const double _loadMoreThreshold = 300;
+  static const int _perPage = 8;
+
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     Future.microtask(() async {
-      await context.read<ProductViewmodel>().getAllProduct();
+      await context.read<ProductViewmodel>().loadInitialPaged(
+        perPage: _perPage,
+      );
       await context.read<CategoryViewModel>().load();
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      context.read<ProductViewmodel>().loadMoreProducts();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -38,7 +58,6 @@ class _HomePageState extends State<HomePage> {
     final productVm = context.watch<ProductViewmodel>();
     final categoryVm = context.watch<CategoryViewModel>();
 
-    // Lấy ColorScheme
     final colorScheme = Theme.of(context).colorScheme;
 
     final Map<int, String> categoryThumbs = {};
@@ -50,8 +69,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const HomeDrawer(),
-      backgroundColor: colorScheme.surface, // Đồng bộ nền trang chủ
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           _HomeSliverAppBar(
             onCart: () => context.go("/cart"),
@@ -106,6 +126,29 @@ class _HomePageState extends State<HomePage> {
                 products: productVm.products,
               ),
             ),
+          if (productVm.isLoadingMore)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text("Đang tải"),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else if (!productVm.hasMore && productVm.products.isNotEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: Text("Đã tải hết sản phẩm")),
+              ),
+            ),
         ],
       ),
     );
@@ -130,7 +173,6 @@ class _HomeSliverAppBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final media = MediaQuery.of(context);
 
-    // Tính toán kích thước như cũ
     final statusBarH = media.padding.top;
     final w = media.size.width;
     final double logoMax = (w * 0.14).clamp(48.0, 58.0);
@@ -144,7 +186,7 @@ class _HomeSliverAppBar extends StatelessWidget {
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: colorScheme.primary, // Màu thanh Appbar từ Theme
+      backgroundColor: colorScheme.primary,
       expandedHeight: expandedH,
       collapsedHeight: collapsedH,
       automaticallyImplyLeading: false,
@@ -158,7 +200,7 @@ class _HomeSliverAppBar extends StatelessWidget {
           final bottomPad = lerpDouble(0.0, bottomPadMax, t)!;
 
           return Container(
-            color: colorScheme.primary, // Đồng nhất màu nền
+            color: colorScheme.primary,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -183,7 +225,6 @@ class _HomeSliverAppBar extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // Nút bấm - Giả sử CircleIconButton đã dùng colorScheme bên trong
                     CircleIconButton(icon: Icons.person, onTap: onProfile),
                     const SizedBox(width: 8),
                     CircleIconButton(icon: Icons.shopping_bag, onTap: onCart),

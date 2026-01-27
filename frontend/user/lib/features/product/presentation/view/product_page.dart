@@ -16,14 +16,35 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
+  final ScrollController _scrollController = ScrollController();
+  static const double _loadMoreThreshold = 300;
+  static const int _perPage = 8;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     Future.microtask(() async {
-      // Load categories + products (náº¿u Ä‘Ã£ load á»Ÿ Home thÃ¬ váº«n OK)
       await context.read<CategoryViewModel>().load();
-      await context.read<ProductViewmodel>().getAllProduct();
+      await context.read<ProductViewmodel>().loadInitialPaged(
+        perPage: _perPage,
+      );
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    // kiểm tra vị trí hiện tại  đã vượt quá ngưỡng chưa(tổng độ dài - ngưỡng 300px)
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      context.read<ProductViewmodel>().loadMoreProducts();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -34,7 +55,6 @@ class _ProductPageState extends State<ProductPage> {
     final List<Category> categories = categoryVm.categories;
     final List<Product> products = productVm.products;
 
-    // Loading/Error tối thiểu (không dùng fields categoryVm.isLoading/errorMessage để tránh sai compile)
     if (productVm.isLoading && products.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -54,8 +74,30 @@ class _ProductPageState extends State<ProductPage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Sản phẩm theo loại")),
       body: ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.only(bottom: 24),
-        children: [ProductSections(categories: categories, products: products)],
+        children: [
+          ProductSections(categories: categories, products: products),
+          if (productVm.isLoadingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 8),
+                    Text("Đang tải"),
+                  ],
+                ),
+              ),
+            )
+          else if (!productVm.hasMore && products.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: Text("Đã tải hết sản phẩm")),
+            ),
+        ],
       ),
     );
   }

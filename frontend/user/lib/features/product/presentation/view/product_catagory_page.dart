@@ -17,27 +17,48 @@ class ProductCatagoryPage extends StatefulWidget {
 }
 
 class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
+  final ScrollController _scrollController = ScrollController();
+  static const double _loadMoreThreshold = 300;
+  static const int _perPage = 8;
+
   int? _selectedCategoryId;
 
   @override
   void initState() {
     super.initState();
     _selectedCategoryId = widget.categoryId;
+    _scrollController.addListener(_onScroll);
 
     Future.microtask(() async {
       await context.read<CategoryViewModel>().load();
-      await context.read<ProductViewmodel>().getAllProduct(
+      await context.read<ProductViewmodel>().loadInitialPaged(
         categoryId: _selectedCategoryId,
+        perPage: _perPage,
       );
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      context.read<ProductViewmodel>().loadMoreProducts();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _selectCategory(int? categoryId) async {
     setState(() {
       _selectedCategoryId = categoryId;
     });
-    await context.read<ProductViewmodel>().getAllProduct(
+    await context.read<ProductViewmodel>().loadInitialPaged(
       categoryId: categoryId,
+      perPage: _perPage,
     );
   }
 
@@ -51,14 +72,14 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface, // Dùng màu nền hệ thống
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary, // Màu chính cho AppBar
+        backgroundColor: colorScheme.primary,
         elevation: 0,
         title: Text(
           "Danh Mục Sản Phẩm",
           style: textTheme.titleLarge?.copyWith(
-            color: colorScheme.onPrimary, // Chữ trên nền màu chính
+            color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -76,10 +97,14 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
       body: RefreshIndicator(
         color: colorScheme.primary,
         onRefresh: () async {
-          await productVm.getAllProduct(categoryId: _selectedCategoryId);
+          await productVm.loadInitialPaged(
+            categoryId: _selectedCategoryId,
+            perPage: _perPage,
+          );
         },
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(8, 16, 8, 24),
           children: [
             CategoryGrid(
               categories: categoryVm.categories,
@@ -99,8 +124,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                         : "Sản phẩm theo danh mục",
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: colorScheme
-                          .onSurface, // Chữ màu tối trên nền sáng (và ngược lại)
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -110,8 +134,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color:
-                          colorScheme.primary, // Loading xoay theo màu chủ đạo
+                      color: colorScheme.secondary,
                     ),
                   ),
               ],
@@ -131,15 +154,16 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                 color: colorScheme.onSurfaceVariant,
               )
             else
+              // card sản phẩm
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: productVm.products.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 14,
+                  crossAxisSpacing: 8,
                   mainAxisSpacing: 14,
-                  mainAxisExtent: 450,
+                  mainAxisExtent: 500,
                 ),
                 itemBuilder: (context, index) {
                   final product = productVm.products[index];
@@ -158,6 +182,25 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                     },
                   );
                 },
+              ),
+            if (productVm.isLoadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text("Đang tải"),
+                    ],
+                  ),
+                ),
+              )
+            else if (!productVm.hasMore && productVm.products.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: Text("Đã tải hết sản phẩm")),
               ),
           ],
         ),

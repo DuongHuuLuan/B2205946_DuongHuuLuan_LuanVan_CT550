@@ -10,18 +10,19 @@ class ProductApi {
     int? perPage,
   }) async {
     try {
-      if (categoryId != null) {
-        return await DioClient.instance.get(
-          ApiEndpoints.productsByCategory(categoryId),
-        );
-      }
-
       final params = <String, dynamic>{};
       if (page != null) {
         params["page"] = page;
       }
       if (perPage != null) {
         params["per_page"] = perPage;
+      }
+
+      if (categoryId != null) {
+        return await DioClient.instance.get(
+          ApiEndpoints.productsByCategory(categoryId),
+          queryParameters: params.isEmpty ? null : params,
+        );
       }
 
       return await DioClient.instance.get(
@@ -41,4 +42,3 @@ class ProductApi {
     }
   }
 }
-

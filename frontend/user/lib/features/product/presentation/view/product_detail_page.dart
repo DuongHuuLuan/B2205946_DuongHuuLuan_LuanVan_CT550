@@ -253,8 +253,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                     ),
 
-                  // // Số lượng
-                  // _buildSectionTitle("Số lượng", textTheme, colorScheme),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -263,8 +261,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: Row(
                       children: [
                         Container(
-                          height:
-                              45, // Giảm chiều cao xuống (trước đó mặc định khá lớn)
+                          height: 45,
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey.shade300),
                             borderRadius: BorderRadius.circular(8),

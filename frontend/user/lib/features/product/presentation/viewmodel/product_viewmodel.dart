@@ -15,6 +15,14 @@ class ProductViewmodel extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
+  // Ph?n trang (lazy load)
+  static const int _defaultPerPage = 8;
+  int _page = 1;
+  int _perPage = _defaultPerPage;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  int? _currentCategoryId;
+
   List<Product> products = []; // danh sách cho ProductPage
   Product? product; // Chi tiết cho trang ProductDetail
 
@@ -32,6 +40,9 @@ class ProductViewmodel extends ChangeNotifier {
   int get quantity => _quantity;
   int? get availableQuantity => _availableQuantity;
   bool get isStockLoading => _stockLoading;
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
+  int get perPage => _perPage;
 
   List<ProductDetail> get colors => product?.uniqueColors ?? [];
   List<ProductDetail> get sizes =>
@@ -50,13 +61,11 @@ class ProductViewmodel extends ChangeNotifier {
     return map;
   }
 
-  Future<void> getAllProduct({
-    int? categoryId,
-    int? page,
-    int? perPage,
-  }) async {
+  Future<void> getAllProduct({int? categoryId, int? page, int? perPage}) async {
     isLoading = true;
     errorMessage = null;
+    _isLoadingMore = false;
+    _currentCategoryId = categoryId;
     notifyListeners();
     try {
       products = await _repository.getAllProduct(
@@ -64,10 +73,77 @@ class ProductViewmodel extends ChangeNotifier {
         page: page,
         perPage: perPage,
       );
+      if (page != null || perPage != null) {
+        _page = page ?? 1;
+        _perPage = perPage ?? _perPage;
+        _hasMore = products.length >= _perPage;
+      } else {
+        _page = 1;
+        _hasMore = false;
+      }
     } catch (e) {
       errorMessage = e.toString();
     } finally {
       isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadInitialPaged({int? categoryId, int? perPage}) async {
+    isLoading = true;
+    errorMessage = null;
+    _currentCategoryId = categoryId;
+    _page = 1;
+    _perPage = perPage ?? _defaultPerPage;
+    _hasMore = true;
+    _isLoadingMore = false;
+    notifyListeners();
+
+    try {
+      final list = await _repository.getAllProduct(
+        categoryId: categoryId,
+        page: _page,
+        perPage: _perPage,
+      );
+      products = list;
+      if (list.length < _perPage) {
+        _hasMore = false;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      products = [];
+      _hasMore = false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreProducts() async {
+    if (isLoading || _isLoadingMore || !_hasMore) return;
+    _isLoadingMore = true;
+    notifyListeners();
+
+    final nextPage = _page + 1;
+    try {
+      final list = await _repository.getAllProduct(
+        categoryId: _currentCategoryId,
+        page: nextPage,
+        perPage: _perPage,
+      );
+      if (list.isEmpty) {
+        _hasMore = false;
+      } else {
+        products.addAll(list);
+        _page = nextPage;
+        if (list.length < _perPage) {
+          _hasMore = false;
+        }
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+    } finally {
+      _isLoadingMore = false;
       notifyListeners();
     }
   }

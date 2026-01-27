@@ -219,9 +219,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
           if (mounted) Navigator.of(context).pop();
         });
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Không mở đượ link thanh toán")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Không mở được link thanh toán")),
+        );
       }
     } else {
       ScaffoldMessenger.of(
