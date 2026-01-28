@@ -15,17 +15,7 @@
                 <div class="card-body">
                     <div class="row g-2 align-items-center">
                         <div class="col-12 col-md-6 col-lg-5">
-                            <div class="input-group">
-                                <span class="input-group-text bg-transparent">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                </span>
-                                <input v-model="keyword" type="text" class="form-control bg-transparent"
-                                    placeholder="Tìm theo mã đơn, email, username..." />
-                                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword"
-                                    title="Clear">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
+                            <SearchToggle v-model="keyword" placeholder="Tìm theo mã đơn, email, username..." />
                         </div>
 
                         <div class="col-12 col-md-6 col-lg-3">
@@ -56,7 +46,7 @@
                             <thead>
                                 <tr>
                                     <th class="ps-3" style="width: 120px">Mã đơn</th>
-                                    <th>Người đặt</th>
+                                    <th>Khách hàng</th>
                                     <th>Thanh toán</th>
                                     <th style="width: 160px">Trạng thái</th>
                                     <th class="text-center pe-3" style="width: 160px">Ngày tạo</th>
@@ -164,6 +154,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import OrderService from "@/services/order.service";
 import { formatMoney, statusLabel, statusTableBadgeClass, formatDateTimeVN } from "@/utils/utils";
@@ -256,29 +247,29 @@ watch(page, async () => {
 }
 
 .status-pending {
-    background: color-mix(in srgb, #f59e0b 18%, transparent);
-    border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+    background: var(--status-warning-bg);
+    border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
     color: var(--font-color);
     font-weight: 700;
 }
 
 .status-shipping {
-    background: color-mix(in srgb, #0ea5e9 18%, transparent);
-    border: 1px solid color-mix(in srgb, #0ea5e9 45%, transparent);
+    background: var(--status-info-bg);
+    border: 1px solid color-mix(in srgb, var(--status-info) 55%, transparent);
     color: var(--font-color);
     font-weight: 700;
 }
 
 .status-completed {
-    background: color-mix(in srgb, #16a34a 18%, transparent);
-    border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
+    background: var(--status-success-bg);
+    border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
     color: var(--font-color);
     font-weight: 700;
 }
 
 .status-canceled {
-    background: color-mix(in srgb, #ef4444 18%, transparent);
-    border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+    background: var(--status-danger-bg);
+    border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
     color: var(--font-color);
     font-weight: 700;
 }
@@ -309,3 +300,5 @@ watch(page, async () => {
     color: #f59e0b;
 }
 </style>
+
+

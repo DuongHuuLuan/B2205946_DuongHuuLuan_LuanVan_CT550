@@ -1,25 +1,36 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
 
 :root {
-  --main-color: #d6aa69;
-  --extra-color: #b78443;
-  --hover-background-color: rgba(214, 170, 105, 0.2);
-  --hover-border-color: #c59554;
+  --main-color: #56ccf2;
+  --extra-color: #5f6f8a;
+  --hover-background-color: rgba(95, 111, 138, 0.18);
+  --hover-border-color: #4f7ea1;
   --header-heigh: 3.5rem;
-  --dark: #2a221a;
-  --light: #fbf7f1;
-  --shadow-color: rgba(24, 18, 10, 0.12);
+  --dark: #1f2a38;
+  --light: #f7fafc;
+  --shadow-color: rgba(15, 23, 42, 0.12);
+  --status-info: #56ccf2;
+  --status-success: #4fd1c5;
+  --status-warning: #f2c94c;
+  --status-danger: #ff6b6b;
+  --status-muted: #94a3b8;
+  --status-info-bg: rgba(86, 204, 242, 0.18);
+  --status-success-bg: rgba(79, 209, 197, 0.18);
+  --status-warning-bg: rgba(242, 201, 76, 0.18);
+  --status-danger-bg: rgba(255, 107, 107, 0.18);
+  --status-muted-bg: rgba(148, 163, 184, 0.18);
 }
 
 [data-bs-theme="light"]:root {
-  --main-bg: #f7f3ec;
+  /* --main-bg: #f7f3ec; */
+  --main-bg: #f7f4f1;
   --main-extra-bg: #ffffff;
   --extra-bg: #efe6d9;
   --font-color: #2a221a;
-  --font-extra-color: #6f5d47;
+  --font-extra-color: #6f7d90;
   --brightness: brightness(0.95);
-  --hover-color: rgba(214, 170, 105, 0.12);
-  --border-color: #e2d3be;
+  --hover-color: rgba(86, 204, 242, 0.12);
+  --border-color: #d7dde6;
   --shadow-color: rgba(24, 18, 10, 0.1);
 }
 
@@ -28,10 +39,10 @@
   --main-extra-bg: #221b15;
   --extra-bg: #2b221a;
   --font-color: #f3e9dc;
-  --font-extra-color: #c7b39b;
+  --font-extra-color: #a9b6c6;
   --brightness: brightness(1.08);
-  --hover-color: rgba(214, 170, 105, 0.14);
-  --border-color: #3a2d22;
+  --hover-color: rgba(86, 204, 242, 0.14);
+  --border-color: #2c3646;
   --shadow-color: rgba(0, 0, 0, 0.35);
 }
 
@@ -75,4 +86,23 @@ hr {
 
 .dropdown-menu .dropdown-item:active {
   background-color: var(--hover-color) !important;
+}
+
+.card.card-soft {
+  box-shadow: 0 8px 18px var(--shadow-color);
+}
+
+.table thead th {
+  background: color-mix(in srgb, var(--main-extra-bg) 70%, var(--extra-bg));
+  color: var(--font-extra-color);
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: var(--hover-background-color);
+}
+
+.table-responsive {
+  border-radius: 0.75rem;
+  overflow: hidden;
 }

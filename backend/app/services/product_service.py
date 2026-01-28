@@ -69,12 +69,16 @@ class ProductService:
         page: int = 1,
         per_page: Optional[int] = None,
         keyword: str = None,
+        category_id: Optional[int] = None,
     ):
         query = db.query(Product).options(
             joinedload(Product.category),
             joinedload(Product.product_images),
             joinedload(Product.product_details)
         )
+
+        if category_id is not None:
+            query = query.filter(Product.category_id == category_id)
 
         if keyword:
             query = query.filter(Product.name.ilike(f"%{keyword}%"))
@@ -102,7 +106,7 @@ class ProductService:
                 page = 1
 
         skip = (page - 1) * per_page
-        items = query.order_by(Product.id.desc()).offset(skip).limit(per_page).all()
+        items = query.order_by(Product.id.asc()).offset(skip).limit(per_page).all()
 
         last_page = math.ceil(total_count / per_page)
 

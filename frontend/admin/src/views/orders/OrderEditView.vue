@@ -28,7 +28,7 @@
               </div>
 
               <div class="col-12 col-md-6">
-                <label class="form-label">Người đặt</label>
+                <label class="form-label">Khách hàng</label>
                 <div class="form-control bg-transparent">
                   {{ order?.user?.username || order?.delivery_info?.name || "-" }}
                 </div>

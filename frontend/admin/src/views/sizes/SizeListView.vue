@@ -24,25 +24,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input
-                  v-model="keyword"
-                  type="text"
-                  class="form-control bg-transparent"
-                  placeholder="Tim theo kich thuoc..."
-                />
-                <button
-                  class="btn btn-outline-secondary"
-                  @click="keyword = ''"
-                  v-if="keyword"
-                  title="Clear"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tim theo kich thuoc..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
@@ -123,6 +105,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import SizeService from "@/services/size.service";
 
@@ -232,3 +215,5 @@ onMounted(fetchSizes);
   border-radius: 1rem;
 }
 </style>
+
+

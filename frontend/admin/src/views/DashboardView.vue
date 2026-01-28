@@ -365,18 +365,18 @@ onMounted(load);
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #e97a2b;
+  background: var(--status-warning);
   animation: pulse 1.6s ease-in-out infinite;
 }
 
 .signal .dot:nth-child(2) {
   animation-delay: 0.2s;
-  background: #167c80;
+  background: var(--status-info);
 }
 
 .signal .dot:nth-child(3) {
   animation-delay: 0.4s;
-  background: #2d2a24;
+  background: var(--status-muted);
 }
 
 .metrics {
@@ -562,22 +562,22 @@ onMounted(load);
 }
 
 .activity-list li.good .status {
-  background: #1f9c6e;
+  background: var(--status-success);
 }
 
 .activity-list li.warn .status {
-  background: #e0a020;
+  background: var(--status-warning);
 }
 
 .activity-list li.alert .status {
-  background: #cc4b2f;
+  background: var(--status-danger);
 }
 
 .status {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #9a8974;
+  background: var(--status-muted);
 }
 
 .activity-empty {

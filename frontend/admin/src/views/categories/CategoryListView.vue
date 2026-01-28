@@ -20,16 +20,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input v-model="keyword" type="text" class="form-control bg-transparent"
-                  placeholder="Tìm theo tên danh mục..." />
-                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tìm theo tên danh mục..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
@@ -132,6 +123,7 @@
 
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import CategoryService from "../../services/category.service";
 
@@ -280,3 +272,5 @@ async function onDeleteClick(categoryId) {
   border-radius: 1rem;
 }
 </style>
+
+

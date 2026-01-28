@@ -20,16 +20,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input v-model="keyword" type="text" class="form-control bg-transparent"
-                  placeholder="Tìm theo kho / nhà cung cấp..." />
-                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tìm theo kho / nhà cung cấp..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
@@ -91,8 +82,7 @@
                     </span>
                   </td>
 
-                  <!-- Actions -->
-                  <td class="text-end pe-3">
+                  <td class="text-end pe-4">
                     <div class="d-flex justify-content-end gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'receipts.detail', params: { id: r.id } }"
                         title="Xem chi tiết">
@@ -148,6 +138,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import ReceiptService from "../../services/receipt.service";
 import { statusLabel, statusTableBadgeClass } from "@/utils/utils";
@@ -257,22 +248,22 @@ async function onDeleteClick(receiptId) {
 
 /* Status badges */
 .status-pending {
-  background: color-mix(in srgb, #f59e0b 18%, transparent);
-  border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+  background: var(--status-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-completed {
-  background: color-mix(in srgb, #16a34a 18%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
+  background: var(--status-success-bg);
+  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-canceled {
-  background: color-mix(in srgb, #ef4444 18%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  background: var(--status-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
@@ -319,3 +310,5 @@ async function onDeleteClick(receiptId) {
   border-radius: 1rem;
 }
 </style>
+
+

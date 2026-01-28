@@ -20,16 +20,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input v-model="keyword" type="text" class="form-control bg-transparent"
-                  placeholder="Tìm theo mô tả khuyến mãi..." />
-                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tìm theo mô tả khuyến mãi..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
@@ -154,6 +145,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import DiscountService from "../../services/discount.service";
 
@@ -290,22 +282,22 @@ async function onDeleteClick(id) {
 
 /* Status badges */
 .status-actived {
-  background: color-mix(in srgb, #16a34a 18%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
+  background: var(--status-success-bg);
+  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-disabled {
-  background: color-mix(in srgb, #ef4444 18%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  background: var(--status-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-expired {
-  background: color-mix(in srgb, #64748b 18%, transparent);
-  border: 1px solid color-mix(in srgb, #64748b 45%, transparent);
+  background: var(--status-muted-bg);
+  border: 1px solid color-mix(in srgb, var(--status-muted) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
@@ -347,3 +339,5 @@ async function onDeleteClick(id) {
   border-radius: 1rem;
 }
 </style>
+
+

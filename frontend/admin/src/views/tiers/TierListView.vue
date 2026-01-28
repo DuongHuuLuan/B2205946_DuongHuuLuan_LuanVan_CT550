@@ -26,25 +26,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input
-                  v-model="keyword"
-                  type="text"
-                  class="form-control bg-transparent"
-                  placeholder="Tìm theo tên hoặc mã..."
-                />
-                <button
-                  class="btn btn-outline-secondary"
-                  @click="keyword = ''"
-                  v-if="keyword"
-                  title="Clear"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tìm theo tên hoặc mã..." />
             </div>
 
             <div
@@ -184,6 +166,7 @@
 
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import TierService from "../../services/tier.service";
 
@@ -273,13 +256,13 @@ async function onDeleteClick(id) {
 }
 
 .badge-on {
-  background: color-mix(in srgb, #16a34a 16%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 40%, transparent);
+  background: var(--status-success-bg);
+  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
   color: var(--font-color);
 }
 .badge-off {
-  background: color-mix(in srgb, #ef4444 14%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 40%, transparent);
+  background: var(--status-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
   color: var(--font-color);
 }
 
@@ -313,3 +296,5 @@ async function onDeleteClick(id) {
   color: #ef4444;
 }
 </style>
+
+

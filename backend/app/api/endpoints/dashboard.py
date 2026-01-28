@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_admin
+from app.api.utils import format_dashboard_meta, get_status_tag, get_status_tone
 from app.db.session import get_db
 from app.models import Order, OrderDetail, Product, Receipt, User
 from app.models.order import OrderStatus
@@ -51,30 +52,6 @@ def get_summary(
     }
 
 
-def _format_meta(timestamp: Optional[datetime]) -> str:
-    if not timestamp:
-        return "--"
-    return timestamp.strftime("%H:%M %d/%m")
-
-
-def _tone_for_status(status: str) -> str:
-    if status in [OrderStatus.CANCELLED, ReceiptStatus.CANCELLED]:
-        return "alert"
-    if status in [OrderStatus.PENDING, ReceiptStatus.PENDING]:
-        return "warn"
-    return "good"
-
-
-def _tag_for_status(status: str) -> str:
-    if status == OrderStatus.PENDING or status == ReceiptStatus.PENDING:
-        return "Chờ xử lý"
-    if status == OrderStatus.CANCELLED or status == ReceiptStatus.CANCELLED:
-        return "Đã hủy"
-    if status == OrderStatus.SHIPPING:
-        return "Đang giao"
-    return "Hoàn tất"
-
-
 @router.get("/activity", response_model=List[DashboardActivityItemOut])
 def get_activity(
     limit: int = 6,
@@ -105,8 +82,8 @@ def get_activity(
             {
                 "created_at": order.created_at,
                 "title": f"Đơn hàng #{order.id}",
-                "tag": _tag_for_status(order.status),
-                "tone": _tone_for_status(order.status),
+                "tag": get_status_tag(order.status),
+                "tone": get_status_tone(order.status),
             }
         )
 
@@ -115,8 +92,8 @@ def get_activity(
             {
                 "created_at": receipt.created_at,
                 "title": f"Phiếu nhập #{receipt.id}",
-                "tag": _tag_for_status(receipt.status),
-                "tone": _tone_for_status(receipt.status),
+                "tag": get_status_tag(receipt.status),
+                "tone": get_status_tone(receipt.status),
             }
         )
 
@@ -130,7 +107,7 @@ def get_activity(
         output.append(
             {
                 "title": item["title"],
-                "meta": _format_meta(item.get("created_at")),
+                "meta": format_dashboard_meta(item.get("created_at")),
                 "tag": item["tag"],
                 "tone": item["tone"],
             }

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+﻿from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
 from pydantic import ValidationError
 
 import cloudinary.uploader
+from app.api.utils import extract_replace_images_map, extract_uploads, parse_int, parse_int_list, upload_images_to_cloudinary
 from app.db.session import get_db
 from app.schemas.product import ProductCreate, ProductOut, ProductPaginationOut
 from app.services.product_service import ProductService
@@ -11,39 +12,6 @@ from app.services.image_service import ImageService
 from app.models.user import User
 from app.api.deps import require_admin, require_user
 router  = APIRouter(prefix="/products", tags=["Products"])
-
-def _parse_int(value):
-    try:    
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _parse_int_list(values):
-    result = []
-    for value in values or []:
-        parsed = _parse_int(value)
-        if parsed is not None:
-            result.append(parsed)
-    return result
-
-
-def _extract_uploads(values):
-    return [v for v in (values or []) if hasattr(v, "file")]
-
-def _extract_replace_images(form) -> Dict[int, UploadFile]:
-    replace_map = {}
-    for key, value in form.items():
-        if not isinstance(value, UploadFile):
-            continue
-        if not key.startswith("replace_images[") or not key.endswith("]"):
-            continue
-        image_id = _parse_int(key[len("replace_images[") : -1])
-        if image_id is None:
-            continue
-        replace_map[image_id] = value
-    return replace_map
-
 
 def _parse_form_product_fields(form):
     def _get_str(key):
@@ -60,27 +28,8 @@ def _parse_form_product_fields(form):
         "name": _get_str("name"),
         "description": description,
         "unit": _get_str("unit"),
-        "category_id": _parse_int(_get_str("category_id")),
+        "category_id": parse_int(_get_str("category_id")),
     }
-
-
-def _upload_images(files, color_ids=None):
-    uploaded = []
-    color_ids = color_ids or []
-    for idx, f in enumerate(files):
-        result = cloudinary.uploader.upload(
-            f.file,
-            folder="helmet_shop/products",
-        )
-        color_id = color_ids[idx] if idx < len(color_ids) else None
-        uploaded.append(
-            {
-                "url": result["secure_url"],
-                "public_id": result["public_id"],
-                "color_id": color_id,
-            }
-        )
-    return uploaded
 
 
 async def _update_product_from_request(product_id: int, request: Request, db: Session):
@@ -106,8 +55,8 @@ async def _update_product_from_request(product_id: int, request: Request, db: Se
 
         ProductService.update_product(db, product_id, product_in)
 
-        replace_images = _extract_replace_images(form)
-        remove_ids = _parse_int_list(form.getlist("remove_image_ids[]"))
+        replace_images = extract_replace_images_map(form)
+        remove_ids = parse_int_list(form.getlist("remove_image_ids[]"))
         if replace_images:
             replace_ids = set(replace_images.keys())
             remove_ids = [image_id for image_id in remove_ids if image_id not in replace_ids]
@@ -118,9 +67,9 @@ async def _update_product_from_request(product_id: int, request: Request, db: Se
         for image_id, file in replace_images.items():
             ImageService.replace_image(db, image_id, file, product_id=product_id)
 
-        new_files = _extract_uploads(form.getlist("images[]"))
-        color_ids = _parse_int_list(form.getlist("image_color_ids[]"))
-        uploaded = _upload_images(new_files, color_ids)
+        new_files = extract_uploads(form.getlist("images[]"))
+        color_ids = parse_int_list(form.getlist("image_color_ids[]"))
+        uploaded = upload_images_to_cloudinary(new_files, color_ids)
         if uploaded:
             ImageService.add_images(db, product_id=product_id, images=uploaded)
 
@@ -161,14 +110,24 @@ def getAll_product(
         keyword=q,
     )
 
-@router.get("/category/{category_id}", response_model=List[ProductOut])
-def get_product_category(category_id: int, db: Session = Depends(get_db)):
+@router.get("/category/{category_id}", response_model=ProductPaginationOut)
+def get_product_category(
+    category_id: int,
+    page: int = 1,
+    per_page: Optional[int] = None,
+    q: str = None,
+    db: Session = Depends(get_db),
+):
     """
-    Lấy tất cả sản phẩm thuộc về một danh mục cụ thể
+    L???y s???n ph???m thu???c v??? m???t danh m???c c??? th??? (c?? ph??n trang)
     """
-    products = ProductService.get_product_category(db, category_id)
-    return products
-
+    return ProductService.get_products_paginated(
+        db,
+        page=page,
+        per_page=per_page,
+        keyword=q,
+        category_id=category_id,
+    )
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_product(
     request: Request,
@@ -181,8 +140,6 @@ async def create_product(
     content_type = request.headers.get("content-type", "")
     if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
         form = await request.form()
-        print(f"DEBUG FORM KEYS: {list(form.keys())}")
-        print(f"DEBUG IMAGES: {form.getlist('images[]')}")
 
         payload = _parse_form_product_fields(form)
 
@@ -196,9 +153,9 @@ async def create_product(
 
         new_product = ProductService.create_product(db, product_in)
 
-        files = _extract_uploads(form.getlist("images[]"))
-        color_ids = _parse_int_list(form.getlist("image_color_ids[]"))
-        uploaded = _upload_images(files, color_ids)
+        files = extract_uploads(form.getlist("images[]"))
+        color_ids = parse_int_list(form.getlist("image_color_ids[]"))
+        uploaded = upload_images_to_cloudinary(files, color_ids)
         if uploaded:
             ImageService.add_images(db, product_id=new_product.id, images=uploaded)
 
@@ -237,7 +194,7 @@ async def update_product(
     current_admin: User = Depends(require_admin),
 ):
     """
-    API cap nhat san pham
+    API Cập nhật sản phẩm
     """
     return await _update_product_from_request(product_id, request, db)
 

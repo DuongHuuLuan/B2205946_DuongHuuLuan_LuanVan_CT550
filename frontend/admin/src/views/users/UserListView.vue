@@ -14,16 +14,7 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <div class="input-group">
-                <span class="input-group-text bg-transparent">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input v-model="keyword" type="text" class="form-control bg-transparent"
-                  placeholder="Tìm theo email hoặc username..." />
-                <button class="btn btn-outline-secondary" @click="keyword = ''" v-if="keyword" title="Clear">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+              <SearchToggle v-model="keyword" placeholder="Tìm theo email hoặc username..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-3">
@@ -86,7 +77,7 @@
                     <span class="small opacity-75">{{ formatDate(u.created_at) }}</span>
                   </td>
 
-                  <td class="text-end pe-3">
+                  <td class="text-end pe-4">
                     <div class="d-flex justify-content-end gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'users.edit', params: { id: u.id } }"
                         title="Chỉnh sửa">
@@ -140,6 +131,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
+import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import UserService from "@/services/user.service";
 
@@ -288,3 +280,5 @@ watch(page, async () => {
   color: #f59e0b;
 }
 </style>
+
+

@@ -363,7 +363,7 @@ async function onSubmit(values, { resetForm, setErrors }) {
       product_detailsError.value = "Vui lòng chọn ảnh cho từng biến thể";
       return;
     }
-    if (!validproduct_details.length) {
+    if (!validProduct_details.length) {
       product_detailsError.value = "Vui lòng thêm ít nhất một biến thể";
       return;
     }

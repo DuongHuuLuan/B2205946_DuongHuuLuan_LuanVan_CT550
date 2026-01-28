@@ -53,11 +53,6 @@
         <span v-if="!collapsed">Nhà cung cấp</span>
       </RouterLink>
 
-      <!-- <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('tiers.') }" to="/tiers">
-        <i class="fa-solid fa-layer-group me-2"></i>
-        <span v-if="!collapsed">Cấp tài khoản</span>
-      </RouterLink> -->
-
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('promotions.') }"
         to="/discounts">
         <i class="fa-solid fa-percent me-2"></i>
@@ -126,12 +121,12 @@ const onLogout = async () => {
 <style scoped>
 .sidebar {
   transition: width 0.2s ease;
-  background: var(--main-extra-bg);
-  border-right: 1px solid var(--border-color);
+  background: #4a566d;
+  border-right: 1px solid #3d475a;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  color: var(--font-color);
+  color: #e2e7ef;
 }
 
 .brand-badge {
@@ -142,18 +137,19 @@ const onLogout = async () => {
 .nav-link {
   border-radius: 0.65rem;
   padding: 0.55rem 0.75rem;
-  color: var(--font-color);
+  color: #e2e7ef;
   border: 1px solid transparent;
 }
 
 .nav-link:hover {
-  background: var(--hover-background-color);
-  border-color: var(--hover-border-color);
+  background: #556279;
+  border-color: #3d475a;
 }
 
 .nav-link.active {
-  background: color-mix(in srgb, var(--main-color) 18%, transparent);
-  border-color: var(--hover-border-color);
+  background: #3e4a60;
+  border-color: #394356;
+  color: #ffffff;
 }
 
 .logo-wrapper {
@@ -162,11 +158,11 @@ const onLogout = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--dark);
+  background: #3e4a60;
   /* Màu nền tối giống logo của bạn */
   border-radius: 50%;
   padding: 2px;
-  border: 1px solid var(--main-color);
+  border: 1px solid #5b687f;
 }
 
 .brand-logo {
@@ -177,21 +173,26 @@ const onLogout = async () => {
 }
 
 .brand-name {
-  color: var(--font-color);
+  color: #f5f7fb;
   font-size: 1.15rem;
   letter-spacing: -0.5px;
 }
 
 /* Tùy chỉnh nút toggle cho đẹp hơn */
 .btn-toggle-sidebar {
-  border: 1px solid var(--border-color);
-  color: var(--font-extra-color);
+  border: 1px solid #5b687f;
+  color: #d3d9e4;
   border-radius: 8px;
   padding: 4px 8px;
 }
 
 .btn-toggle-sidebar:hover {
-  background: var(--hover-background-color);
-  color: var(--main-color);
+  background: #556279;
+  color: #ffffff;
+}
+
+.sidebar .small,
+.sidebar .opacity-75 {
+  color: #c3cbd7 !important;
 }
 </style>

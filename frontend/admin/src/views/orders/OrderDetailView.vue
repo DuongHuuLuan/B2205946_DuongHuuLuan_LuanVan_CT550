@@ -62,7 +62,7 @@
 
             <div class="row g-3 mt-2">
               <div class="col-12 col-md-6">
-                <label class="form-label">Thông tin người đặt</label>
+                <label class="form-label">Thông tin Khách hàng</label>
                 <div class="form-control bg-transparent mb-2">
                   {{ order?.user?.username || "-" }}
                 </div>
@@ -264,29 +264,29 @@ onMounted(fetchOrder);
 }
 
 .status-pending {
-  background: color-mix(in srgb, #f59e0b 18%, transparent);
-  border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+  background: var(--status-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-shipping {
-  background: color-mix(in srgb, #0ea5e9 18%, transparent);
-  border: 1px solid color-mix(in srgb, #0ea5e9 45%, transparent);
+  background: var(--status-info-bg);
+  border: 1px solid color-mix(in srgb, var(--status-info) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-completed {
-  background: color-mix(in srgb, #16a34a 18%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
+  background: var(--status-success-bg);
+  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }
 
 .status-canceled {
-  background: color-mix(in srgb, #ef4444 18%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  background: var(--status-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
   color: var(--font-color);
   font-weight: 700;
 }

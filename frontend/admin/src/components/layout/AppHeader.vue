@@ -106,8 +106,13 @@ onMounted(fetchProfile);
 <style scoped>
 .topbar {
   height: 64px;
-  background: var(--main-extra-bg);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(
+      90deg,
+      rgba(86, 204, 242, 0.08),
+      transparent 55%
+    ),
+    var(--main-extra-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--extra-color) 35%, var(--border-color));
   color: var(--font-color);
 }
 
@@ -120,7 +125,7 @@ onMounted(fetchProfile);
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in srgb, var(--extra-color) 35%, var(--border-color));
   background: var(--main-extra-bg);
   display: inline-flex;
   align-items: center;
@@ -131,7 +136,7 @@ onMounted(fetchProfile);
 }
 
 .icon-btn:hover {
-  border-color: color-mix(in srgb, var(--main-color) 35%, var(--border-color));
+  border-color: color-mix(in srgb, var(--main-color) 45%, var(--border-color));
   color: var(--font-color);
   box-shadow: 0 6px 14px var(--shadow-color);
 }
@@ -175,14 +180,14 @@ onMounted(fetchProfile);
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--main-color) 35%, var(--main-extra-bg));
+  background: color-mix(in srgb, var(--main-color) 30%, var(--main-extra-bg));
   color: var(--dark);
   font-weight: 600;
   font-size: 0.8rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--main-color) 55%, var(--border-color));
+  border: 1px solid color-mix(in srgb, var(--main-color) 45%, var(--border-color));
   overflow: hidden;
 }
 

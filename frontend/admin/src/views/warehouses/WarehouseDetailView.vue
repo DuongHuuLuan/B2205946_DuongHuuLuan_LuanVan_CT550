@@ -345,20 +345,20 @@ onMounted(async () => {
 }
 
 .badge-pending {
-  background: rgba(255, 193, 7, 0.18);
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  color: #ffc107;
+  background: var(--status-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+  color: var(--status-warning);
 }
 
 .badge-completed {
-  background: rgba(25, 135, 84, 0.18);
-  border: 1px solid rgba(25, 135, 84, 0.35);
-  color: #2ecc71;
+  background: var(--status-success-bg);
+  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
+  color: var(--status-success);
 }
 
 .badge-canceled {
-  background: rgba(220, 53, 69, 0.18);
-  border: 1px solid rgba(220, 53, 69, 0.35);
-  color: #ff6b6b;
+  background: var(--status-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
+  color: var(--status-danger);
 }
 </style>

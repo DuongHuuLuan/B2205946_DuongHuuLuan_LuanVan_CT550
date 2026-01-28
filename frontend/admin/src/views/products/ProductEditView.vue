@@ -636,7 +636,6 @@ onMounted(async () => {
   filter: var(--brightness);
 }
 
-/* variant image */
 .variant-thumb {
   position: relative;
   width: 5rem;
@@ -653,11 +652,9 @@ onMounted(async () => {
   object-fit: cover;
 }
 
-/* image blocks */
 .img-item {
   position: relative;
   width: 12rem;
-  /* height: 8rem; */
   border-radius: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -670,7 +667,6 @@ onMounted(async () => {
   object-fit: cover;
 }
 
-/* actions overlay */
 .img-actions {
   position: absolute;
   left: 6px;
