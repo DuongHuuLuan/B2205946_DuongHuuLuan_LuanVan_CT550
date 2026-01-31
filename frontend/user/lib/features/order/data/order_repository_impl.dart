@@ -1,11 +1,11 @@
 import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/data/checkout_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/order_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/delivery_info_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/ghn_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/order_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/payment_method_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/vnpay_mapper.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/checkout_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/delivery_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/ghn_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
@@ -13,9 +13,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/payment_meth
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 import 'package:dio/dio.dart';
 
-class CheckoutRepositoryImpl implements CheckoutRepository {
-  final CheckoutApi _api;
-  CheckoutRepositoryImpl(this._api);
+class OrderRepositoryImpl implements OrderRepository {
+  final OrderApi _api;
+  OrderRepositoryImpl(this._api);
 
   Map<String, dynamic> _extractMap(dynamic raw) {
     if (raw is Map<String, dynamic>) {
@@ -34,6 +34,17 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       }
     }
     return const {};
+  }
+
+  @override
+  Future<List<OrderOut>> getOrderHistory() async {
+    try {
+      final reponse = await _api.getOrderHistory();
+      final List<dynamic> data = reponse.data;
+      return data.map((e) => OrderMapper.fromJson(e)).toList();
+    } on DioException catch (error) {
+      throw ErrorHandler.handle(error);
+    }
   }
 
   @override
@@ -199,6 +210,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     required String toWardCode,
     required int serviceId,
     required int serviceTypeId,
+    required int weight,
     int? insuranceValue,
     String? note,
     String? requiredNote,
@@ -211,6 +223,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         "service_id": serviceId,
         "service_type_id": serviceTypeId,
         "insurance_value": insuranceValue,
+        "Weight": weight,
         "note": note,
         "required_note": requiredNote,
       });

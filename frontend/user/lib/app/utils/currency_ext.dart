@@ -1,4 +1,3 @@
-
 extension CurrencyX on double {
   String toVnd() {
     final s = toStringAsFixed(0);

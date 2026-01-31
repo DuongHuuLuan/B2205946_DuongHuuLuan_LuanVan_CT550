@@ -7,8 +7,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/checkout_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
@@ -134,17 +135,22 @@ class AppRouter {
                   (extra["details"] as List<CartDetail>?) ?? const [];
               final discountPercent =
                   (extra["discountPercent"] as num?)?.toDouble() ?? 0;
-              return CheckoutPage(
+              return OrderPage(
                 cartDetails: details,
                 discountPercent: discountPercent,
               );
             }
             final details = (extra as List<CartDetail>?) ?? const [];
-            return CheckoutPage(cartDetails: details, discountPercent: 0);
+            return OrderPage(cartDetails: details, discountPercent: 0);
           },
         ),
 
         GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
+
+        GoRoute(
+          path: "/profile",
+          builder: (context, state) => const ProfilePage(),
+        ),
       ],
     );
   }

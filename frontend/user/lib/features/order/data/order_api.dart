@@ -1,8 +1,17 @@
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/api_endpoints.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/network/dio_client.dart';
+import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
 import 'package:dio/dio.dart';
 
-class CheckoutApi {
+class OrderApi {
+  Future<Response> getOrderHistory() async {
+    try {
+      return await DioClient.instance.get(ApiEndpoints.orderHistory);
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   Future<Response> getPaymentMethods() {
     return DioClient.instance.get(ApiEndpoints.paymentMethods);
   }

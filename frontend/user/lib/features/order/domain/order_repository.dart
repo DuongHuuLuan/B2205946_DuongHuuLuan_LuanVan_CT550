@@ -4,7 +4,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/payment_method.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 
-abstract class CheckoutRepository {
+abstract class OrderRepository {
+  Future<List<OrderOut>> getOrderHistory();
+
   Future<List<PaymentMethod>> getPaymentMethods();
   Future<List<DeliveryInfo>> getDeliveryInfos();
   Future<DeliveryInfo> createDeliveryInfo({
@@ -38,6 +40,7 @@ abstract class CheckoutRepository {
     required String toWardCode,
     required int serviceId,
     required int serviceTypeId,
+    required int weight,
     int? insuranceValue,
     String? note,
     String? requiredNote,

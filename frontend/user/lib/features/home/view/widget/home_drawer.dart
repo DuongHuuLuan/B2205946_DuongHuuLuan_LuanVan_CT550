@@ -35,6 +35,15 @@ class HomeDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _DrawerItem(
+              title: "Hồ sơ",
+              onTap: () {
+                Navigator.pop(context);
+                context.go("/profile");
+              },
+              trailing: const Icon(Icons.person_outline, color: Colors.black),
+            ),
+
+            _DrawerItem(
               title: "Về Chúng tôi",
               onTap: () {
                 Navigator.pop(context);

@@ -23,6 +23,13 @@ class OrderCreate {
 class OrderOut {
   final int id;
   final String status;
+  final DateTime? createdAt;
+  final double total;
 
-  const OrderOut({required this.id, required this.status});
+  const OrderOut({
+    required this.id,
+    required this.status,
+    this.createdAt,
+    this.total = 0,
+  });
 }

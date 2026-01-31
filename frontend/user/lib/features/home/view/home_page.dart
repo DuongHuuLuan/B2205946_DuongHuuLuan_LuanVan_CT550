@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category_strip.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/circle_icon_button.dart';
@@ -54,7 +53,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.read<AuthViewmodel>();
     final productVm = context.watch<ProductViewmodel>();
     final categoryVm = context.watch<CategoryViewModel>();
 
@@ -76,7 +74,7 @@ class _HomePageState extends State<HomePage> {
           _HomeSliverAppBar(
             onCart: () => context.go("/cart"),
             onSearch: () {},
-            onProfile: () async => auth.logout(),
+            onProfile: () => context.go("/profile"),
             onMenu: () => _scaffoldKey.currentState?.openDrawer(),
           ),
 

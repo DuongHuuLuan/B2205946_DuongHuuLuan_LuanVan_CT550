@@ -19,14 +19,18 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/data/warehouse_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/data/checkout_api.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/data/checkout_repository_impl.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/checkout_repository.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/checkout_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/order_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/order_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/order_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/data/auth_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/data/profile_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/data/profile_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/domain/profile_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
 import 'package:provider/single_child_widget.dart';
 
 final List<SingleChildWidget> Providers = [
@@ -66,10 +70,16 @@ final List<SingleChildWidget> Providers = [
     create: (context) => DiscountRepositoryImpl(context.read<DiscountApi>()),
   ),
 
-  //checkout
-  Provider(create: (context) => CheckoutApi()),
-  Provider<CheckoutRepository>(
-    create: (context) => CheckoutRepositoryImpl(context.read<CheckoutApi>()),
+  //Order
+  Provider(create: (context) => OrderApi()),
+  Provider<OrderRepository>(
+    create: (context) => OrderRepositoryImpl(context.read<OrderApi>()),
+  ),
+
+  //profile
+  Provider(create: (context) => ProfileApi()),
+  Provider<ProfileRepository>(
+    create: (context) => ProfileRepositoryImpl(context.read<ProfileApi>()),
   ),
 
   ///-------------------------------------------------------------------------
@@ -110,10 +120,16 @@ final List<SingleChildWidget> Providers = [
     ),
   ),
 
-  //checkout
+  //Order
   ChangeNotifierProvider(
-    create: (context) => CheckoutViewmodel(
-      context.read<CheckoutRepository>(),
+    create: (context) => OrderViewmodel(context.read<OrderRepository>()),
+  ),
+
+  //profile
+  ChangeNotifierProvider(
+    create: (context) => ProfileViewmodel(
+      context.read<ProfileRepository>(),
+      context.read<OrderRepository>(),
     ),
   ),
 ];

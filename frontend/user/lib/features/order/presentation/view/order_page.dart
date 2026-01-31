@@ -2,7 +2,7 @@ import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/ghn_models.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/checkout_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/order_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/address_form.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/address_section.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/payment_section.dart';
@@ -14,20 +14,20 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class CheckoutPage extends StatefulWidget {
+class OrderPage extends StatefulWidget {
   final List<CartDetail> cartDetails;
   final double discountPercent;
-  const CheckoutPage({
+  const OrderPage({
     super.key,
     required this.cartDetails,
     required this.discountPercent,
   });
 
   @override
-  State<CheckoutPage> createState() => _CheckoutPageState();
+  State<OrderPage> createState() => _OrderPageState();
 }
 
-class _CheckoutPageState extends State<CheckoutPage> {
+class _OrderPageState extends State<OrderPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
@@ -38,7 +38,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      final vm = context.read<CheckoutViewmodel>();
+      final vm = context.read<OrderViewmodel>();
       vm.setCartDetails(widget.cartDetails);
       vm.loadInitialData();
     });
@@ -55,7 +55,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<CheckoutViewmodel>();
+    final vm = context.watch<OrderViewmodel>();
     final cartVm = context.read<CartViewmodel>();
     final discountPercent = widget.discountPercent;
     final subtotal = widget.cartDetails.fold<double>(
@@ -169,7 +169,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  Future<void> _submit(CheckoutViewmodel vm) async {
+  Future<void> _submit(OrderViewmodel vm) async {
     final useSaved = vm.useSavedAddress && vm.selectedDelivery != null;
     final name = useSaved
         ? vm.selectedDelivery!.name
@@ -211,27 +211,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (url != null && url.isNotEmpty) {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        Navigator.of(context).pop();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go("/cart");
+        }
 
-        await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
-
-        Future.microtask(() {
-          if (mounted) Navigator.of(context).pop();
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Không mở được link thanh toán")),
-        );
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
       }
-    } else {
+
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Đặt hàng thành công")));
+      ).showSnackBar(SnackBar(content: Text("Không mở được link thanh toán")));
+      return;
     }
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) Navigator.of(context).pop();
-    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text("Đặt hàng thành công")));
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go("/cart");
+    }
   }
 }
 
@@ -254,7 +258,7 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _LocationSelectors extends StatelessWidget {
-  final CheckoutViewmodel vm;
+  final OrderViewmodel vm;
   const _LocationSelectors({required this.vm});
 
   @override
@@ -300,21 +304,21 @@ class _NoteSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const options = [
-      {"value": "KHONGCHOXEMHANG", "label": "Không cho xem hàng"},
-      {"value": "CHOXEMHANGKHONGTHU", "label": "Cho xem hàng không thử"},
-      {"value": "CHOTHUHANG", "label": "Cho thử hàng"},
-    ];
+    // const options = [
+    //   {"value": "KHONGCHOXEMHANG", "label": "Không cho xem hàng"},
+    //   {"value": "CHOXEMHANGKHONGTHU", "label": "Cho xem hàng không thử"},
+    //   {"value": "CHOTHUHANG", "label": "Cho thử hàng"},
+    // ];
     return Column(
       children: [
-        _Dropdown<String>(
-          label: "Yêu cầu giao hàng",
-          value: requiredNote,
-          items: options.map((e) => e["value"]!).toList(),
-          itemLabel: (value) =>
-              options.firstWhere((e) => e["value"] == value)["label"]!,
-          onChanged: onRequiredNoteChanged,
-        ),
+        // _Dropdown<String>(
+        //   label: "Yêu cầu giao hàng",
+        //   value: requiredNote,
+        //   items: options.map((e) => e["value"]!).toList(),
+        //   itemLabel: (value) =>
+        //       options.firstWhere((e) => e["value"] == value)["label"]!,
+        //   onChanged: onRequiredNoteChanged,
+        // ),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: TextField(

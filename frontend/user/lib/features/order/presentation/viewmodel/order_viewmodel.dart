@@ -1,5 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/checkout_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/delivery_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/ghn_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
@@ -7,9 +7,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/payment_meth
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 import 'package:flutter/material.dart';
 
-class CheckoutViewmodel extends ChangeNotifier {
-  final CheckoutRepository _repository;
-  CheckoutViewmodel(this._repository);
+class OrderViewmodel extends ChangeNotifier {
+  final OrderRepository _repository;
+  OrderViewmodel(this._repository);
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -142,9 +142,9 @@ class CheckoutViewmodel extends ChangeNotifier {
     }
     selectedDistrict = GhnDistrict(
       districtId: delivery.districtId!,
-      districtName: "Da luu",
+      districtName: "Đã lưu",
     );
-    selectedWard = GhnWard(wardCode: delivery.wardCode!, wardName: "Da luu");
+    selectedWard = GhnWard(wardCode: delivery.wardCode!, wardName: "Đã lưu");
     services = await _repository.getServices(delivery.districtId!);
     if (services.isNotEmpty) {
       selectedService = services.first;
@@ -229,6 +229,7 @@ class CheckoutViewmodel extends ChangeNotifier {
         insuranceValue: null,
         note: note,
         requiredNote: normalizedRequiredNote,
+        weight: 500,
       );
 
       final lowerName = selectedPayment!.name.toLowerCase();
