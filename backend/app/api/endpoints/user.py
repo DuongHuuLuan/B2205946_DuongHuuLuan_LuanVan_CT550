@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.db.session import get_db
-from app.api.deps import require_admin
+from app.api.deps import require_admin, require_user
 from app.models.user import User
 from app.schemas.user import UserAdminOut, UserUpdate, UserPaginationOut
 from app.services.user_service import UserService

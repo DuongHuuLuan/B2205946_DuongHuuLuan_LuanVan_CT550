@@ -19,6 +19,8 @@ from app.api.endpoints import discount
 from app.api.endpoints import vnpay
 from app.api.endpoints import ghn
 from app.api.endpoints import dashboard
+from app.api.endpoints import profile
+from app.api.endpoints import profile
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
@@ -40,7 +42,8 @@ app.include_router(discount.router)
 app.include_router(vnpay.router)
 app.include_router(ghn.router)
 app.include_router(dashboard.router)
-
+app.include_router(profile.router)
+app.include_router(profile.router)
 
 from fastapi.middleware.cors import CORSMiddleware
 
