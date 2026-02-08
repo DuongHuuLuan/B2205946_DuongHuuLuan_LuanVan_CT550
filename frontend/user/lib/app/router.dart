@@ -3,6 +3,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/lo
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation/view/about_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
@@ -127,7 +128,7 @@ class AppRouter {
         GoRoute(path: "/cart", builder: (context, state) => const CartPage()),
 
         GoRoute(
-          path: "/checkout",
+          path: "/order",
           builder: (context, state) {
             final extra = state.extra;
             if (extra is Map) {
@@ -142,6 +143,41 @@ class AppRouter {
             }
             final details = (extra as List<CartDetail>?) ?? const [];
             return OrderPage(cartDetails: details, discountPercent: 0);
+          },
+        ),
+
+        GoRoute(
+          path: "/order-result",
+          builder: (context, state) {
+            final queryOrderId =
+                int.tryParse(state.uri.queryParameters["orderId"] ?? "") ?? 0;
+            final queryPaymentUrl =
+                state.uri.queryParameters["paymentUrl"] ?? "";
+            final extra = state.extra;
+            if (extra is Map) {
+              final orderId = extra["orderId"] as int? ?? 0;
+              final paymentUrl = extra["paymentUrl"] as String? ?? "";
+              return OrderResultPage(orderId: orderId, paymentUrl: paymentUrl);
+            }
+            return OrderResultPage(
+              orderId: queryOrderId,
+              paymentUrl: queryPaymentUrl,
+            );
+          },
+        ),
+
+        GoRoute(
+          path: "/payment-result",
+          redirect: (context, state) {
+            final orderId = state.uri.queryParameters["orderId"];
+            final status = state.uri.queryParameters["status"];
+            final valid = state.uri.queryParameters["valid"];
+            final qp = <String>[];
+            if (orderId != null) qp.add("orderId=$orderId");
+            if (status != null) qp.add("status=$status");
+            if (valid != null) qp.add("valid=$valid");
+            final tail = qp.isEmpty ? "" : "?${qp.join("&")}";
+            return "/order-result$tail";
           },
         ),
 

@@ -1,8 +1,8 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/delivery_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/ghn_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/payment_method.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +13,9 @@ class OrderViewmodel extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
+  int _shippingRequestToken = 0;
+  int _feeRequestToken = 0;
+
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -35,6 +38,7 @@ class OrderViewmodel extends ChangeNotifier {
   bool useSavedAddress = true;
 
   double? feeTotal;
+  int? lastOrderId;
 
   void setCartDetails(List<CartDetail> details) {
     cartDetails = details;
@@ -50,6 +54,7 @@ class OrderViewmodel extends ChangeNotifier {
       if (paymentMethods.isNotEmpty) {
         selectedPayment = paymentMethods.first;
       }
+
       deliveries = await _repository.getDeliveryInfos();
       if (deliveries.isNotEmpty) {
         selectedDelivery = deliveries.first;
@@ -69,6 +74,10 @@ class OrderViewmodel extends ChangeNotifier {
   }
 
   Future<void> selectProvince(GhnProvince? province) async {
+    _shippingRequestToken++;
+    _feeRequestToken++;
+    _errorMessage = null;
+
     selectedProvince = province;
     selectedDistrict = null;
     selectedWard = null;
@@ -78,7 +87,9 @@ class OrderViewmodel extends ChangeNotifier {
     services = [];
     feeTotal = null;
     notifyListeners();
+
     if (province == null) return;
+
     try {
       districts = await _repository.getDistricts(province.provinceId);
       notifyListeners();
@@ -89,6 +100,10 @@ class OrderViewmodel extends ChangeNotifier {
   }
 
   Future<void> selectDistrict(GhnDistrict? district) async {
+    _shippingRequestToken++;
+    _feeRequestToken++;
+    _errorMessage = null;
+
     selectedDistrict = district;
     selectedWard = null;
     selectedService = null;
@@ -96,7 +111,9 @@ class OrderViewmodel extends ChangeNotifier {
     services = [];
     feeTotal = null;
     notifyListeners();
+
     if (district == null) return;
+
     try {
       wards = await _repository.getWards(district.districtId);
       services = await _repository.getServices(district.districtId);
@@ -108,19 +125,28 @@ class OrderViewmodel extends ChangeNotifier {
   }
 
   void selectWard(GhnWard? ward) {
+    _feeRequestToken++;
+    _errorMessage = null;
     selectedWard = ward;
     feeTotal = null;
     notifyListeners();
+    _refreshFeeIfReady();
   }
 
   void selectService(GhnServiceOption? service) {
+    _feeRequestToken++;
+    _errorMessage = null;
     selectedService = service;
     feeTotal = null;
     notifyListeners();
+    _refreshFeeIfReady();
   }
 
   Future<void> selectDelivery(DeliveryInfo? delivery) async {
+    _shippingRequestToken++;
+    _feeRequestToken++;
     selectedDelivery = delivery;
+
     if (delivery == null) {
       useSavedAddress = false;
       selectedDistrict = null;
@@ -128,47 +154,102 @@ class OrderViewmodel extends ChangeNotifier {
       selectedService = null;
       services = [];
       feeTotal = null;
+      _errorMessage = null;
       notifyListeners();
       return;
     }
+
     useSavedAddress = true;
     await _applyDeliveryShipping(delivery);
     notifyListeners();
   }
 
   Future<void> _applyDeliveryShipping(DeliveryInfo delivery) async {
-    if (delivery.districtId == null || delivery.wardCode == null) {
+    final requestToken = ++_shippingRequestToken;
+    final districtId = delivery.districtId;
+    final wardCode = delivery.wardCode?.trim() ?? "";
+
+    selectedDistrict = null;
+    selectedWard = null;
+    selectedService = null;
+    services = [];
+    feeTotal = null;
+
+    if (districtId == null || districtId <= 0 || wardCode.isEmpty) {
+      _errorMessage =
+          "Dia chi da luu thieu district/ward. Vui long tao lai dia chi.";
+      notifyListeners();
       return;
     }
-    selectedDistrict = GhnDistrict(
-      districtId: delivery.districtId!,
-      districtName: "Đã lưu",
-    );
-    selectedWard = GhnWard(wardCode: delivery.wardCode!, wardName: "Đã lưu");
-    services = await _repository.getServices(delivery.districtId!);
-    if (services.isNotEmpty) {
-      selectedService = services.first;
+
+    selectedDistrict = GhnDistrict(districtId: districtId, districtName: "Da luu");
+    selectedWard = GhnWard(wardCode: wardCode, wardName: "Da luu");
+    notifyListeners();
+
+    try {
+      final loadedServices = await _repository.getServices(districtId);
+      if (requestToken != _shippingRequestToken) {
+        return;
+      }
+
+      services = loadedServices;
+      selectedService = services.isNotEmpty ? services.first : null;
+      if (selectedService == null) {
+        _errorMessage = "Khong lay duoc dich vu GHN cho dia chi nay.";
+        notifyListeners();
+        return;
+      }
+
+      _errorMessage = null;
+      notifyListeners();
+      _refreshFeeIfReady();
+    } catch (e) {
+      if (requestToken != _shippingRequestToken) {
+        return;
+      }
+      selectedService = null;
+      services = [];
+      feeTotal = null;
+      _errorMessage = e.toString();
+      notifyListeners();
     }
   }
 
-  Future<void> calculateFee(int orderId, {int? insuranceValue}) async {
-    if (selectedDistrict == null ||
-        selectedWard == null ||
-        selectedService == null) {
+  Future<void> calculateFee({int? insuranceValue}) async {
+    final districtId = selectedDistrict?.districtId ?? 0;
+    final wardCode = selectedWard?.wardCode.trim() ?? "";
+    final serviceId = selectedService?.serviceId ?? 0;
+    final serviceTypeId = selectedService?.serviceTypeId ?? 0;
+
+    if (districtId <= 0 || wardCode.isEmpty || serviceId <= 0) {
+      _feeRequestToken++;
+      feeTotal = null;
+      notifyListeners();
       return;
     }
+
+    final requestToken = ++_feeRequestToken;
     try {
+      const int defaultWeight = 1000;
       final fee = await _repository.calculateFee(
-        orderId: orderId,
-        toDistrictId: selectedDistrict!.districtId,
-        toWardCode: selectedWard!.wardCode,
-        serviceId: selectedService!.serviceId,
-        serviceTypeId: selectedService!.serviceTypeId,
+        toDistrictId: districtId,
+        toWardCode: wardCode,
+        serviceId: serviceId,
+        serviceTypeId: serviceTypeId,
         insuranceValue: insuranceValue,
+        weight: defaultWeight,
       );
+      if (requestToken != _feeRequestToken) {
+        return;
+      }
       feeTotal = fee.total;
+      _errorMessage = null;
       notifyListeners();
     } catch (e) {
+      if (requestToken != _feeRequestToken) {
+        return;
+      }
+      feeTotal = null;
       _errorMessage = e.toString();
       notifyListeners();
     }
@@ -185,7 +266,7 @@ class OrderViewmodel extends ChangeNotifier {
         selectedDistrict == null ||
         selectedWard == null ||
         selectedService == null) {
-      _errorMessage = "Vui lòng chọn đầy đủ địa chỉ và dịch vụ GHN";
+      _errorMessage = "Vui long chon day du dia chi va dich vu GHN";
       notifyListeners();
       return null;
     }
@@ -219,6 +300,7 @@ class OrderViewmodel extends ChangeNotifier {
               .toList(),
         ),
       );
+      lastOrderId = order.id;
 
       await _repository.createGhnOrder(
         orderId: order.id,
@@ -229,7 +311,7 @@ class OrderViewmodel extends ChangeNotifier {
         insuranceValue: null,
         note: note,
         requiredNote: normalizedRequiredNote,
-        weight: 500,
+        weight: 1000,
       );
 
       final lowerName = selectedPayment!.name.toLowerCase();
@@ -252,5 +334,26 @@ class OrderViewmodel extends ChangeNotifier {
       return value;
     }
     return "KHONGCHOXEMHANG";
+  }
+
+  void _refreshFeeIfReady() {
+    final districtId = selectedDistrict?.districtId ?? 0;
+    final wardCode = selectedWard?.wardCode.trim() ?? "";
+    final serviceId = selectedService?.serviceId ?? 0;
+
+    if (districtId <= 0 || wardCode.isEmpty || serviceId <= 0) {
+      return;
+    }
+    final insurance = _estimateInsuranceValue();
+    calculateFee(insuranceValue: insurance);
+  }
+
+  int _estimateInsuranceValue() {
+    double total = 0;
+    for (final item in cartDetails) {
+      total += item.lineTotal;
+    }
+    if (total <= 0) return 0;
+    return total.ceil();
   }
 }

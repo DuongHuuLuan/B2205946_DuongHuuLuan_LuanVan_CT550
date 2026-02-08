@@ -48,6 +48,16 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
+  Future<OrderOut> getOrderDetail(int orderId) async {
+    try {
+      final response = await _api.getOrderDetail(orderId);
+      return OrderMapper.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (error) {
+      throw ErrorHandler.handle(error);
+    }
+  }
+
+  @override
   Future<List<PaymentMethod>> getPaymentMethods() async {
     try {
       final response = await _api.getPaymentMethods();
@@ -65,9 +75,6 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<List<DeliveryInfo>> getDeliveryInfos() async {
     try {
       final response = await _api.getDeliveryInfos();
-      print("========= DEBUG: getDeliveryInfos =========");
-      print("Kiểu dữ liệu nhận được: ${response.data.runtimeType}");
-      print("Nội dung dữ liệu: ${response.data}");
       final data = response.data is Map
           ? (response.data["data"] ?? response.data)
           : response.data;
@@ -177,22 +184,32 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<GhnFee> calculateFee({
-    required int orderId,
+    int? orderId,
     required int toDistrictId,
     required String toWardCode,
     required int serviceId,
     required int serviceTypeId,
     int? insuranceValue,
+    required int weight,
   }) async {
     try {
-      final response = await _api.calculateFee({
-        "order_id": orderId,
+      final payload = <String, dynamic>{
         "to_district_id": toDistrictId,
-        "to_ward_code": toWardCode,
-        "service_id": serviceId,
-        "service_type_id": serviceTypeId,
+        "to_ward_code": toWardCode.trim(),
         "insurance_value": insuranceValue,
-      });
+        "weight": weight,
+        "Weight": weight,
+      };
+      if (serviceId > 0) {
+        payload["service_id"] = serviceId;
+      }
+      if (serviceTypeId > 0) {
+        payload["service_type_id"] = serviceTypeId;
+      }
+      if (orderId != null) {
+        payload["order_id"] = orderId;
+      }
+      final response = await _api.calculateFee(payload);
       final raw = response.data is Map
           ? (response.data["data"] ?? response.data)
           : response.data;
@@ -216,17 +233,23 @@ class OrderRepositoryImpl implements OrderRepository {
     String? requiredNote,
   }) async {
     try {
-      final response = await _api.createGhnOrder({
+      final payload = <String, dynamic>{
         "order_id": orderId,
         "to_district_id": toDistrictId,
-        "to_ward_code": toWardCode,
-        "service_id": serviceId,
-        "service_type_id": serviceTypeId,
+        "to_ward_code": toWardCode.trim(),
         "insurance_value": insuranceValue,
+        "weight": weight,
         "Weight": weight,
         "note": note,
         "required_note": requiredNote,
-      });
+      };
+      if (serviceId > 0) {
+        payload["service_id"] = serviceId;
+      }
+      if (serviceTypeId > 0) {
+        payload["service_type_id"] = serviceTypeId;
+      }
+      final response = await _api.createGhnOrder(payload);
       final raw = response.data is Map
           ? (response.data["data"] ?? response.data)
           : response.data;

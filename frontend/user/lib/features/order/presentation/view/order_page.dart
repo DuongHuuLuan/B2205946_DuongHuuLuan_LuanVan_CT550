@@ -8,11 +8,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/payment_section.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/payment_summary.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/product_row.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/shipping_section.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class OrderPage extends StatefulWidget {
   final List<CartDetail> cartDetails;
@@ -113,13 +111,13 @@ class _OrderPageState extends State<OrderPage> {
                   );
                 }),
                 const SizedBox(height: 12),
-                _SectionTitle("Phương thức vận chuyển (GHN)"),
-                ShippingSection(
-                  services: vm.services,
-                  selected: vm.selectedService,
-                  fee: vm.feeTotal,
-                  onSelect: (service) => vm.selectService(service),
-                ),
+                // _SectionTitle("Phương thức vận chuyển (GHN)"),
+                // ShippingSection(
+                //   services: vm.services,
+                //   selected: vm.selectedService,
+                //   fee: vm.feeTotal,
+                //   onSelect: (service) => vm.selectService(service),
+                // ),
                 const SizedBox(height: 12),
                 _SectionTitle("Phương thức thanh toán"),
                 PaymentSection(
@@ -209,22 +207,19 @@ class _OrderPageState extends State<OrderPage> {
     final url = result?.paymentUrl;
 
     if (url != null && url.isNotEmpty) {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go("/cart");
-        }
-
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final orderId = vm.lastOrderId ?? 0;
+      if (orderId == 0) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Không tìm thấy mã đơn hàng")),
+        );
         return;
       }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Không mở được link thanh toán")));
+      context.go(
+        "/order-result",
+        extra: {"orderId": orderId, "paymentUrl": url},
+      );
       return;
     }
 
@@ -324,7 +319,7 @@ class _NoteSection extends StatelessWidget {
           child: TextField(
             controller: noteController,
             decoration: InputDecoration(
-              labelText: "Ghỉ chú",
+              labelText: "Ghi chú",
               border: const OutlineInputBorder(),
             ),
           ),

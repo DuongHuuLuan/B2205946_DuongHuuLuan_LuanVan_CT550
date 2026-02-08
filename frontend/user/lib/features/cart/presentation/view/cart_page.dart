@@ -110,7 +110,7 @@ class _CartPageState extends State<CartPage> {
                           )
                           .toList();
                       context.go(
-                        "/checkout",
+                        "/order",
                         extra: {
                           "details": selected,
                           "discountPercent": _currentDiscountPercent,

@@ -12,12 +12,20 @@ class OrderApi {
     }
   }
 
+  Future<Response> getOrderDetail(int orderId) async {
+    try {
+      return await DioClient.instance.get(ApiEndpoints.orderDetail(orderId));
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   Future<Response> getPaymentMethods() {
     return DioClient.instance.get(ApiEndpoints.paymentMethods);
   }
 
   Future<Response> createDeliveryInfo(Map<String, dynamic> data) {
-    return DioClient.instance.post(ApiEndpoints.delivery);
+    return DioClient.instance.post(ApiEndpoints.delivery, data: data);
   }
 
   Future<Response> getDeliveryInfos() {

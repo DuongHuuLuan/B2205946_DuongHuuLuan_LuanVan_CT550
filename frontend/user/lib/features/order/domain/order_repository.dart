@@ -6,6 +6,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 
 abstract class OrderRepository {
   Future<List<OrderOut>> getOrderHistory();
+  Future<OrderOut> getOrderDetail(int orderId);
 
   Future<List<PaymentMethod>> getPaymentMethods();
   Future<List<DeliveryInfo>> getDeliveryInfos();
@@ -26,12 +27,13 @@ abstract class OrderRepository {
   Future<List<GhnServiceOption>> getServices(int toDistrictId);
 
   Future<GhnFee> calculateFee({
-    required int orderId,
+    int? orderId,
     required int toDistrictId,
     required String toWardCode,
     required int serviceId,
     required int serviceTypeId,
     int? insuranceValue,
+    required int weight,
   });
 
   Future<GhnShipment> createGhnOrder({
