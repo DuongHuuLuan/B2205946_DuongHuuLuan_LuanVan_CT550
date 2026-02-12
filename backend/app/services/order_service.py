@@ -159,11 +159,14 @@ class OrderService:
                 .joinedload(ProductDetail.size)
             ).filter(Order.user_id == user_id).order_by(Order.created_at.desc()).all()
     
+
+    def get_orders2(db: Session, user_id: int) -> List[Order]:
+        return db.query(Order).filter(Order.user_id == user_id).all()
+
     #chi tiết một đơn hàng
     @staticmethod
     def get_order_byID(db: Session, order_id: int, user_id: int):
         order = db.query(Order).options(
-            # Tương tự như trên, phải nạp đủ các bảng liên quan
             joinedload(Order.order_details)
                 .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.product)

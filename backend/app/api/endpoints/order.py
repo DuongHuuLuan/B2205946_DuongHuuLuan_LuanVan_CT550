@@ -56,7 +56,14 @@ def get_orders(
 ):
     """Lấy danh sách tất cả đơn hàng đã mua của người dùng hiện tại"""
     orders = OrderService.get_orders(db=db, user_id=current_user.id)
-    # return [OrderDetailOut.from_orm(o) for o in orders]
+    return orders
+@router.get("/history2", response_model=List[OrderOut])
+def get_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user)
+):
+    """Lấy danh sách tất cả đơn hàng đã mua của người dùng hiện tại"""
+    orders = OrderService.get_orders2(db=db, user_id=current_user.id)
     return orders
 
 @router.get("/{order_id}", response_model=OrderOut)

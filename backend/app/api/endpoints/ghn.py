@@ -18,14 +18,14 @@ def calculate_fee(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user),
 ):
-    order = (
-        db.query(Order)
-        .filter(Order.id == payload.order_id, Order.user_id == current_user.id)
-        .first()
-    )
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
+    if payload.order_id is not None:
+        order = (
+            db.query(Order)
+            .filter(Order.id == payload.order_id, Order.user_id == current_user.id)
+            .first()
+        )
+        if not order:
+            raise HTTPException(status_code=404, detail = "Order not found")
     result = GhnService.calculate_fee(
         db=db,
         order_id=payload.order_id,

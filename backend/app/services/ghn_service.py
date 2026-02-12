@@ -79,29 +79,45 @@ class GhnService:
     @staticmethod
     def calculate_fee(
         db: Session,
-        order_id: int,
+        order_id: Optional[int],
         to_district_id: int,
         to_ward_code: str,
         service_id: Optional[int] = None,
         service_type_id: Optional[int] = None,
         insurance_value: Optional[Decimal] = None,
     ) -> dict:
-        order = GhnService._load_order(db, order_id)
+        order: Optional[Order] = None
+        if order_id is not None:
+            order = GhnService._load_order(db, order_id)
+
+        # Cross-province GHN fee can reject small weights; enforce minimum 1000g.
+        weight_value = max(settings.GHN_DEFAULT_WEIGHT, 1000)
+        length_value = settings.GHN_DEFAULT_LENGTH if settings.GHN_DEFAULT_LENGTH > 0 else 20
+        width_value = settings.GHN_DEFAULT_WIDTH if settings.GHN_DEFAULT_WIDTH > 0 else 20
+        height_value = settings.GHN_DEFAULT_HEIGHT if settings.GHN_DEFAULT_HEIGHT > 0 else 20
+
+        computed_insurance = insurance_value
+        if computed_insurance is None:
+            computed_insurance = GhnService._order_total(order) if order else Decimal("0")
 
         payload = {
             "to_district_id": to_district_id,
             "to_ward_code": to_ward_code,
             "from_district_id": settings.GHN_FROM_DISTRICT_ID,
             "from_ward_code": settings.GHN_FROM_WARD_CODE,
-            "height": settings.GHN_DEFAULT_HEIGHT,
-            "length": settings.GHN_DEFAULT_LENGTH,
-            "width": settings.GHN_DEFAULT_WIDTH,
-            "weight": settings.GHN_DEFAULT_WEIGHT,
-            "insurance_value": int(insurance_value or GhnService._order_total(order)),
+            "height": height_value,
+            "length": length_value,
+            "width": width_value,
+            "weight": weight_value,
+            "Height": height_value,
+            "Length": length_value,
+            "Width": width_value,
+            "Weight": weight_value,
+            "insurance_value": int(computed_insurance),
         }
-        if service_id is not None:
+        if service_id is not None and int(service_id) > 0:
             payload["service_id"] = service_id
-        if service_type_id is not None:
+        if service_type_id is not None and int(service_type_id) > 0:
             payload["service_type_id"] = service_type_id
 
         data = GhnService._request("/shiip/public-api/v2/shipping-order/fee", payload)
@@ -148,6 +164,12 @@ class GhnService:
                 }
             )
 
+        # Keep create-order payload consistent with fee calculation.
+        weight_value = max(settings.GHN_DEFAULT_WEIGHT, 1000)
+        length_value = settings.GHN_DEFAULT_LENGTH if settings.GHN_DEFAULT_LENGTH > 0 else 20
+        width_value = settings.GHN_DEFAULT_WIDTH if settings.GHN_DEFAULT_WIDTH > 0 else 20
+        height_value = settings.GHN_DEFAULT_HEIGHT if settings.GHN_DEFAULT_HEIGHT > 0 else 20
+
         payload = {
             "payment_type_id": settings.GHN_PAYMENT_TYPE_ID,
             "note": note or "",
@@ -164,15 +186,15 @@ class GhnService:
             "to_district_id": to_district_id,
             "cod_amount": int(cod_amount),
             "insurance_value": int(insurance_value or total_amount),
-            "weight": settings.GHN_DEFAULT_WEIGHT,
-            "length": settings.GHN_DEFAULT_LENGTH,
-            "width": settings.GHN_DEFAULT_WIDTH,
-            "height": settings.GHN_DEFAULT_HEIGHT,
+            "Weight": weight_value,
+            "Length": length_value,
+            "Width": width_value,
+            "Height": height_value,
             "items": items,
         }
-        if service_id is not None:
+        if service_id is not None and int(service_id) > 0:
             payload["service_id"] = service_id
-        if service_type_id is not None:
+        if service_type_id is not None and int(service_type_id) > 0:
             payload["service_type_id"] = service_type_id
 
         data = GhnService._request("/shiip/public-api/v2/shipping-order/create", payload)
@@ -262,4 +284,3 @@ class GhnService:
         }
         data = GhnService._request("/shiip/public-api/v2/shipping-order/available-services", payload)
         return data.get("data", [])
-

@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     VNPAY_URL: str = os.getenv("VNPAY_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html")
     VNPAY_RETURN_URL: str = os.getenv("VNPAY_RETURN_URL", "")
     VNPAY_VERSION: str = os.getenv("VNPAY_VERSION", "2.1.0")
+    APP_DEEP_LINK_SCHEME: str = os.getenv("APP_DEEP_LINK_SCHEME", "helmetshop")
+    APP_RETURN_URL: str = os.getenv("APP_RETURN_URL", "")
 
     # GHN
     GHN_API_BASE: str = os.getenv("GHN_API_BASE", "https://dev-online-gateway.ghn.vn")

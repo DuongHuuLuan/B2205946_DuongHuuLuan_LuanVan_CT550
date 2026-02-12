@@ -44,18 +44,12 @@ class AuthService:
         # tạo token chứa sub(ID) và role
         token = created_access_token(
             subject=user.id,
-            role=user.role.value # lấy chuỗi "admin" hoặc "user" từ Enum
+            role=user.role.value 
         )
         return {
             "access_token": token,
             "token_type": "bearer",
             "user": user
-            # "user": {
-            #     "id": user.id,
-            #     "email": user.email,
-            #     "username": user.username,
-            #     "role": user.role.value
-            # }
         }
     
     @staticmethod

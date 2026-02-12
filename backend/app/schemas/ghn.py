@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class GhnFeeRequest(BaseModel):
-    order_id: int
+    order_id: Optional[int] = None
     to_district_id: int #id địa chỉ
     to_ward_code: str # địa chỉ
     service_id: Optional[int] = None

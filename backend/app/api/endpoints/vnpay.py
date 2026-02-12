@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_user
@@ -50,20 +51,24 @@ def vnpay_return(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No data received")
     
     is_valid = VnpayService.verify_signature(params)
-    if is_valid:
-        VnpayService.record_transaction(db, params)
+    order_id = params.get("vnp_TxnRef", "")
+    response_code = params.get("vnp_ResponseCode")
+    transaction_status = params.get("vnp_TransactionStatus")
+    is_success = response_code == "00" and transaction_status == "00"
 
-    return {
-        "is_valid": is_valid,
-        "received_params": params
-    }
-    # return {
-    #     "valid_signature": is_valid,
-    #     "vnp_ResponseCode": params.get("vnp_ResponseCode"),
-    #     "vnp_TxnRef": params.get("vnp_TxnRef"),
-    #     "vnp_Amount": params.get("vnp_Amount"),
-    #     "vnp_OrderInfo": params.get("vnp_OrderInfo"),
-    # }
+    if is_valid:
+        VnpayService.handle_ipn(db, params)
+
+    app_return_url = settings.APP_RETURN_URL or (
+        f"{settings.APP_DEEP_LINK_SCHEME}://payment-result"
+    )
+    separator = "&" if "?" in app_return_url else "?"
+    redirect_url = (
+        f"{app_return_url}{separator}orderId={order_id}"
+        f"&status={'success' if (is_valid and is_success) else 'failed'}"
+        f"&valid={'1' if is_valid else '0'}"
+    )
+    return RedirectResponse(url=redirect_url, status_code=302)
 
 
 @router.get("/ipn")
