@@ -130,6 +130,8 @@ final List<SingleChildWidget> Providers = [
     create: (context) => ProfileViewmodel(
       context.read<ProfileRepository>(),
       context.read<OrderRepository>(),
+      context.read<CategoryRepository>(),
+      context.read<DiscountRepository>(),
     ),
   ),
 ];

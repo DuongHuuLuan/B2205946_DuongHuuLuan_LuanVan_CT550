@@ -114,8 +114,10 @@ class _OrderResultPageState extends State<OrderResultPage>
     final isFailed = status != null && _isFailed(status);
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
       appBar: AppBar(
         title: const Text("Thanh toán"),
+        centerTitle: true,
         leading: IconButton(
           onPressed: () => context.go("/"),
           icon: Icon(Icons.close),
@@ -123,55 +125,59 @@ class _OrderResultPageState extends State<OrderResultPage>
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            Icon(
-              isSuccess
-                  ? Icons.check_circle
-                  : isFailed
-                  ? Icons.cancel
-                  : Icons.pending,
-              size: 72,
-              color: isSuccess
-                  ? Colors.green
-                  : isFailed
-                  ? Colors.red
-                  : Colors.orange,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isSuccess
-                  ? "Thanh toán thành công"
-                  : isFailed
-                  ? "Thanh toán thất bại"
-                  : "Đang chờ xác nhận thanh toán",
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Mã đơn hàng : #ĐH-${widget.orderId}",
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 24),
-            if (_error != null)
+        child: Center(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              Icon(
+                isSuccess
+                    ? Icons.check_circle
+                    : isFailed
+                    ? Icons.cancel
+                    : Icons.pending,
+                size: 72,
+                color: isSuccess
+                    ? Colors.green
+                    : isFailed
+                    ? Colors.red
+                    : Colors.orange,
+              ),
+              const SizedBox(height: 16),
               Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                isSuccess
+                    ? "Thanh toán thành công"
+                    : isFailed
+                    ? "Thanh toán thất bại"
+                    : "Đang chờ xác nhận thanh toán",
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
               ),
-            const Spacer(),
-            if (!isSuccess && !isFailed)
-              ElevatedButton.icon(
-                onPressed: _isChecking ? null : _checkStatus,
-                label: Text(_isChecking ? "Đang kiểm tra..." : "Kiểm tra lại"),
+              const SizedBox(height: 8),
+              Text(
+                "Mã đơn hàng : #ĐH-${widget.orderId}",
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => context.go("/profile"),
-              child: const Text("Xem đơn hàng"),
-            ),
-          ],
+              const SizedBox(height: 24),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              const Spacer(),
+              if (!isSuccess && !isFailed)
+                ElevatedButton.icon(
+                  onPressed: _isChecking ? null : _checkStatus,
+                  label: Text(
+                    _isChecking ? "Đang kiểm tra..." : "Kiểm tra lại",
+                  ),
+                ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.go("/profile"),
+                child: const Text("Xem đơn hàng"),
+              ),
+            ],
+          ),
         ),
       ),
     );

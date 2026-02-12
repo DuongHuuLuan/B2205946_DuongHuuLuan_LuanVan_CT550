@@ -7,7 +7,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/vnpay.dart';
 abstract class OrderRepository {
   Future<List<OrderOut>> getOrderHistory();
   Future<OrderOut> getOrderDetail(int orderId);
-
+  Future<OrderOut> confirmDelivery(int orderId);
+  Future<void> cancelOrder(int orderId);
   Future<List<PaymentMethod>> getPaymentMethods();
   Future<List<DeliveryInfo>> getDeliveryInfos();
   Future<DeliveryInfo> createDeliveryInfo({

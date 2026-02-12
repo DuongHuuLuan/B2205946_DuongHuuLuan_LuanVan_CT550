@@ -177,13 +177,16 @@ class OrderViewmodel extends ChangeNotifier {
 
     if (districtId == null || districtId <= 0 || wardCode.isEmpty) {
       _errorMessage =
-          "Dia chi da luu thieu district/ward. Vui long tao lai dia chi.";
+          "Địa chỉ đã lưu thiếu district/ward. Vui lòng tạo lại địa chỉ.";
       notifyListeners();
       return;
     }
 
-    selectedDistrict = GhnDistrict(districtId: districtId, districtName: "Da luu");
-    selectedWard = GhnWard(wardCode: wardCode, wardName: "Da luu");
+    selectedDistrict = GhnDistrict(
+      districtId: districtId,
+      districtName: "Đã lưu",
+    );
+    selectedWard = GhnWard(wardCode: wardCode, wardName: "Đã lưu");
     notifyListeners();
 
     try {
@@ -195,7 +198,7 @@ class OrderViewmodel extends ChangeNotifier {
       services = loadedServices;
       selectedService = services.isNotEmpty ? services.first : null;
       if (selectedService == null) {
-        _errorMessage = "Khong lay duoc dich vu GHN cho dia chi nay.";
+        _errorMessage = "Không lấy được dịch vụ GHN cho địa chỉ này.";
         notifyListeners();
         return;
       }
@@ -266,7 +269,7 @@ class OrderViewmodel extends ChangeNotifier {
         selectedDistrict == null ||
         selectedWard == null ||
         selectedService == null) {
-      _errorMessage = "Vui long chon day du dia chi va dich vu GHN";
+      _errorMessage = "Vui lòng chọn đầy đủ địa chỉ và dịch vụ GHN";
       notifyListeners();
       return null;
     }

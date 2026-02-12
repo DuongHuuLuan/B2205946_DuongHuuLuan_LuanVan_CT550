@@ -20,6 +20,24 @@ class OrderApi {
     }
   }
 
+  Future<Response> confirmDelivery(int orderId) async {
+    try {
+      return await DioClient.instance.post(
+        ApiEndpoints.orderConfirmDelivery(orderId),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  Future<Response> cancelOrder(int orderId) async {
+    try {
+      return await DioClient.instance.post(ApiEndpoints.orderCancel(orderId));
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   Future<Response> getPaymentMethods() {
     return DioClient.instance.get(ApiEndpoints.paymentMethods);
   }

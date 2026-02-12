@@ -58,6 +58,29 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
+  Future<OrderOut> confirmDelivery(int orderId) async {
+    try {
+      final response = await _api.confirmDelivery(orderId);
+      final raw = response.data is Map
+          ? (response.data["data"] ?? response.data)
+          : response.data;
+      final data = _extractMap(raw);
+      return OrderMapper.fromJson(data);
+    } on DioException catch (error) {
+      throw ErrorHandler.handle(error);
+    }
+  }
+
+  @override
+  Future<void> cancelOrder(int orderId) async {
+    try {
+      await _api.cancelOrder(orderId);
+    } on DioException catch (error) {
+      throw ErrorHandler.handle(error);
+    }
+  }
+
+  @override
   Future<List<PaymentMethod>> getPaymentMethods() async {
     try {
       final response = await _api.getPaymentMethods();
