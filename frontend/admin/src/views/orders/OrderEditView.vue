@@ -36,17 +36,23 @@
 
               <div class="col-12 col-md-6">
                 <label class="form-label">Trạng thái</label>
-                <select v-model="status" class="form-select bg-transparent">
-                  <option value="pending">Pending</option>
-                  <option value="shipping">Shipping</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                <select v-if="canAdminUpdateStatus" v-model="status" class="form-select bg-transparent"
+                  :disabled="saving">
+                  <option v-for="opt in adminStatusOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
+                <div v-else class="form-control bg-transparent">
+                  {{ statusLabel(order?.status) }}
+                </div>
+                <div class="form-text text-warning mt-1" v-if="!canAdminUpdateStatus">
+                  Admin chỉ được cập nhật đơn hàng ở trạng thái chờ xác nhận.
+                </div>
               </div>
             </div>
 
             <div class="d-flex gap-2 mt-3">
-              <button class="btn btn-accent" type="submit" :disabled="saving">
+              <button class="btn btn-accent" type="submit" :disabled="!canSubmit">
                 <i class="fa-solid fa-floppy-disk me-1"></i>
                 {{ saving ? "Đang lưu..." : "Lưu thay đổi" }}
               </button>
@@ -63,10 +69,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import OrderService from "@/services/order.service";
+import { statusLabel } from "@/utils/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -76,13 +83,23 @@ const loading = ref(true);
 const saving = ref(false);
 const order = ref(null);
 const status = ref("pending");
+const adminStatusOptions = [
+  { value: "shipping", label: "Shipping" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const currentStatus = computed(() => String(order.value?.status || "").toLowerCase());
+const canAdminUpdateStatus = computed(() => currentStatus.value === "pending");
+const canSubmit = computed(() => {
+  return !saving.value && canAdminUpdateStatus.value && adminStatusOptions.some((opt) => opt.value === status.value);
+});
 
 async function fetchOrder() {
   loading.value = true;
   try {
     const res = await OrderService.get(id);
     order.value = res ?? null;
-    status.value = order.value?.status || "pending";
+    status.value = canAdminUpdateStatus.value ? "shipping" : order.value?.status || "pending";
   } catch (e) {
     const msg =
       e?.response?.data?.message ||
@@ -96,6 +113,11 @@ async function fetchOrder() {
 }
 
 async function onSubmit() {
+  if (!canAdminUpdateStatus.value || !adminStatusOptions.some((opt) => opt.value === status.value)) {
+    await Swal.fire("Không hợp lệ", "Admin chỉ được chuyển trạng thái từ chờ xác nhận sang giao hàng hoặc hủy đơn.", "warning");
+    return;
+  }
+
   saving.value = true;
   try {
     await OrderService.updateStatus(id, { status: status.value });

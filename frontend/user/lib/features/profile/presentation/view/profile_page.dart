@@ -2,6 +2,7 @@ import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart'
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_edit_dialog.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/order_history_list.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_header.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/quick_order_grid.dart';
@@ -87,6 +88,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     name: _pickName(vm.profile?.name, auth.user?.username),
                     email: auth.user?.email ?? "Chưa có email",
                     avatarUrl: _resolveAvatar(vm.profile?.avatar),
+                    onEditPressed: vm.isUpdatingProfile
+                        ? null
+                        : () => _openEditProfileDialog(auth),
                   ),
                   const SizedBox(height: 14),
                   const _SectionHeader(title: "Đơn hàng của tôi"),
@@ -200,6 +204,47 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {
       if (!mounted) return;
       final message = vm.errorMessage ?? "Hủy đơn hàng thất bại.";
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _openEditProfileDialog(AuthViewmodel auth) async {
+    final vm = context.read<ProfileViewmodel>();
+    final formValue = await showDialog<ProfileEditValue>(
+      context: context,
+      builder: (dialogContext) {
+        return AnimatedBuilder(
+          animation: vm,
+          builder: (_, __) {
+            return ProfileEditDialog(
+              profile: vm.profile,
+              fallbackName: _pickName(vm.profile?.name, auth.user?.username),
+              isSubmitting: vm.isUpdatingProfile,
+            );
+          },
+        );
+      },
+    );
+
+    if (formValue == null) return;
+
+    try {
+      await vm.updateProfile(
+        name: formValue.name,
+        phone: formValue.phone,
+        gender: formValue.gender,
+        birthday: formValue.birthday,
+        avatar: formValue.avatar,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cập nhật thông tin thành công.")),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final message = vm.errorMessage ?? "Cập nhật thông tin thất bại.";
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));

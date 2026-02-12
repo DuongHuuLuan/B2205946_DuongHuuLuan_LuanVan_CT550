@@ -22,6 +22,8 @@ class ProfileViewmodel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  bool _isUpdatingProfile = false;
+  bool get isUpdatingProfile => _isUpdatingProfile;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -123,6 +125,40 @@ class ProfileViewmodel extends ChangeNotifier {
 
   String _normalizeStatus(String value) => value.trim().toLowerCase();
 
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+    required String gender,
+    required DateTime? birthday,
+    required String avatar,
+  }) async {
+    if (_isUpdatingProfile) return;
+
+    _isUpdatingProfile = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final payload = <String, dynamic>{
+      "name": _normalizeOptionalText(name),
+      "phone": _normalizeOptionalText(phone),
+      "gender": _normalizeGender(gender),
+      "birthday": birthday == null ? null : _formatBirthdayForApi(birthday),
+      "avatar": _normalizeOptionalText(avatar),
+    };
+
+    try {
+      profile = await _profileRepository.updateProfile(payload);
+    } catch (e, stacktrace) {
+      _errorMessage = e.toString();
+      debugPrint("ProfileViewmodel updateProfile error: $e");
+      debugPrint("ProfileViewmodel updateProfile stacktrace: $stacktrace");
+      rethrow;
+    } finally {
+      _isUpdatingProfile = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> _loadAvailableDiscounts() async {
     final categories = await _categoryRepository.getAll();
     final categoryIds = categories.map((c) => c.id).toSet().toList();
@@ -142,5 +178,28 @@ class ProfileViewmodel extends ChangeNotifier {
 
     availableDiscounts = uniqueById.values.toList()
       ..sort((a, b) => a.endAt.compareTo(b.endAt));
+  }
+
+  String? _normalizeOptionalText(String value) {
+    final text = value.trim();
+    return text.isEmpty ? null : text;
+  }
+
+  String? _normalizeGender(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    if (normalized == "male" ||
+        normalized == "female" ||
+        normalized == "other") {
+      return normalized;
+    }
+    return null;
+  }
+
+  String _formatBirthdayForApi(DateTime birthday) {
+    final date = birthday.toLocal();
+    final month = date.month.toString().padLeft(2, "0");
+    final day = date.day.toString().padLeft(2, "0");
+    return "${date.year}-$month-$day";
   }
 }

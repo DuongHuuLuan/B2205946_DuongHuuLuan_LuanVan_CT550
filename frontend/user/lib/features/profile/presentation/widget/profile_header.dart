@@ -4,12 +4,14 @@ class ProfileHeader extends StatelessWidget {
   final String name;
   final String email;
   final String? avatarUrl;
+  final VoidCallback? onEditPressed;
 
   const ProfileHeader({
     super.key,
     required this.name,
     required this.email,
     required this.avatarUrl,
+    this.onEditPressed,
   });
 
   @override
@@ -72,7 +74,7 @@ class ProfileHeader extends StatelessWidget {
               ),
             ),
             OutlinedButton(
-              onPressed: () {},
+              onPressed: onEditPressed,
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: Colors.white54),

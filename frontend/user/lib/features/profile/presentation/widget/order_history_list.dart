@@ -64,11 +64,15 @@ class OrderHistoryList extends StatelessWidget {
                 if (_canConfirm(order) && onConfirmReceived != null) ...[
                   const SizedBox(height: 8),
                   FilledButton.tonal(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     onPressed: isConfirming
                         ? null
                         : () => _handleConfirmReceived(context, order),
                     child: Text(
-                      isConfirming ? "Đang xử lý..." : "Đã nhận hàng",
+                      isConfirming ? "Đang xử lý..." : "Đã nhận được hàng",
                     ),
                   ),
                 ],
@@ -122,10 +126,19 @@ class OrderHistoryList extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text("Hủy"),
+              child: Text(
+                "Hủy",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               child: const Text("Xác nhận"),
             ),
           ],
@@ -223,7 +236,14 @@ class OrderHistoryList extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Đóng"),
+              child: Text(
+                "Đóng",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );

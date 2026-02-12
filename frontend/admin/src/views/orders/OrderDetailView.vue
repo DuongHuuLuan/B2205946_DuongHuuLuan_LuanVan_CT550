@@ -11,7 +11,8 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'orders.list' }">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
           </RouterLink>
-          <RouterLink class="btn btn-outline-secondary" :to="{ name: 'orders.edit', params: { id } }">
+          <RouterLink v-if="canUpdateStatus" class="btn btn-outline-secondary"
+            :to="{ name: 'orders.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Cập nhật trạng thái
           </RouterLink>
         </div>
@@ -193,6 +194,7 @@ const id = route.params.id;
 
 const loading = ref(true);
 const order = ref(null);
+const canUpdateStatus = computed(() => String(order.value?.status || "").toLowerCase() === "pending");
 
 const orderItems = computed(() => {
   return order.value?.order_details || [];

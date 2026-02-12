@@ -100,7 +100,7 @@
                                                 title="Xem chi tiết">
                                                 <i class="fa-solid fa-eye"></i>
                                             </RouterLink>
-                                            <RouterLink class="icon-btn icon-edit"
+                                            <RouterLink v-if="canUpdateStatus(o?.status)" class="icon-btn icon-edit"
                                                 :to="{ name: 'orders.edit', params: { id: o.id } }"
                                                 title="Cập nhật trạng thái">
                                                 <i class="fa-solid fa-pen-to-square"></i>
@@ -175,6 +175,10 @@ function calcTotal(order) {
         const price = Number(d?.price || 0);
         return sum + qty * price;
     }, 0);
+}
+
+function canUpdateStatus(orderStatus) {
+    return String(orderStatus || "").toLowerCase() === "pending";
 }
 
 async function fetchOrders() {
@@ -300,5 +304,3 @@ watch(page, async () => {
     color: #f59e0b;
 }
 </style>
-
-
