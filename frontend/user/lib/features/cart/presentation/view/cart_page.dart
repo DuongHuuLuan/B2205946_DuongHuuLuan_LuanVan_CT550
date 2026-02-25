@@ -59,7 +59,7 @@ class _CartPageState extends State<CartPage> {
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Giỏ hàng")),
+      appBar: AppBar(title: Text("Giỏ hàng", style: TextStyle(fontSize: 20))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(

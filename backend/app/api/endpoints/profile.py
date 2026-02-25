@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 from app.api.deps import require_user
 from app.db.session import get_db
@@ -23,3 +23,12 @@ def update_profile(
     current_user: User = Depends(require_user)
 ):
     return ProfileService.update_me(db, current_user.id, profile_in)
+
+
+@router.post("/me/avatar", response_model=ProfileOut)
+def upload_my_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user),
+):
+    return ProfileService.upload_my_avatar(db, current_user.id, file)

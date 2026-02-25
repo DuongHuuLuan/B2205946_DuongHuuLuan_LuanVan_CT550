@@ -76,6 +76,11 @@
         <span v-if="!collapsed">Đơn hàng</span>
       </RouterLink>
 
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('evaluates.') }" to="/evaluates">
+        <i class="fa-solid fa-star-half-stroke me-2"></i>
+        <span v-if="!collapsed">Đánh giá</span>
+      </RouterLink>
+
       <div class="nav-link" role="button" @click="onLogout()">
         <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>
         <span v-if="!collapsed">Đăng xuất</span>

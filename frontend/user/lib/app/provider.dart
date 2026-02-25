@@ -12,6 +12,10 @@ import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_ap
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_reponsitory_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_reponsitory.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
@@ -82,6 +86,12 @@ final List<SingleChildWidget> Providers = [
     create: (context) => ProfileRepositoryImpl(context.read<ProfileApi>()),
   ),
 
+  //evaluate
+  Provider(create: (_) => EvaluateApi()),
+  Provider<EvaluateRepository>(
+    create: (context) => EvaluateRepositoryImpl(context.read<EvaluateApi>()),
+  ),
+
   ///-------------------------------------------------------------------------
 
   // AuthViewModel
@@ -133,5 +143,10 @@ final List<SingleChildWidget> Providers = [
       context.read<CategoryRepository>(),
       context.read<DiscountRepository>(),
     ),
+  ),
+
+  //EvaluateViewModel
+  ChangeNotifierProvider(
+    create: (context) => EvaluateViewmodel(context.read<EvaluateRepository>()),
   ),
 ];

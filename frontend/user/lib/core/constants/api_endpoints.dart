@@ -46,6 +46,12 @@ class ApiEndpoints {
       "/orders/$orderId/confirm-delivery";
   static String orderStatus(int orderId) => "/orders/$orderId/status";
 
+  //Evaluate
+  static const evaluatesUser = "/evaluates/my";
+  static String evaluateDetail(int id) => "/evaluates/$id";
+  static String createEvaluate(int orderId) => "/evaluates/$orderId";
+  static String evaluateByOrder(int orderId) => "/evaluates/order/$orderId";
+
   // Delivery
   static const delivery = "/delivery/";
 

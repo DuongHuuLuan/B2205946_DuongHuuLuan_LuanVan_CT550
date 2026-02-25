@@ -389,6 +389,14 @@ const routes = [
         meta: { title: "Chi tiết đơn hàng" },
         props: true,
       },
+
+      {
+        path: "/evaluates",
+        name: "evaluates.list",
+        component: () =>
+          import("../views/evaluates/EvaluatePendingListView.vue"),
+        meta: { title: "Đánh giá" },
+      },
     ],
   },
 ];

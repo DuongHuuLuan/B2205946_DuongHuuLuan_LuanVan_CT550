@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import app.core.cloudinary
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from app.api.endpoints import auth
 from app.api.endpoints import user
 from app.api.endpoints import product
@@ -24,6 +25,8 @@ from app.api.endpoints import profile
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), name="static")
 app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(product.router)

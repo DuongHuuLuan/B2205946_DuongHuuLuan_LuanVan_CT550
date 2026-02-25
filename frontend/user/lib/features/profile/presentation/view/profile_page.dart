@@ -1,5 +1,9 @@
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/view/evaluate_create_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/widget/evaluate_history_section.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_edit_dialog.dart';
@@ -27,18 +31,21 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     context.read<ProfileViewmodel>().load();
+    context.read<EvaluateViewmodel>().load(perPage: 10);
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthViewmodel>();
     final vm = context.watch<ProfileViewmodel>();
+    final evaluateVm = context.watch<EvaluateViewmodel>();
     final profile = vm.profile;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     final filteredOrders = vm.ordersByStatus(_selectedStatus);
     final completedOrders = vm.completedOrders;
+    _scheduleEvaluateStatusSync(completedOrders, evaluateVm);
     final vouchers = vm.availableDiscounts
         .map(
           (discount) => VoucherItemData(
@@ -69,12 +76,18 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           IconButton(
             tooltip: "Tải lại",
-            onPressed: vm.isLoading ? null : () => vm.refresh(),
+            onPressed: vm.isLoading
+                ? null
+                : () async {
+                    await vm.refresh();
+                    if (!mounted) return;
+                    await context.read<EvaluateViewmodel>().refresh();
+                  },
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
             tooltip: "Đăng xuất",
-            onPressed: auth.isAuthenticated ? () => auth.logout() : null,
+            onPressed: auth.isAuthenticated ? () => _confirmLogout(auth) : null,
             icon: const Icon(Icons.logout),
           ),
         ],
@@ -142,6 +155,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     confirmingOrderIds: vm.confirmingOrderIds,
                     onCancelOrder: _cancelOrder,
                     cancellingOrderIds: vm.cancellingOrderIds,
+                    evaluatedOrderIds: evaluateVm.reviewedOrderIds,
+                    evaluatingOrderIds: evaluateVm.creatingOrderIds,
+                    onCreateEvaluate: _openCreateEvaluate,
+                    onViewEvaluate: _openEvaluateDetail,
                     emptyMessage:
                         "Không có đơn hàng nào ở trạng thái ${_statusLabel(_selectedStatus).toLowerCase()}.",
                   ),
@@ -153,8 +170,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     confirmingOrderIds: vm.confirmingOrderIds,
                     onCancelOrder: _cancelOrder,
                     cancellingOrderIds: vm.cancellingOrderIds,
+                    evaluatedOrderIds: evaluateVm.reviewedOrderIds,
+                    evaluatingOrderIds: evaluateVm.creatingOrderIds,
+                    onCreateEvaluate: _openCreateEvaluate,
+                    onViewEvaluate: _openEvaluateDetail,
                     emptyMessage: "Bạn chưa có đơn hàng giao thành công.",
                   ),
+                  const SizedBox(height: 18),
+                  const _SectionHeader(title: "Lịch sử đơn hàng"),
+                  EvaluateHistorySection(key: ValueKey(vm.orders.length)),
                   if (vm.errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -210,6 +234,142 @@ class _ProfilePageState extends State<ProfilePage> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  void _scheduleEvaluateStatusSync(
+    List<OrderOut> completedOrders,
+    EvaluateViewmodel evaluateVm,
+  ) {
+    final orderIds = completedOrders.map((e) => e.id).toList(growable: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      evaluateVm.syncEvaluateStatusForOrders(orderIds);
+    });
+  }
+
+  Future<void> _openCreateEvaluate(OrderOut order) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => EvaluateCreatePage(orderId: order.id)),
+    );
+
+    if (result == true && mounted) {
+      await context.read<EvaluateViewmodel>().refresh();
+    }
+  }
+
+  Future<void> _openEvaluateDetail(OrderOut order) async {
+    final evaluateVm = context.read<EvaluateViewmodel>();
+    await evaluateVm.syncEvaluateStatusForOrders([order.id]);
+    final evaluateId = evaluateVm.evaluateIdForOrder(order.id);
+    if (evaluateId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Chưa tìm thấy đánh giá cho đơn hàng này."),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final evaluate = await evaluateVm.getEvaluateDetail(evaluateId);
+      if (!mounted) return;
+      await _showEvaluateDetailDialog(evaluate);
+    } catch (_) {
+      if (!mounted) return;
+      final msg = evaluateVm.errorMessage ?? "Không thể tải chi tiết đánh giá.";
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _showEvaluateDetailDialog(EvaluateItem evaluate) async {
+    final content = (evaluate.content ?? "").trim();
+    final reply = (evaluate.adminReply ?? "").trim();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Đánh giá #EV-${evaluate.id}"),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Đơn hàng #DH-${evaluate.orderId}"),
+                  const SizedBox(height: 8),
+                  Text("Số sao: ${evaluate.rate}/5"),
+                  const SizedBox(height: 8),
+                  Text(content.isEmpty ? "(Không có nội dung)" : content),
+                  if (evaluate.images.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: evaluate.images
+                          .map(
+                            (img) => ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _resolveAvatar(img.imageUrl) ?? "",
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 72,
+                                  height: 72,
+                                  color: Colors.grey.shade200,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.broken_image_outlined,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  if (reply.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Phản hồi từ shop",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(reply),
+                        ],
+                      ),
+                    )
+                  else
+                    Text(
+                      "Chưa có phản hồi từ shop.",
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Đóng"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _openEditProfileDialog(AuthViewmodel auth) async {
@@ -282,6 +442,31 @@ class _ProfilePageState extends State<ProfilePage> {
       ).showSnackBar(SnackBar(content: Text(message)));
       return null;
     }
+  }
+
+  Future<void> _confirmLogout(AuthViewmodel auth) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Xác nhận đăng xuất"),
+          content: const Text("Bạn có chắc muốn đăng xuất không?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text("Hủy"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text("Đăng xuất"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true) return;
+    await auth.logout();
   }
 
   void _setStatus(String status) {

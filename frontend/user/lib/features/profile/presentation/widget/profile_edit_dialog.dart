@@ -97,7 +97,14 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
     final avatarUrl = _resolveAvatar(_avatarController.text);
 
     return AlertDialog(
-      title: const Text("Chỉnh sửa thông tin cá nhân"),
+      title: Text(
+        "Chỉnh sửa thông tin cá nhân",
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(

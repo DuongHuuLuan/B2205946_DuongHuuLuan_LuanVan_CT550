@@ -13,6 +13,7 @@ from app.models.delivery import DeliveryInfo
 from app.models.payment import PaymentMethod
 from app.models.discount import Discount, OrderDiscount
 from app.models.evaluate import Evaluate
+from app.models.evaluate_image import EvaluateImage
 from app.models.warehouse import Warehouse, WarehouseDetail
 from app.models.distributor import Distributor
 from app.models.receipt import Receipt, ReceiptDetail

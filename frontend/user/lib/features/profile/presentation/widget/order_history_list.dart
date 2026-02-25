@@ -11,6 +11,10 @@ class OrderHistoryList extends StatelessWidget {
   final Set<int> confirmingOrderIds;
   final Future<void> Function(OrderOut order)? onCancelOrder;
   final Set<int> cancellingOrderIds;
+  final Set<int> evaluatedOrderIds;
+  final Set<int> evaluatingOrderIds;
+  final Future<void> Function(OrderOut order)? onCreateEvaluate;
+  final Future<void> Function(OrderOut order)? onViewEvaluate;
 
   const OrderHistoryList({
     super.key,
@@ -21,6 +25,10 @@ class OrderHistoryList extends StatelessWidget {
     this.confirmingOrderIds = const {},
     this.onCancelOrder,
     this.cancellingOrderIds = const {},
+    this.evaluatedOrderIds = const {},
+    this.evaluatingOrderIds = const {},
+    this.onCreateEvaluate,
+    this.onViewEvaluate,
   });
 
   @override
@@ -42,6 +50,8 @@ class OrderHistoryList extends StatelessWidget {
         final discountCode = order.discountCode?.trim() ?? "";
         final isConfirming = confirmingOrderIds.contains(order.id);
         final isCancelling = cancellingOrderIds.contains(order.id);
+        final isEvaluated = evaluatedOrderIds.contains(order.id);
+        final isEvaluating = evaluatingOrderIds.contains(order.id);
 
         return Card(
           margin: EdgeInsets.zero,
@@ -84,6 +94,24 @@ class OrderHistoryList extends StatelessWidget {
                         : () => _handleCancelOrder(context, order),
                     child: Text(
                       isCancelling ? "Đang xử lý..." : "Hủy đơn hàng",
+                    ),
+                  ),
+                ],
+                if (_canEvaluate(order) &&
+                    ((!isEvaluated && onCreateEvaluate != null) ||
+                        (isEvaluated && onViewEvaluate != null))) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: isEvaluating
+                        ? null
+                        : () => _handleEvaluateAction(context, order, isEvaluated),
+                    icon: Icon(
+                      isEvaluated ? Icons.rate_review_outlined : Icons.star_outline,
+                    ),
+                    label: Text(
+                      isEvaluating
+                          ? "Đang xử lý..."
+                          : (isEvaluated ? "Xem đánh giá" : "Đánh giá"),
                     ),
                   ),
                 ],
@@ -257,6 +285,20 @@ class OrderHistoryList extends StatelessWidget {
 
   bool _canCancel(OrderOut order) {
     return _normalizeStatus(order.status) == "pending";
+  }
+
+  bool _canEvaluate(OrderOut order) {
+    return _normalizeStatus(order.status) == "completed";
+  }
+
+  Future<void> _handleEvaluateAction(
+    BuildContext context,
+    OrderOut order,
+    bool isEvaluated,
+  ) async {
+    final callback = isEvaluated ? onViewEvaluate : onCreateEvaluate;
+    if (callback == null) return;
+    await callback(order);
   }
 
   String _normalizeStatus(String value) => value.trim().toLowerCase();
