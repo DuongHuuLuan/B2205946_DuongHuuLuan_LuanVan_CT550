@@ -24,6 +24,8 @@ class ProfileViewmodel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool _isUpdatingProfile = false;
   bool get isUpdatingProfile => _isUpdatingProfile;
+  bool _isUploadingAvatar = false;
+  bool get isUploadingAvatar => _isUploadingAvatar;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -33,6 +35,9 @@ class ProfileViewmodel extends ChangeNotifier {
   List<Discount> availableDiscounts = [];
   final Set<int> _confirmingOrderIds = {};
   Set<int> get confirmingOrderIds => Set.unmodifiable(_confirmingOrderIds);
+
+  final _cancellingOrderIds = <int>{};
+  Set<int> get cancellingOrderIds => Set.unmodifiable(_cancellingOrderIds);
 
   Future<void> load() async {
     if (_isLoading) return;
@@ -47,32 +52,13 @@ class ProfileViewmodel extends ChangeNotifier {
       profile = await _profileRepository.getProfile();
       orders = await _orderRepository.getOrderHistory();
       await _loadAvailableDiscounts();
-    } catch (e, stacktrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("ProfileViewmodel error: $e");
-      debugPrint("ProfileViewmodel stacktrace: $stacktrace");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-
-  List<OrderOut> ordersByStatus(String status) {
-    final normalized = _normalizeStatus(status);
-    return orders
-        .where((o) => _normalizeStatus(o.status) == normalized)
-        .toList();
-  }
-
-  List<OrderOut> get completedOrders => ordersByStatus("completed");
-
-  int get pendingCount => ordersByStatus("pending").length;
-
-  int get shippingCount => ordersByStatus("shipping").length;
-
-  int get completedCount => completedOrders.length;
-
-  int get cancelledCount => ordersByStatus("cancelled").length;
 
   Future<void> confirmOrderReceived(int orderId) async {
     if (_confirmingOrderIds.contains(orderId)) return;
@@ -89,12 +75,8 @@ class ProfileViewmodel extends ChangeNotifier {
       } else {
         orders = await _orderRepository.getOrderHistory();
       }
-    } catch (e, stacktrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("ProfileViewmodel confirmOrderReceived error: $e");
-      debugPrint(
-        "ProfileViewmodel confirmOrderReceived stacktrace: $stacktrace",
-      );
       rethrow;
     } finally {
       _confirmingOrderIds.remove(orderId);
@@ -102,8 +84,6 @@ class ProfileViewmodel extends ChangeNotifier {
     }
   }
 
-  final _cancellingOrderIds = <int>{};
-  Set<int> get cancellingOrderIds => Set.unmodifiable(_cancellingOrderIds);
   Future<void> cancelOrder(int orderId) async {
     if (_cancellingOrderIds.contains(orderId)) return;
     _cancellingOrderIds.add(orderId);
@@ -112,10 +92,8 @@ class ProfileViewmodel extends ChangeNotifier {
     try {
       await _orderRepository.cancelOrder(orderId);
       orders = await _orderRepository.getOrderHistory();
-    } catch (e, stacktrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("ProfileViewmodel cancelOrder error: $e");
-      debugPrint("ProfileViewmodel cancelOrder stacktrace: $stacktrace");
       rethrow;
     } finally {
       _cancellingOrderIds.remove(orderId);
@@ -148,13 +126,35 @@ class ProfileViewmodel extends ChangeNotifier {
 
     try {
       profile = await _profileRepository.updateProfile(payload);
-    } catch (e, stacktrace) {
+    } catch (e) {
       _errorMessage = e.toString();
-      debugPrint("ProfileViewmodel updateProfile error: $e");
-      debugPrint("ProfileViewmodel updateProfile stacktrace: $stacktrace");
       rethrow;
     } finally {
       _isUpdatingProfile = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> uploadAvatar({
+    required String filePath,
+    String? fileName,
+  }) async {
+    if (_isUploadingAvatar) return;
+
+    _isUploadingAvatar = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      profile = await _profileRepository.uploadAvatar(
+        filePath: filePath,
+        fileName: fileName,
+      );
+    } catch (e) {
+      _errorMessage = e.toString();
+      rethrow;
+    } finally {
+      _isUploadingAvatar = false;
       notifyListeners();
     }
   }
@@ -179,6 +179,23 @@ class ProfileViewmodel extends ChangeNotifier {
     availableDiscounts = uniqueById.values.toList()
       ..sort((a, b) => a.endAt.compareTo(b.endAt));
   }
+
+  List<OrderOut> ordersByStatus(String status) {
+    final normalized = _normalizeStatus(status);
+    return orders
+        .where((o) => _normalizeStatus(o.status) == normalized)
+        .toList();
+  }
+
+  List<OrderOut> get completedOrders => ordersByStatus("completed");
+
+  int get pendingCount => ordersByStatus("pending").length;
+
+  int get shippingCount => ordersByStatus("shipping").length;
+
+  int get completedCount => completedOrders.length;
+
+  int get cancelledCount => ordersByStatus("cancelled").length;
 
   String? _normalizeOptionalText(String value) {
     final text = value.trim();

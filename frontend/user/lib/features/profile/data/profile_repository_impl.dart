@@ -30,4 +30,21 @@ class ProfileRepositoryImpl implements ProfileRepository {
       throw ErrorHandler.handle(e);
     }
   }
+
+  @override
+  Future<Profile> uploadAvatar({
+    required String filePath,
+    String? fileName,
+  }) async {
+    try {
+      final response = await _api.uploadAvatar(
+        filePath: filePath,
+        fileName: fileName,
+      );
+
+      return ProfileMapper.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
 }

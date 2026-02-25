@@ -19,4 +19,21 @@ class ProfileApi {
       throw ErrorHandler.handle(e);
     }
   }
+
+  Future<Response> uploadAvatar({
+    required String filePath,
+    String? fileName,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+      return await DioClient.instance.post(
+        ApiEndpoints.profileMeAvatar,
+        data: formData,
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
 }

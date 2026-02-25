@@ -5,6 +5,7 @@ class ApiEndpoints {
   static const register = "/auth/register";
   static const me = "/auth/me";
   static const profileMe = "/profile/me";
+  static const profileMeAvatar = "/profile/me/avatar";
 
   // Category
   static const category = "/categories";

@@ -9,6 +9,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widg
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/voucher_section.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -20,6 +21,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String _selectedStatus = "pending";
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -53,7 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Hồ sơ cá nhân"),
+        title: Text("Hồ sơ cá nhân", style: TextStyle(fontSize: 20)),
         leading: IconButton(
           onPressed: () {
             if (context.canPop()) {
@@ -144,7 +146,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         "Không có đơn hàng nào ở trạng thái ${_statusLabel(_selectedStatus).toLowerCase()}.",
                   ),
                   const SizedBox(height: 18),
-                  const _SectionHeader(title: "Lịch sử đơn hàng (đã giao)"),
+                  const _SectionHeader(title: "Lịch sử đơn hàng"),
                   OrderHistoryList(
                     orders: completedOrders,
                     onConfirmReceived: _confirmOrderReceived,
@@ -222,6 +224,9 @@ class _ProfilePageState extends State<ProfilePage> {
               profile: vm.profile,
               fallbackName: _pickName(vm.profile?.name, auth.user?.username),
               isSubmitting: vm.isUpdatingProfile,
+              isUploadingAvatar: vm.isUploadingAvatar,
+              onPickAvatarFromGallery: () => _pickAvatar(ImageSource.gallery),
+              onCaptureAvatar: () => _pickAvatar(ImageSource.camera),
             );
           },
         );
@@ -231,12 +236,22 @@ class _ProfilePageState extends State<ProfilePage> {
     if (formValue == null) return;
 
     try {
+      final hasNewAvatar = (formValue.avatarFilePath ?? "").trim().isNotEmpty;
+      if (hasNewAvatar) {
+        await vm.uploadAvatar(
+          filePath: formValue.avatarFilePath!,
+          fileName: formValue.avatarFileName,
+        );
+      }
+
       await vm.updateProfile(
         name: formValue.name,
         phone: formValue.phone,
         gender: formValue.gender,
         birthday: formValue.birthday,
-        avatar: formValue.avatar,
+        avatar: hasNewAvatar
+            ? (vm.profile?.avatar ?? formValue.avatar)
+            : formValue.avatar,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -248,6 +263,24 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<XFile?> _pickAvatar(ImageSource source) async {
+    try {
+      return await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1200,
+        preferredCameraDevice: CameraDevice.front,
+      );
+    } catch (_) {
+      if (!mounted) return null;
+      const message = "Không thể chọn/chụp ảnh .";
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      return null;
     }
   }
 

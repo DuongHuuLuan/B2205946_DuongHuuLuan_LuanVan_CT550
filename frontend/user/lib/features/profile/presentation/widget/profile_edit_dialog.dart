@@ -1,5 +1,8 @@
+import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/domain/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class ProfileEditValue {
   final String name;
@@ -7,6 +10,8 @@ class ProfileEditValue {
   final String gender;
   final DateTime? birthday;
   final String avatar;
+  final String? avatarFilePath;
+  final String? avatarFileName;
 
   const ProfileEditValue({
     required this.name,
@@ -14,6 +19,8 @@ class ProfileEditValue {
     required this.gender,
     required this.birthday,
     required this.avatar,
+    this.avatarFilePath,
+    this.avatarFileName,
   });
 }
 
@@ -21,12 +28,18 @@ class ProfileEditDialog extends StatefulWidget {
   final Profile? profile;
   final String fallbackName;
   final bool isSubmitting;
+  final bool isUploadingAvatar;
+  final Future<XFile?> Function()? onPickAvatarFromGallery;
+  final Future<XFile?> Function()? onCaptureAvatar;
 
   const ProfileEditDialog({
     super.key,
     required this.profile,
     required this.fallbackName,
     required this.isSubmitting,
+    required this.isUploadingAvatar,
+    this.onPickAvatarFromGallery,
+    this.onCaptureAvatar,
   });
 
   @override
@@ -41,6 +54,10 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
 
   DateTime? _birthday;
   String _gender = "";
+  XFile? _pendingAvatarFile;
+  Uint8List? _pendingAvatarBytes;
+
+  bool get _isBusy => widget.isSubmitting || widget.isUploadingAvatar;
 
   @override
   void initState() {
@@ -57,6 +74,16 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   }
 
   @override
+  void didUpdateWidget(covariant ProfileEditDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldAvatar = (oldWidget.profile?.avatar ?? "").trim();
+    final newAvatar = (widget.profile?.avatar ?? "").trim();
+    if (oldAvatar != newAvatar) {
+      _avatarController.text = newAvatar;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -67,6 +94,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   @override
   Widget build(BuildContext context) {
     final birthdayText = _birthday == null ? "" : _formatDateLabel(_birthday!);
+    final avatarUrl = _resolveAvatar(_avatarController.text);
 
     return AlertDialog(
       title: const Text("Chỉnh sửa thông tin cá nhân"),
@@ -76,6 +104,15 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _AvatarPickerCard(
+                avatarUrl: avatarUrl,
+                isUploading: widget.isUploadingAvatar,
+                pendingAvatarName: _pendingAvatarFile?.name,
+                pendingAvatarBytes: _pendingAvatarBytes,
+                onPickFromGallery: _isBusy ? null : _handlePickFromGallery,
+                onCaptureFromCamera: _isBusy ? null : _handleCaptureAvatar,
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
@@ -85,9 +122,8 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                 ),
                 validator: (value) {
                   final text = (value ?? "").trim();
-                  if (text.length > 50) {
-                    return "Tên tối đa 50 ký tự";
-                  }
+                  if (text.isEmpty) return "Vui lòng nhập họ tên";
+                  if (text.length > 50) return "Tên tối đa 50 ký tự";
                   return null;
                 },
               ),
@@ -119,7 +155,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                   DropdownMenuItem(value: "female", child: Text("Nữ")),
                   DropdownMenuItem(value: "other", child: Text("Khác")),
                 ],
-                onChanged: widget.isSubmitting
+                onChanged: _isBusy
                     ? null
                     : (value) => setState(() => _gender = value ?? ""),
                 decoration: const InputDecoration(
@@ -129,7 +165,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
               ),
               const SizedBox(height: 12),
               InkWell(
-                onTap: widget.isSubmitting ? null : _pickBirthday,
+                onTap: _isBusy ? null : _pickBirthday,
                 borderRadius: BorderRadius.circular(4),
                 child: InputDecorator(
                   decoration: InputDecoration(
@@ -139,13 +175,13 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          tooltip: "Chọn ngày",
-                          onPressed: widget.isSubmitting ? null : _pickBirthday,
+                          tooltip: "Chọn ngày sinh",
+                          onPressed: _isBusy ? null : _pickBirthday,
                           icon: const Icon(Icons.calendar_today_outlined),
                         ),
                         IconButton(
                           tooltip: "Xóa ngày sinh",
-                          onPressed: widget.isSubmitting
+                          onPressed: _isBusy
                               ? null
                               : () => setState(() => _birthday = null),
                           icon: const Icon(Icons.close),
@@ -163,39 +199,56 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _avatarController,
-                keyboardType: TextInputType.url,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: "Avatar URL",
-                  border: OutlineInputBorder(),
-                ),
-              ),
             ],
           ),
         ),
       ),
       actions: [
         TextButton(
-          onPressed: widget.isSubmitting
-              ? null
-              : () => Navigator.of(context).pop(),
-          child: const Text("Hủy"),
+          onPressed: _isBusy ? null : () => Navigator.of(context).pop(),
+          child: Text(
+            "Hủy",
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+          ),
         ),
         ElevatedButton(
-          onPressed: widget.isSubmitting ? null : _submit,
+          onPressed: _isBusy ? null : _submit,
           child: widget.isSubmitting
               ? const SizedBox(
-                  height: 18,
                   width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text("Lưu"),
+              : Text("Lưu"),
         ),
       ],
     );
+  }
+
+  Future<void> _handlePickFromGallery() async {
+    final callback = widget.onPickAvatarFromGallery;
+    if (callback == null) return;
+    final file = await callback();
+    if (!mounted || file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _pendingAvatarFile = file;
+      _pendingAvatarBytes = bytes;
+    });
+  }
+
+  Future<void> _handleCaptureAvatar() async {
+    final callback = widget.onCaptureAvatar;
+    if (callback == null) return;
+    final file = await callback();
+    if (!mounted || file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _pendingAvatarFile = file;
+      _pendingAvatarBytes = bytes;
+    });
   }
 
   Future<void> _pickBirthday() async {
@@ -223,6 +276,8 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
         gender: _gender,
         birthday: _birthday,
         avatar: _avatarController.text,
+        avatarFilePath: _pendingAvatarFile?.path,
+        avatarFileName: _pendingAvatarFile?.name,
       ),
     );
   }
@@ -236,5 +291,132 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
 
   bool _isValidGender(String value) {
     return value == "male" || value == "female" || value == "other";
+  }
+
+  String? _resolveAvatar(String? avatar) {
+    if (avatar == null || avatar.trim().isEmpty) return null;
+    final raw = avatar.trim();
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+    if (raw.startsWith("/")) return "${AppConstants.baseUrl}$raw";
+    return "${AppConstants.baseUrl}/$raw";
+  }
+}
+
+class _AvatarPickerCard extends StatelessWidget {
+  final String? avatarUrl;
+  final bool isUploading;
+  final String? pendingAvatarName;
+  final Uint8List? pendingAvatarBytes;
+  final Future<void> Function()? onPickFromGallery;
+  final Future<void> Function()? onCaptureFromCamera;
+
+  const _AvatarPickerCard({
+    required this.avatarUrl,
+    required this.isUploading,
+    required this.pendingAvatarName,
+    required this.pendingAvatarBytes,
+    required this.onPickFromGallery,
+    required this.onCaptureFromCamera,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: pendingAvatarBytes != null
+                    ? MemoryImage(pendingAvatarBytes!)
+                    : (avatarUrl != null ? NetworkImage(avatarUrl!) : null),
+                child: pendingAvatarBytes == null && avatarUrl == null
+                    ? const Icon(Icons.person, size: 28)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isUploading
+                      ? "Đang tải ảnh..."
+                      : pendingAvatarName != null
+                      ? "Đã chọn ảnh mới: $pendingAvatarName"
+                      : "Chọn ảnh từ thư viện hoặc máy ảnh",
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              if (isUploading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: isUploading || onPickFromGallery == null
+                        ? null
+                        : () => onPickFromGallery!.call(),
+                    icon: const Icon(Icons.photo_library_outlined, size: 18),
+                    label: const Text(
+                      "Thư viện",
+                      style: TextStyle(
+                        fontSize: 12,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: isUploading || onCaptureFromCamera == null
+                        ? null
+                        : () => onCaptureFromCamera!.call(),
+                    icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                    label: const Text(
+                      "Máy ảnh",
+                      style: TextStyle(
+                        fontSize: 12,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

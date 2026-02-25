@@ -3,4 +3,5 @@ import 'package:b2205946_duonghuuluan_luanvan/features/profile/domain/profile.da
 abstract class ProfileRepository {
   Future<Profile> getProfile();
   Future<Profile> updateProfile(Map<String, dynamic> data);
+  Future<Profile> uploadAvatar({required String filePath, String? fileName});
 }

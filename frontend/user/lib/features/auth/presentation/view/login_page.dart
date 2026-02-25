@@ -141,11 +141,11 @@ class _LoginPageState extends State<LoginPage> {
                                   authState,
                                 );
                                 if (success == true && mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Đăng nhập thành công"),
-                                    ),
-                                  );
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   const SnackBar(
+                                  //     content: Text("Đăng nhập thành công"),
+                                  //   ),
+                                  // );
                                   context.go('/');
                                 }
                               }
