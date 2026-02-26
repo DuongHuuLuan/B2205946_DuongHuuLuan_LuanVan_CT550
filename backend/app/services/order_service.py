@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from fastapi import HTTPException, status
 from app.models import *
-from app.models.discount import OrderDiscount
+from app.models.discount import DiscountStatus, OrderDiscount
 from app.models.order import OrderStatus
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
 from typing import List, Optional
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime
 
 class OrderService:
 
@@ -80,11 +81,54 @@ class OrderService:
             for _, product_detail, _ in cart_details
             if product_detail.product and product_detail.product.category_id
         }
-        from app.services.discount_service import DiscountService
-        category_discounts = DiscountService.get_valid_discounts_by_category_ids(
-            db,
-            category_ids,
-        )
+        category_discounts = {}
+        selected_discounts = []
+
+        if order_in.discount_ids is None:
+            from app.services.discount_service import DiscountService
+            category_discounts = DiscountService.get_valid_discounts_by_category_ids(
+                db,
+                category_ids,
+            )
+            selected_discounts = list(category_discounts.values())
+        else:
+            raw_discount_ids = [int(discount_id) for discount_id in order_in.discount_ids]
+            unique_discount_ids = list(dict.fromkeys(raw_discount_ids))
+            if unique_discount_ids:
+                now = datetime.now()
+                valid_discounts = db.query(Discount).filter(
+                    Discount.id.in_(unique_discount_ids),
+                    Discount.status == DiscountStatus.ACTIVE,
+                    Discount.start_at <= now,
+                    Discount.end_at >= now,
+                ).all()
+
+                valid_by_id = {discount.id: discount for discount in valid_discounts}
+                missing_ids = [
+                    discount_id
+                    for discount_id in unique_discount_ids
+                    if discount_id not in valid_by_id
+                ]
+                if missing_ids:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Có mã giảm giá không hợp lệ hoặc đã hết hạn",
+                    )
+
+                for discount_id in unique_discount_ids:
+                    discount = valid_by_id[discount_id]
+                    if discount.category_id not in category_ids:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Mã giảm giá {discount.name} không áp dụng cho sản phẩm đã chọn",
+                        )
+                    if discount.category_id in category_discounts:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Chỉ được chọn một mã giảm giá cho mỗi danh mục",
+                        )
+                    category_discounts[discount.category_id] = discount
+                    selected_discounts.append(discount)
 
         for cart_detail, product_detail, requested_quantity in cart_details:
             unit_price = Decimal(str(product_detail.price or 0))
@@ -117,6 +161,8 @@ class OrderService:
         )
         db.add(new_order)
         db.flush() # lay ID de gan vao chi tiet
+        if selected_discounts:
+            new_order.applied_discounts.extend(selected_discounts)
 
         #tao cac order detail
         for order_detail in order_details_to_create:
@@ -156,7 +202,11 @@ class OrderService:
                 .joinedload(ProductDetail.color),
             joinedload(Order.order_details)
                 .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.size)
+                .joinedload(ProductDetail.size),
+            joinedload(Order.delivery_info),
+            joinedload(Order.payment_method),
+            joinedload(Order.applied_discounts),
+            joinedload(Order.ghn_shipments),
             ).filter(Order.user_id == user_id).order_by(Order.created_at.desc()).all()
     
 
@@ -178,7 +228,9 @@ class OrderService:
                 .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.size),
             joinedload(Order.delivery_info),
-            joinedload(Order.payment_method)
+            joinedload(Order.payment_method),
+            joinedload(Order.applied_discounts),
+            joinedload(Order.ghn_shipments),
         ).filter(Order.id == order_id, Order.user_id == user_id).first()
         
         if not order:
@@ -249,6 +301,8 @@ class OrderService:
                 joinedload(Order.delivery_info),
                 joinedload(Order.payment_method),
                 joinedload(Order.user),
+                joinedload(Order.applied_discounts),
+                joinedload(Order.ghn_shipments),
             )
             .order_by(Order.created_at.desc())
             .offset(skip)
@@ -285,6 +339,8 @@ class OrderService:
                 joinedload(Order.delivery_info),
                 joinedload(Order.payment_method),
                 joinedload(Order.user),
+                joinedload(Order.applied_discounts),
+                joinedload(Order.ghn_shipments),
             )
             .filter(Order.id == order_id)
             .first()

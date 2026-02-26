@@ -3,21 +3,21 @@ import 'package:flutter/material.dart';
 
 class PaymentSummary extends StatelessWidget {
   final double subtotal;
-  final double discountPercent;
+  final double discountAmount;
   final double shippingFee;
   final double total;
 
   const PaymentSummary({
     super.key,
     required this.subtotal,
-    required this.discountPercent,
+    required this.discountAmount,
     required this.shippingFee,
     required this.total,
   });
 
   @override
   Widget build(BuildContext context) {
-    final discountAmount = subtotal * (discountPercent / 100);
+    final safeDiscount = discountAmount.clamp(0, subtotal).toDouble();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -26,7 +26,7 @@ class PaymentSummary extends StatelessWidget {
             _SummaryRow(label: "Tổng tiền hàng", value: subtotal.toVnd()),
             _SummaryRow(
               label: "Giảm giá sản phẩm",
-              value: "-${discountAmount.toVnd()}",
+              value: "-${safeDiscount.toVnd()}",
               valueStyle: const TextStyle(color: Colors.red),
             ),
             _SummaryRow(label: "Phí vận chuyển", value: shippingFee.toVnd()),

@@ -11,13 +11,18 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_admin, require_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.evaluate import EvaluateOut, EvaluateReplyCreate, EvaluatePaginationMeta, EvaluatePaginationOut
+from app.schemas.evaluate import (
+    EvaluateOut,
+    EvaluateReplyCreate,
+    EvaluatePaginationOut,
+    EvaluateProductPaginationOut,
+)
 from app.services.evaluate_service import EvaluateService
 
 
 router = APIRouter(prefix="/evaluates", tags=["Evaluates"])
 
-MAX_REVIEW_IMAGES = 5
+MAX_EVALUATE_IMAGES = 5
 BACKEND_DIR = Path(__file__).resolve().parents[3]
 UPLOAD_DIR = BACKEND_DIR / "static" / "evaluates"
 
@@ -51,7 +56,7 @@ def get_admin_evaluations(
         order_id=order_id,
     )
 
-@router.get("/user", response_model=EvaluatePaginationOut)
+@router.get("/my", response_model=EvaluatePaginationOut)
 def get_my_evaluations(
     page: int = Query(1, ge=1),
     per_page: int = Query(8, ge=1, le=100),
@@ -61,6 +66,32 @@ def get_my_evaluations(
     return EvaluateService.get_my_evaluations(
         db=db,
         user_id=current_user.id,
+        page=page,
+        per_page=per_page,
+    )
+
+@router.get("/order/{order_id}", response_model=EvaluateOut)
+def get_evaluate_by_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user),
+):
+    return EvaluateService.get_evaluation_by_order(
+        db=db,
+        order_id=order_id,
+        current_user=current_user,
+    )
+
+@router.get("/product/{product_id}", response_model=EvaluateProductPaginationOut)
+def get_product_evaluations(
+    product_id: int,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(3, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return EvaluateService.get_product_evaluations(
+        db=db,
+        product_id=product_id,
         page=page,
         per_page=per_page,
     )
@@ -88,8 +119,8 @@ async def post_evaluate(
 ):
     uploaded_images = images or []
 
-    if len(uploaded_images) > MAX_REVIEW_IMAGES:
-        raise HTTPException(status_code=400, detail=f"Chỉ được tải tối đa {MAX_REVIEW_IMAGES} ảnh")
+    if len(uploaded_images) > MAX_EVALUATE_IMAGES:
+        raise HTTPException(status_code=400, detail=f"Chỉ được tải tối đa {MAX_EVALUATE_IMAGES} ảnh")
 
     image_urls: List[str] = []
     for image in uploaded_images:

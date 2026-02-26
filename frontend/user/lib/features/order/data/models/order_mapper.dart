@@ -1,4 +1,6 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/json_extension.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/delivery_info_mapper.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/data/models/payment_method_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 
 class OrderMapper {
@@ -7,21 +9,47 @@ class OrderMapper {
     final status = json["status"]?.toString() ?? "";
     final createdAt = _toDate(json["created_at"] ?? json["createdAt"]);
     final discountCode = _pickDiscountCode(json);
+    final deliveryInfo = _parseDeliveryInfo(json["delivery_info"]);
+    final paymentMethod = _parsePaymentMethod(json["payment_method"]);
 
     final orderDetails = _parseOrderDetails(json["order_details"]);
-    final total = orderDetails.fold<double>(
+    final subtotal = orderDetails.fold<double>(
       0,
       (sum, item) => sum + (item.price * item.quantity),
     );
+    final shippingFee = _toDouble(json["shipping_fee"]);
+    final total = subtotal + shippingFee;
 
     return OrderOut(
       id: id,
       status: status,
       createdAt: createdAt,
+      subtotal: subtotal,
+      shippingFee: shippingFee,
       total: total,
       orderDetails: orderDetails,
       discountCode: discountCode,
+      deliveryInfo: deliveryInfo,
+      paymentMethod: paymentMethod,
     );
+  }
+
+  static dynamic _castMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.cast<String, dynamic>();
+    return null;
+  }
+
+  static dynamic _parseDeliveryInfo(dynamic raw) {
+    final json = _castMap(raw);
+    if (json == null) return null;
+    return DeliveryInfoMapper.fromJson(json);
+  }
+
+  static dynamic _parsePaymentMethod(dynamic raw) {
+    final json = _castMap(raw);
+    if (json == null) return null;
+    return PaymentMethodMapper.fromJson(json);
   }
 
   static List<OrderDetailOut> _parseOrderDetails(dynamic rawDetails) {

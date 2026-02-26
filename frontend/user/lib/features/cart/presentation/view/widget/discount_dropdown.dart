@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 class DiscountDropdown extends StatelessWidget {
   final List<Discount> discounts;
   final bool isLoading;
-  final int? selectedId;
-  final ValueChanged<int?> onChanged;
+  final Set<int> selectedIds;
+  final void Function(Discount discount, bool selected) onToggle;
+
   const DiscountDropdown({
     super.key,
     required this.discounts,
     required this.isLoading,
-    required this.onChanged,
-    required this.selectedId,
+    required this.selectedIds,
+    required this.onToggle,
   });
 
   @override
@@ -22,29 +23,7 @@ class DiscountDropdown extends StatelessWidget {
       context,
     ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
     final iconColor = Theme.of(context).textTheme.bodySmall?.color;
-    final items = <DropdownMenuItem<int?>>[
-      const DropdownMenuItem(value: null, child: Text("Không áp dụng")),
-      ...discounts.map(
-        (d) => DropdownMenuItem(
-          value: d.id,
-          child: Text("${d.name} - ${d.percent}%"),
-        ),
-      ),
-    ];
 
-    final hasSelected =
-        selectedId != null && discounts.any((d) => d.id == selectedId);
-    final effectiveSelectedId = hasSelected ? selectedId : null;
-
-    Discount? selected;
-    if (hasSelected) {
-      for (final discount in discounts) {
-        if (discount.id == selectedId) {
-          selected = discount;
-          break;
-        }
-      }
-    }
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -62,22 +41,32 @@ class DiscountDropdown extends StatelessWidget {
               Text("Mã giảm giá", style: titleStyle),
             ],
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int?>(
-            value: effectiveSelectedId,
-            items: items,
-            onChanged: isLoading ? null : onChanged,
-            decoration: const InputDecoration(hintText: "Chọn mã giảm giá"),
+          const SizedBox(height: 8),
+          const Text(
+            "Bạn có thể chọn nhiều mã, nhưng chỉ 1 mã cho mỗi danh mục.",
           ),
+          const SizedBox(height: 8),
           if (isLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text("Đang tải mã giảm giá..."),
-            )
-          else if (selected != null && selected.description.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(selected.description),
+            const Text("Đang tải mã giảm giá...")
+          else if (discounts.isEmpty)
+            const Text("Không có mã giảm giá hợp lệ cho các sản phẩm đã chọn.")
+          else
+            Column(
+              children: discounts
+                  .map(
+                    (d) => CheckboxListTile(
+                      value: selectedIds.contains(d.id),
+                      onChanged: (value) => onToggle(d, value ?? false),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text("${d.name} - ${d.percent}%"),
+                      subtitle: d.description.isEmpty
+                          ? Text("Danh mục #${d.categoryId}")
+                          : Text("${d.description}\nDanh mục #${d.categoryId}"),
+                    ),
+                  )
+                  .toList(),
             ),
         ],
       ),

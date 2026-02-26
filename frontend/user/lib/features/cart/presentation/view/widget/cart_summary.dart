@@ -3,17 +3,22 @@ import 'package:flutter/material.dart';
 
 class CartSummary extends StatelessWidget {
   final double total;
-  final double discountPercent;
+  final double discountAmount;
+  final int appliedDiscountCount;
 
-  const CartSummary({super.key, required this.total, this.discountPercent = 0});
+  const CartSummary({
+    super.key,
+    required this.total,
+    this.discountAmount = 0,
+    this.appliedDiscountCount = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
-    double discountAmount = total * (discountPercent / 100);
-    double finalTotal = total - discountAmount;
+    final safeDiscount = discountAmount.clamp(0, total).toDouble();
+    final finalTotal = total - safeDiscount;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -33,19 +38,18 @@ class CartSummary extends StatelessWidget {
             ),
           ),
           Divider(height: 20, color: colorScheme.outlineVariant),
-
           _SummaryRow(
-            label: "Tạm Tính",
+            label: "Tạm tính",
             value: total.toVnd(),
             colorScheme: colorScheme,
           ),
-
-          //  hiển thị thêm dòng giảm giá nếu có mã áp dụng
-          if (discountPercent > 0) ...[
+          if (safeDiscount > 0) ...[
             const SizedBox(height: 8),
             _SummaryRow(
-              label: "Giảm giá ($discountPercent%)",
-              value: "- ${discountAmount.toVnd()}",
+              label: appliedDiscountCount > 0
+                  ? "Giảm giá ($appliedDiscountCount mã)"
+                  : "Giảm giá",
+              value: "- ${safeDiscount.toVnd()}",
               customValueColor: Colors.red,
               colorScheme: colorScheme,
             ),

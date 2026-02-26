@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_actions.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_summary.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_table.dart';
@@ -17,8 +18,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final Set<int> _lastDiscountCategoryIds = {};
-  int? _selectedDiscountId;
-  double _currentDiscountPercent = 0;
+  final Set<int> _selectedDiscountIds = {};
 
   final Set<int> _selectedCartDetailIds = {};
   bool _selectionTouched = false;
@@ -49,6 +49,24 @@ class _CartPageState extends State<CartPage> {
         .toSet()
         .toList();
     _requestDiscounts(vm, selectedCategoryIds);
+    final availableDiscounts = vm.discounts;
+    _syncSelectedDiscounts(availableDiscounts);
+    final selectedDiscounts = availableDiscounts
+        .where((discount) => _selectedDiscountIds.contains(discount.id))
+        .toList();
+    final discountByCategory = <int, double>{
+      for (final discount in selectedDiscounts)
+        discount.categoryId: discount.percent.toDouble(),
+    };
+    final selectedDiscountAmount = cartDetails
+        .where((detail) => _selectedCartDetailIds.contains(detail.id))
+        .fold<double>(0, (sum, detail) {
+          final categoryId = vm.categoryIdForDetail(detail.productDetailId);
+          final percent = categoryId == null
+              ? 0.0
+              : (discountByCategory[categoryId] ?? 0.0);
+          return sum + (detail.lineTotal * (percent / 100));
+        });
 
     final bool? selectAllValue = cartDetails.isEmpty
         ? false
@@ -97,7 +115,8 @@ class _CartPageState extends State<CartPage> {
             const SizedBox(height: 20),
             CartSummary(
               total: selectedTotal,
-              discountPercent: _currentDiscountPercent,
+              discountAmount: selectedDiscountAmount,
+              appliedDiscountCount: selectedDiscounts.length,
             ),
             const SizedBox(height: 16),
             _CheckoutButton(
@@ -113,7 +132,7 @@ class _CartPageState extends State<CartPage> {
                         "/order",
                         extra: {
                           "details": selected,
-                          "discountPercent": _currentDiscountPercent,
+                          "appliedDiscounts": selectedDiscounts,
                         },
                       );
                     }
@@ -122,21 +141,11 @@ class _CartPageState extends State<CartPage> {
             const SizedBox(height: 16),
 
             DiscountDropdown(
-              discounts: vm.discounts,
+              discounts: availableDiscounts,
               isLoading: vm.isDiscountLoading,
-              selectedId: _selectedDiscountId,
-              onChanged: (id) {
-                setState(() {
-                  _selectedDiscountId = id;
-                  if (id == null) {
-                    _currentDiscountPercent = 0;
-                  }
-
-                  //tìm discout trong danh sách để lấy %
-                  final selected = vm.discounts.firstWhere((d) => d.id == id);
-                  _currentDiscountPercent = selected.percent.toDouble();
-                });
-              },
+              selectedIds: _selectedDiscountIds,
+              onToggle: (discount, selected) =>
+                  _toggleDiscount(discount, selected, availableDiscounts),
             ),
           ],
         ),
@@ -168,9 +177,38 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
+  void _toggleDiscount(
+    Discount discount,
+    bool selected,
+    List<Discount> availableDiscounts,
+  ) {
+    setState(() {
+      if (!selected) {
+        _selectedDiscountIds.remove(discount.id);
+        return;
+      }
+
+      final selectedById = {
+        for (final d in availableDiscounts) d.id: d,
+      };
+      _selectedDiscountIds.removeWhere((id) {
+        final selectedDiscount = selectedById[id];
+        if (selectedDiscount == null) return false;
+        return selectedDiscount.categoryId == discount.categoryId;
+      });
+      _selectedDiscountIds.add(discount.id);
+    });
+  }
+
   void _requestDiscounts(CartViewmodel vm, List<int> categoryIds) {
     final normalized = categoryIds.toSet();
     if (normalized.isEmpty) {
+      if (_selectedDiscountIds.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() => _selectedDiscountIds.clear());
+        });
+      }
       if (_lastDiscountCategoryIds.isNotEmpty) {
         _lastDiscountCategoryIds.clear();
         vm.fetchDiscountsForCategories(const []);
@@ -187,6 +225,19 @@ class _CartPageState extends State<CartPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       vm.fetchDiscountsForCategories(normalized.toList());
+    });
+  }
+
+  void _syncSelectedDiscounts(List<Discount> availableDiscounts) {
+    final availableIds = availableDiscounts.map((d) => d.id).toSet();
+    final needsCleanup = _selectedDiscountIds.any((id) => !availableIds.contains(id));
+    if (!needsCleanup) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedDiscountIds.removeWhere((id) => !availableIds.contains(id));
+      });
     });
   }
 
@@ -214,6 +265,7 @@ class _CartPageState extends State<CartPage> {
       });
     });
   }
+
 }
 
 class _HeaderRow extends StatelessWidget {

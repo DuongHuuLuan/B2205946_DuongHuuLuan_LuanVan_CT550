@@ -142,6 +142,7 @@ class OrderRepositoryImpl implements OrderRepository {
       final response = await _api.createOrder({
         "delivery_info_id": order.deliveryInfoId,
         "payment_method_id": order.paymentMethodId,
+        "discount_ids": order.discountIds,
         "order_items": order.items
             .map(
               (item) => {

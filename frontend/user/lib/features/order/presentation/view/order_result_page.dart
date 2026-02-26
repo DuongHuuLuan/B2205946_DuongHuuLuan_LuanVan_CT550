@@ -173,7 +173,7 @@ class _OrderResultPageState extends State<OrderResultPage>
                 ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => context.go("/profile"),
+                onPressed: () => context.go("/orders/${widget.orderId}"),
                 child: const Text("Xem đơn hàng"),
               ),
             ],

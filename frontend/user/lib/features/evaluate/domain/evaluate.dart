@@ -21,6 +21,10 @@ class EvaluateItem {
   final DateTime? updatedAt;
   final DateTime? adminRepliedAt;
   final List<EvaluateImage> images;
+  final String? reviewerName;
+  final String? reviewerNameMasked;
+  final List<String> matchedVariants;
+  final bool hasImages;
 
   const EvaluateItem({
     required this.id,
@@ -33,6 +37,10 @@ class EvaluateItem {
     this.updatedAt,
     this.adminRepliedAt,
     this.images = const [],
+    this.reviewerName,
+    this.reviewerNameMasked,
+    this.matchedVariants = const [],
+    this.hasImages = false,
   });
 }
 
@@ -44,6 +52,54 @@ class EvaluatePage {
   final int totalPages;
 
   const EvaluatePage({
+    required this.items,
+    required this.page,
+    required this.perPage,
+    required this.total,
+    required this.totalPages,
+  });
+
+  bool get hasNextPage => page < totalPages;
+}
+
+class EvaluateRateCount {
+  final int star;
+  final int count;
+
+  const EvaluateRateCount({
+    required this.star,
+    required this.count,
+  });
+}
+
+class ProductEvaluateSummary {
+  final int productId;
+  final double averageRate;
+  final int totalReviews;
+  final int totalWithImages;
+  final String? summaryText;
+  final List<EvaluateRateCount> rateCounts;
+
+  const ProductEvaluateSummary({
+    required this.productId,
+    required this.averageRate,
+    required this.totalReviews,
+    required this.totalWithImages,
+    this.summaryText,
+    this.rateCounts = const [],
+  });
+}
+
+class ProductEvaluatePage {
+  final ProductEvaluateSummary summary;
+  final List<EvaluateItem> items;
+  final int page;
+  final int perPage;
+  final int total;
+  final int totalPages;
+
+  const ProductEvaluatePage({
+    required this.summary,
     required this.items,
     required this.page,
     required this.perPage,

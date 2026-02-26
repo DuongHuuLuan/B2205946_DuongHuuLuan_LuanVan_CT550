@@ -16,6 +16,21 @@ class EvaluateApi {
     }
   }
 
+  Future<Response> getProductEvaluates({
+    required int productId,
+    int page = 1,
+    int perPage = 3,
+  }) async {
+    try {
+      return await DioClient.instance.get(
+        ApiEndpoints.evaluateByProduct(productId),
+        queryParameters: {"page": page, "per_page": perPage},
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   Future<Response> getEvaluateDetail(int evaluateId) async {
     try {
       return await DioClient.instance.get(

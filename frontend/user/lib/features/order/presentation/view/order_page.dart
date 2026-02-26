@@ -1,6 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/ghn_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/viewmodel/order_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/widget/address_form.dart';
@@ -14,11 +15,11 @@ import 'package:provider/provider.dart';
 
 class OrderPage extends StatefulWidget {
   final List<CartDetail> cartDetails;
-  final double discountPercent;
+  final List<Discount> appliedDiscounts;
   const OrderPage({
     super.key,
     required this.cartDetails,
-    required this.discountPercent,
+    this.appliedDiscounts = const [],
   });
 
   @override
@@ -55,12 +56,19 @@ class _OrderPageState extends State<OrderPage> {
   Widget build(BuildContext context) {
     final vm = context.watch<OrderViewmodel>();
     final cartVm = context.read<CartViewmodel>();
-    final discountPercent = widget.discountPercent;
+    final discountByCategory = <int, double>{
+      for (final d in widget.appliedDiscounts) d.categoryId: d.percent.toDouble(),
+    };
     final subtotal = widget.cartDetails.fold<double>(
       0,
       (sum, item) => sum + item.lineTotal,
     );
-    final discountedTotal = subtotal * (1 - discountPercent / 100);
+    final discountAmount = widget.cartDetails.fold<double>(0, (sum, item) {
+      final categoryId = cartVm.categoryIdForDetail(item.productDetailId);
+      final percent = categoryId == null ? 0.0 : (discountByCategory[categoryId] ?? 0.0);
+      return sum + (item.lineTotal * (percent / 100));
+    });
+    final discountedTotal = subtotal - discountAmount;
     final shippingFee = vm.feeTotal ?? 0;
     final totalPayment = discountedTotal + shippingFee;
 
@@ -107,7 +115,12 @@ class _OrderPageState extends State<OrderPage> {
                   return ProductRow(
                     detail: item,
                     product: product,
-                    discountPercent: discountPercent,
+                    discountPercent: (() {
+                      final categoryId = cartVm.categoryIdForDetail(item.productDetailId);
+                      return categoryId == null
+                          ? 0.0
+                          : (discountByCategory[categoryId] ?? 0.0);
+                    })(),
                   );
                 }),
                 const SizedBox(height: 12),
@@ -133,7 +146,7 @@ class _OrderPageState extends State<OrderPage> {
                 _SectionTitle("Chi tiết thanh toán"),
                 PaymentSummary(
                   subtotal: subtotal,
-                  discountPercent: discountPercent,
+                  discountAmount: discountAmount,
                   shippingFee: shippingFee,
                   total: totalPayment,
                 ),
@@ -193,6 +206,7 @@ class _OrderPageState extends State<OrderPage> {
       address: address,
       note: _noteController.text.trim(),
       requiredNote: _requiredNote,
+      discountIds: widget.appliedDiscounts.map((d) => d.id).toList(),
     );
 
     if (!mounted) return;
@@ -223,14 +237,10 @@ class _OrderPageState extends State<OrderPage> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text("Đặt hàng thành công")));
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go("/cart");
-    }
+    context.go(
+      "/order-success",
+      extra: {"orderId": vm.lastOrderId ?? 0},
+    );
   }
 }
 

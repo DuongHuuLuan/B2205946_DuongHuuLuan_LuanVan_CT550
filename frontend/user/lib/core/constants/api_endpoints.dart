@@ -51,6 +51,8 @@ class ApiEndpoints {
   static String evaluateDetail(int id) => "/evaluates/$id";
   static String createEvaluate(int orderId) => "/evaluates/$orderId";
   static String evaluateByOrder(int orderId) => "/evaluates/order/$orderId";
+  static String evaluateByProduct(int productId) =>
+      "/evaluates/product/$productId";
 
   // Delivery
   static const delivery = "/delivery/";

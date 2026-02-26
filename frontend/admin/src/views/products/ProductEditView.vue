@@ -515,6 +515,30 @@ function collectVariants() {
   return { invalid, newVariants, updates, validCount, missingImage, imageUploads };
 }
 
+function collectOrphanImageIds(imageUploads) {
+  const currentImageIds = new Set(
+    variants.value
+      .map((v) => v?.image_id)
+      .filter((id) => id !== null && id !== undefined)
+  );
+  const replacedImageIds = new Set(
+    imageUploads
+      .map((img) => img?.image_id)
+      .filter((id) => id !== null && id !== undefined)
+  );
+  const orphanImageIds = new Set();
+
+  originalVariants.value.forEach((v) => {
+    const imageId = v?.image_id;
+    if (imageId === null || imageId === undefined) return;
+    if (currentImageIds.has(imageId)) return;
+    if (replacedImageIds.has(imageId)) return;
+    orphanImageIds.add(imageId);
+  });
+
+  return Array.from(orphanImageIds);
+}
+
 // ---- Reset ----
 function onReset(resetFormFn) {
   resetFormFn({ values: { ...initialValues.value } });
@@ -535,6 +559,7 @@ async function onSubmit(values, { setErrors }) {
   try {
     variantsError.value = "";
     const { invalid, newVariants, updates, validCount, missingImage, imageUploads } = collectVariants();
+    const orphanImageIds = collectOrphanImageIds(imageUploads);
     if (invalid.length) {
       variantsError.value = "Vui lòng nhập đầy đủ màu, kích thước, và giá";
       return;
@@ -568,6 +593,7 @@ async function onSubmit(values, { setErrors }) {
         fd.append("image_color_ids[]", img.color_id);
       }
     });
+    orphanImageIds.forEach((imageId) => fd.append("remove_image_ids[]", imageId));
 
     console.log("FormData entries:");
     for (const pair of fd.entries()) {

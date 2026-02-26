@@ -2,6 +2,7 @@ import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/status_chip.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OrderHistoryList extends StatelessWidget {
   final List<OrderOut> orders;
@@ -104,9 +105,15 @@ class OrderHistoryList extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: isEvaluating
                         ? null
-                        : () => _handleEvaluateAction(context, order, isEvaluated),
+                        : () => _handleEvaluateAction(
+                            context,
+                            order,
+                            isEvaluated,
+                          ),
                     icon: Icon(
-                      isEvaluated ? Icons.rate_review_outlined : Icons.star_outline,
+                      isEvaluated
+                          ? Icons.rate_review_outlined
+                          : Icons.star_outline,
                     ),
                     label: Text(
                       isEvaluating
@@ -192,7 +199,12 @@ class OrderHistoryList extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text("Không"),
+              child: Text(
+                "Không",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -209,74 +221,7 @@ class OrderHistoryList extends StatelessWidget {
   }
 
   Future<void> _showOrderDetail(BuildContext context, OrderOut order) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        final discountCode = order.discountCode?.trim() ?? "";
-        return AlertDialog(
-          title: Text("Chi tiết đơn hàng #DH-${order.id}"),
-          content: SizedBox(
-            width: 420,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Ngày đặt: ${_formatDate(order.createdAt)}"),
-                  const SizedBox(height: 8),
-                  StatusChip(status: order.status),
-                  if (discountCode.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text("Mã giảm giá: $discountCode"),
-                  ],
-                  const SizedBox(height: 12),
-                  Text(
-                    "Sản phẩm",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (order.orderDetails.isEmpty)
-                    const Text("Không có chi tiết sản phẩm.")
-                  else
-                    Column(
-                      children: order.orderDetails
-                          .map(
-                            (detail) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _OrderLine(detail: detail),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  const Divider(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      "Tổng: ${order.total.toVnd()}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                "Đóng",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    await context.push("/orders/${order.id}");
   }
 
   bool _canConfirm(OrderOut order) {
@@ -309,37 +254,37 @@ class OrderHistoryList extends StatelessWidget {
   }
 }
 
-class _OrderLine extends StatelessWidget {
-  final OrderDetailOut detail;
+// class _OrderLine extends StatelessWidget {
+//   final OrderDetailOut detail;
 
-  const _OrderLine({required this.detail});
+//   const _OrderLine({required this.detail});
 
-  @override
-  Widget build(BuildContext context) {
-    final variant = _variantText(detail);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          detail.productName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        if (variant.isNotEmpty)
-          Text(variant, style: Theme.of(context).textTheme.bodySmall),
-        Text(
-          "${detail.quantity} x ${detail.price.toVnd()}",
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     final variant = _variantText(detail);
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(
+//           detail.productName,
+//           style: const TextStyle(fontWeight: FontWeight.w600),
+//         ),
+//         if (variant.isNotEmpty)
+//           Text(variant, style: Theme.of(context).textTheme.bodySmall),
+//         Text(
+//           "${detail.quantity} x ${detail.price.toVnd()}",
+//           style: Theme.of(context).textTheme.bodySmall,
+//         ),
+//       ],
+//     );
+//   }
 
-  String _variantText(OrderDetailOut item) {
-    final parts = <String>[];
-    final color = item.colorName?.trim() ?? "";
-    final size = item.sizeName?.trim() ?? "";
-    if (color.isNotEmpty) parts.add("Màu: $color");
-    if (size.isNotEmpty) parts.add("Kích thước: $size");
-    return parts.join(" | ");
-  }
-}
+//   String _variantText(OrderDetailOut item) {
+//     final parts = <String>[];
+//     final color = item.colorName?.trim() ?? "";
+//     final size = item.sizeName?.trim() ?? "";
+//     if (color.isNotEmpty) parts.add("Màu: $color");
+//     if (size.isNotEmpty) parts.add("Kích thước: $size");
+//     return parts.join(" | ");
+//   }
+// }

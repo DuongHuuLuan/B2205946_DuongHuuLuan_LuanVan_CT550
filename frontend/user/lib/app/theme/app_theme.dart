@@ -29,6 +29,15 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: p.background,
 
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.secondary, // Màu của thanh nháy
+        selectionColor: AppColors.secondary.withOpacity(
+          0.3,
+        ), // Màu nền khi bôi đen chữ
+        selectionHandleColor:
+            AppColors.secondary, // Màu của "giọt nước" kéo chọn chữ
+      ),
+
       appBarTheme: AppBarTheme(
         backgroundColor: p.background,
         foregroundColor: p.textPrimary,

@@ -264,6 +264,7 @@ class OrderViewmodel extends ChangeNotifier {
     required String address,
     String? note,
     String? requiredNote,
+    List<int> discountIds = const [],
   }) async {
     if (selectedPayment == null ||
         selectedDistrict == null ||
@@ -293,6 +294,7 @@ class OrderViewmodel extends ChangeNotifier {
         OrderCreate(
           deliveryInfoId: deliveryInfo.id,
           paymentMethodId: selectedPayment!.id,
+          discountIds: discountIds,
           items: cartDetails
               .map(
                 (item) => OrderItemCreate(

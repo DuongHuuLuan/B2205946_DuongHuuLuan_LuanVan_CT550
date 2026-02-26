@@ -4,12 +4,15 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/re
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_detail_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_success_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation/view/about_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -134,15 +137,38 @@ class AppRouter {
             if (extra is Map) {
               final details =
                   (extra["details"] as List<CartDetail>?) ?? const [];
-              final discountPercent =
-                  (extra["discountPercent"] as num?)?.toDouble() ?? 0;
+              final appliedDiscounts =
+                  (extra["appliedDiscounts"] as List<Discount>?) ?? const [];
               return OrderPage(
                 cartDetails: details,
-                discountPercent: discountPercent,
+                appliedDiscounts: appliedDiscounts,
               );
             }
             final details = (extra as List<CartDetail>?) ?? const [];
-            return OrderPage(cartDetails: details, discountPercent: 0);
+            return OrderPage(cartDetails: details);
+          },
+        ),
+
+        GoRoute(
+          path: "/orders/:orderId",
+          builder: (context, state) {
+            final orderId =
+                int.tryParse(state.pathParameters["orderId"] ?? "") ?? 0;
+            return OrderDetailPage(orderId: orderId);
+          },
+        ),
+
+        GoRoute(
+          path: "/order-success",
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map) {
+              final orderId = extra["orderId"] as int? ?? 0;
+              return OrderSuccessPage(orderId: orderId);
+            }
+            final orderId =
+                int.tryParse(state.uri.queryParameters["orderId"] ?? "") ?? 0;
+            return OrderSuccessPage(orderId: orderId);
           },
         ),
 

@@ -40,6 +40,27 @@ class EvaluateOut(BaseModel):
         from_attributes = True
 
 
+class ProductEvaluateOut(EvaluateOut):
+    reviewer_name: Optional[str] = None
+    reviewer_name_masked: Optional[str] = None
+    matched_variants: List[str] = Field(default_factory=list)
+    has_images: bool = False
+
+
+class EvaluateProductRateCount(BaseModel):
+    star: int = Field(..., ge=1, le=5)
+    count: int = Field(..., ge=0)
+
+
+class EvaluateProductSummaryOut(BaseModel):
+    product_id: int
+    average_rate: float = 0
+    total_reviews: int = 0
+    total_with_images: int = 0
+    summary_text: Optional[str] = None
+    rate_counts: List[EvaluateProductRateCount] = Field(default_factory=list)
+
+
 class EvaluatePaginationMeta(BaseModel):
     page: int
     per_page: int
@@ -49,4 +70,10 @@ class EvaluatePaginationMeta(BaseModel):
 
 class EvaluatePaginationOut(BaseModel):
     items: List[EvaluateOut]
+    meta: EvaluatePaginationMeta
+
+
+class EvaluateProductPaginationOut(BaseModel):
+    summary: EvaluateProductSummaryOut
+    items: List[ProductEvaluateOut]
     meta: EvaluatePaginationMeta

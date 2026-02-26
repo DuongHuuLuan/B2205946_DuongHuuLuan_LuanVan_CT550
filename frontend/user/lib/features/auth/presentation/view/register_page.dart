@@ -92,9 +92,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _emailController,
                         decoration: InputDecoration(
                           labelText: "Email",
+                          floatingLabelStyle: TextStyle(
+                            color: colorScheme.secondary,
+                          ),
                           prefixIcon: Icon(
                             Icons.email,
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimary,
                           ),
                           border: const OutlineInputBorder(),
                         ),
@@ -110,9 +113,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _usernameController,
                         decoration: InputDecoration(
                           labelText: "Tên người dùng",
+                          floatingLabelStyle: TextStyle(
+                            color: colorScheme.secondary,
+                          ),
                           prefixIcon: Icon(
                             Icons.person,
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimary,
                           ), // Đổi sang icon person cho đúng ngữ nghĩa
                           border: const OutlineInputBorder(),
                         ),
@@ -126,9 +132,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: "Mật khẩu",
+                          floatingLabelStyle: TextStyle(
+                            color: colorScheme.secondary,
+                          ),
                           prefixIcon: Icon(
                             Icons.lock,
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimary,
                           ),
                           border: const OutlineInputBorder(),
                         ),
@@ -147,9 +156,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _confirmPasswordController,
                         decoration: InputDecoration(
                           labelText: "Xác nhận mật khẩu",
+                          floatingLabelStyle: TextStyle(
+                            color: colorScheme.secondary,
+                          ),
                           prefixIcon: Icon(
                             Icons.lock_reset,
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimary,
                           ),
                           border: const OutlineInputBorder(),
                         ),

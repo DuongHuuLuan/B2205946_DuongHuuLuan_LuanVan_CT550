@@ -177,8 +177,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     emptyMessage: "Bạn chưa có đơn hàng giao thành công.",
                   ),
                   const SizedBox(height: 18),
-                  const _SectionHeader(title: "Lịch sử đơn hàng"),
-                  EvaluateHistorySection(key: ValueKey(vm.orders.length)),
+                  const _SectionHeader(title: "Lịch sử đánh giá"),
+                  EvaluateHistorySection(),
                   if (vm.errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -344,7 +344,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Phản hồi từ shop",
+                            "Phản hồi từ người bán",
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
@@ -354,7 +354,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     )
                   else
                     Text(
-                      "Chưa có phản hồi từ shop.",
+                      "Chưa có phản hồi từ người bán.",
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                 ],
@@ -364,7 +364,14 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Đóng"),
+              child: Text(
+                "Đóng",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ],
         );

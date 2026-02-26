@@ -26,6 +26,24 @@ class EvaluateRepositoryImpl implements EvaluateRepository {
   }
 
   @override
+  Future<ProductEvaluatePage> getProductEvaluates({
+    required int productId,
+    int page = 1,
+    int perPage = 3,
+  }) async {
+    try {
+      final response = await _api.getProductEvaluates(
+        productId: productId,
+        page: page,
+        perPage: perPage,
+      );
+      return EvaluateMapper.productPageFromJson(_asMap(response.data));
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
   Future<EvaluateItem> getEvaluateDetail(int evaluateId) async {
     try {
       final response = await _api.getEvaluateDetail(evaluateId);

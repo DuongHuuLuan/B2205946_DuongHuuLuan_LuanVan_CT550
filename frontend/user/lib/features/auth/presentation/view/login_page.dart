@@ -78,6 +78,9 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: "Email",
+                        floatingLabelStyle: TextStyle(
+                          color: colorScheme.secondary,
+                        ),
                         prefixIcon: Icon(
                           Icons.email,
                           color: colorScheme.onPrimary,
@@ -99,6 +102,9 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: true,
                       decoration: InputDecoration(
                         labelText: "Mật khẩu",
+                        floatingLabelStyle: TextStyle(
+                          color: colorScheme.secondary,
+                        ),
                         prefixIcon: Icon(
                           Icons.lock,
                           color: colorScheme.onPrimary,

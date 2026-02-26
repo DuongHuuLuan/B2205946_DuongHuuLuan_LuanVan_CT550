@@ -2,7 +2,7 @@
     <div class="row g-3">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
-                <h4 class="mb-1">Đánh giá sản phẩm (theo đơn)</h4>
+                <h4 class="mb-1">Đánh giá sản phẩm</h4>
                 <div class="small opacity-75">Danh sách đánh giá chưa phản hồi</div>
             </div>
             <button class="btn btn-outline-secondary btn-sm" @click="fetchItems" :disabled="loading">
@@ -42,7 +42,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th class="ps-3">Evaluate</th>
+                                    <th class="ps-3">Mã ĐG</th>
                                     <th>Đơn hàng</th>
                                     <th>Số sao</th>
                                     <th>Nội dung</th>
@@ -69,7 +69,7 @@
                                     <td>
                                         <div class="d-flex gap-1 flex-wrap">
                                             <img v-for="img in (r.images || []).slice(0, 3)" :key="img.id"
-                                                :src="resolveUrl(img.image_url)" alt="review-image"
+                                                :src="resolveUrl(img.image_url)" alt="evaluate-image"
                                                 style="width: 34px; height: 34px; object-fit: cover; border-radius: 6px;" />
                                             <span v-if="(r.images || []).length > 3" class="small opacity-75">
                                                 +{{ (r.images || []).length - 3 }}
@@ -128,7 +128,7 @@
                     <div class="modal-body">
                         <div v-if="replyDialog.loadingDetail" class="py-4 text-center opacity-75">
                             <i class="fa-solid fa-spinner fa-spin me-2"></i>
-                            Dang tai chi tiet...
+                            Đang tải chi tiết...
                         </div>
                         <div v-else class="evaluate-reply-body">
                             <div class="mb-2">
@@ -148,7 +148,8 @@
                                 </div>
                             </div>
                             <label class="form-label fw-semibold">Nội dung phản hồi</label>
-                        <textarea v-model="replyDialog.reply" rows="4" class="form-control" :disabled="replyDialog.loadingDetail || replyDialog.submitting"
+                            <textarea v-model="replyDialog.reply" rows="4" class="form-control"
+                                :disabled="replyDialog.loadingDetail || replyDialog.submitting"
                                 placeholder="Nhập phản hồi cho khách hàng..."></textarea>
                         </div>
                     </div>
@@ -157,7 +158,8 @@
                             :disabled="replyDialog.submitting">
                             Đóng
                         </button>
-                        <button class="btn btn-primary" @click="submitReply" :disabled="replyDialog.submitting || replyDialog.loadingDetail">
+                        <button class="btn btn-primary" @click="submitReply"
+                            :disabled="replyDialog.submitting || replyDialog.loadingDetail">
                             {{ replyDialog.submitting ? "Đang gửi..." : "Gửi phản hồi" }}
                         </button>
                     </div>
