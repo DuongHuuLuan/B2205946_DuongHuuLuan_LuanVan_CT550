@@ -562,6 +562,9 @@ class _ActionSection extends StatelessWidget {
         FilledButton(
           onPressed: isBusy ? null : onConfirmReceived,
           child: Text(isBusy ? "Đang xử lý..." : "Đã nhận được hàng"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+          ),
         ),
       );
     }

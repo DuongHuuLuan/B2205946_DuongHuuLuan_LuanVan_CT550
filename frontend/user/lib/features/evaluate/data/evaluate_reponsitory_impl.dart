@@ -12,7 +12,7 @@ class EvaluateRepositoryImpl implements EvaluateRepository {
   Map<String, dynamic> _asMap(dynamic raw) {
     if (raw is Map<String, dynamic>) return raw;
     if (raw is Map) return raw.cast<String, dynamic>();
-    return const {};
+    throw FormatException("Unexpected evaluate response format: ${raw.runtimeType}");
   }
 
   @override

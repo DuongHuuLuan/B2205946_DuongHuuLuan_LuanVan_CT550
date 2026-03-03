@@ -187,13 +187,13 @@
 
               <div class="d-flex col-12 col-md-3 justify-content-md-end align-items-center mt-2 mt-md-0"
                 v-if="receipt?.status === 'pending'">
-                <button type="button" class="btn btn-outline-success me-2" :disabled="actionLoading"
+                <button type="button" class="btn btn-approve-warning me-2" :disabled="actionLoading"
                   @click="approveReceipt">
                   <i class="fa-solid fa-check me-1"></i>
                   {{ actionLoading ? "Đang xử lý..." : "Duyệt phiếu" }}
                 </button>
 
-                <button type="button" class="btn btn-outline-danger" :disabled="actionLoading" @click="rejectReceipt">
+                <button type="button" class="btn btn-reject-warning" :disabled="actionLoading" @click="rejectReceipt">
                   <i class="fa-solid fa-xmark me-1"></i>
                   {{ actionLoading ? "Đang xử lý..." : "Từ chối" }}
                 </button>
@@ -365,6 +365,42 @@ onMounted(fetchReceipt);
   font-size: 1.1rem;
 }
 
+.btn-approve-warning {
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+  color: #8a6700;
+  background: transparent;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-approve-warning:hover,
+.btn-approve-warning:focus-visible,
+.btn-approve-warning:active {
+  background: var(--status-warning-bg);
+  color: #8a6700;
+}
+
+
+.btn-reject-warning {
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
+  color: var(--status-danger);
+  background: transparent;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-reject-warning:hover,
+.btn-reject-warning:focus-visible,
+.btn-reject-warning:active {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+}
+
+.btn-reject-warning:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
 /* status badges */
 .badge {
   padding: 0.45rem 0.6rem;
@@ -375,19 +411,25 @@ onMounted(fetchReceipt);
 .badge-pending {
   background: var(--status-warning-bg);
   border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
-  color: var(--status-warning);
+  /* color: var(--status-warning); */
+  color: var(--font-color);
+  font-weight: 700;
 }
 
 .badge-completed {
   background: var(--status-success-bg);
   border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
-  color: var(--status-success);
+  /* color: var(--status-success); */
+  color: var(--font-color);
+  font-weight: 700;
 }
 
 .badge-canceled {
   background: var(--status-danger-bg);
   border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
-  color: var(--status-danger);
+  /* color: var(--status-danger); */
+  color: var(--font-color);
+  font-weight: 700;
 }
 
 .badge-secondary {

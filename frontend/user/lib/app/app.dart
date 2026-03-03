@@ -59,6 +59,7 @@ class _MyAppState extends State<MyApp> {
         "orderId": orderId,
         "paymentUrl": "",
         "status": uri.queryParameters["status"] ?? "",
+        "valid": uri.queryParameters["valid"] ?? "",
       },
     );
   }

@@ -3,8 +3,8 @@
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Tài Khoản</h4>
-          <div class="small opacity-75">Quản lý danh sách tài khoản</div>
+          <h4 class="mb-1">Tài khoản khách hàng</h4>
+          <div class="small opacity-75">Quản lý danh sách tài khoản khách hàng</div>
         </div>
       </div>
     </div>
@@ -14,20 +14,12 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <SearchToggle v-model="keyword" placeholder="Tìm theo email hoặc username..." />
+              <SearchToggle v-model="keyword" placeholder="Tìm kiếm thông tin khách hàng..." />
             </div>
 
-            <div class="col-12 col-md-6 col-lg-3">
-              <select v-model="role" class="form-select bg-transparent">
-                <option value="">Tất cả vai trò</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-              </select>
-            </div>
-
-            <div class="col-12 col-lg-4 d-flex justify-content-md-end gap-2">
+            <div class="col-12 col-lg-7 d-flex justify-content-md-end gap-2">
               <span class="badge bg-secondary-subtle text-secondary align-self-center">
-                Tổng: {{ meta.total }}
+                Tong: {{ meta.total }}
               </span>
             </div>
           </div>
@@ -42,12 +34,11 @@
             <table class="table table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th class="ps-3" style="width: 140px">Mã TK</th>
-                  <th>Username</th>
+                  <th class="ps-3" style="width: 140px">Ma TK</th>
+                  <!-- <th>Username</th> -->
+                  <th>Họ Tên</th>
                   <th>Email</th>
-                  <th style="width: 140px">Vai trò</th>
                   <th class="text-end" style="width: 160px">Ngày tạo</th>
-                  <th class="text-end pe-3" style="width: 140px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -57,40 +48,33 @@
                     <span class="code-pill">U{{ u.id }}</span>
                   </td>
 
-                  <td>
+                  <!-- <td>
                     <RouterLink class="name-link" :to="{ name: 'users.detail', params: { id: u.id } }">
                       <div class="fw-semibold">{{ u.username || "-" }}</div>
                     </RouterLink>
+                  </td> -->
+
+                  <td>
+                    <RouterLink class="name-link" :to="{ name: 'users.detail', params: { id: u.id } }">
+                      <div class="fw-semibold">{{ u?.profile.name || "-" }}</div>
+                    </RouterLink>
+                    <!-- <span class="opacity-75">{{ u?.profile?.name || "-" }}</span> -->
                   </td>
 
                   <td>
                     <span class="opacity-75">{{ u.email || "-" }}</span>
                   </td>
 
-                  <td>
-                    <span class="badge" :class="roleBadgeClass(u.role)">
-                      {{ roleLabel(u.role) }}
-                    </span>
-                  </td>
-
                   <td class="text-end">
                     <span class="small opacity-75">{{ formatDate(u.created_at) }}</span>
                   </td>
 
-                  <td class="text-end pe-4">
-                    <div class="d-flex justify-content-end gap-2">
-                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'users.edit', params: { id: u.id } }"
-                        title="Chỉnh sửa">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                      </RouterLink>
-                    </div>
-                  </td>
                 </tr>
               </tbody>
 
               <tbody v-else>
                 <tr>
-                  <td colspan="6" class="text-center py-5">
+                  <td colspan="5" class="text-center py-5">
                     <div class="opacity-75">
                       <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
                       Không có tài khoản phù hợp.
@@ -103,7 +87,7 @@
 
           <div class="d-flex justify-content-between align-items-center p-3 border-top" v-if="meta.total">
             <div class="small opacity-75">
-              Hiển thị {{ (meta.current_page - 1) * meta.per_page + 1 }}
+              Hien thi {{ (meta.current_page - 1) * meta.per_page + 1 }}
               -
               {{ Math.min(meta.current_page * meta.per_page, meta.total) }}
               /
@@ -131,40 +115,17 @@
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
-import SearchToggle from '@/components/common/SearchToggle.vue';
+import SearchToggle from "@/components/common/SearchToggle.vue";
 import Swal from "sweetalert2";
 import UserService from "@/services/user.service";
 
 const keyword = ref("");
-const role = ref("");
 const page = ref(1);
 const perPage = 8;
 
 const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
-
-function roleLabel(value) {
-  switch (value) {
-    case "admin":
-      return "Admin";
-    case "user":
-      return "User";
-    default:
-      return "-";
-  }
-}
-
-function roleBadgeClass(value) {
-  switch (value) {
-    case "admin":
-      return "role-admin";
-    case "user":
-      return "role-user";
-    default:
-      return "bg-secondary-subtle text-secondary";
-  }
-}
 
 function formatDate(value) {
   if (!value) return "-";
@@ -178,7 +139,7 @@ async function fetchUsers() {
   try {
     const res = await UserService.getAll({
       q: keyword.value.trim() || undefined,
-      role: role.value || undefined,
+      role: "user",
       page: page.value,
       per_page: perPage,
     });
@@ -207,7 +168,7 @@ onMounted(async () => {
   await fetchUsers();
 });
 
-watch([keyword, role], async () => {
+watch(keyword, async () => {
   page.value = 1;
   await fetchUsers();
 });
@@ -243,42 +204,4 @@ watch(page, async () => {
   border: 1px solid var(--hover-border-color);
   color: var(--font-color);
 }
-
-.role-admin {
-  background: color-mix(in srgb, #16a34a 18%, transparent);
-  border: 1px solid color-mix(in srgb, #16a34a 45%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.role-user {
-  background: color-mix(in srgb, #0ea5e9 18%, transparent);
-  border: 1px solid color-mix(in srgb, #0ea5e9 45%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 0.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  text-decoration: none;
-  transition: 0.12s ease;
-}
-
-.icon-btn:hover {
-  background: var(--hover-background-color);
-  border-color: var(--hover-border-color);
-}
-
-.icon-edit {
-  color: #f59e0b;
-}
 </style>
-
-

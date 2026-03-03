@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 from app.models.user import UserRole
 
@@ -26,10 +26,21 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     role: Optional[UserRole] = None
 
+class UserProfileSummaryOut(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    birthday: Optional[date] = None
+    avatar: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class UserAdminOut(UserBase):
     id: int
     role: UserRole
     created_at: datetime
+    profile: Optional[UserProfileSummaryOut] = None
 
     class Config:
         from_attributes = True

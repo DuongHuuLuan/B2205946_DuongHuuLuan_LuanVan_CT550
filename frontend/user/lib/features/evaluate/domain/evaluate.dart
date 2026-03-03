@@ -21,8 +21,8 @@ class EvaluateItem {
   final DateTime? updatedAt;
   final DateTime? adminRepliedAt;
   final List<EvaluateImage> images;
-  final String? reviewerName;
-  final String? reviewerNameMasked;
+  final String? evaluaterName;
+  final String? evaluaterNameMasked;
   final List<String> matchedVariants;
   final bool hasImages;
 
@@ -37,8 +37,8 @@ class EvaluateItem {
     this.updatedAt,
     this.adminRepliedAt,
     this.images = const [],
-    this.reviewerName,
-    this.reviewerNameMasked,
+    this.evaluaterName,
+    this.evaluaterNameMasked,
     this.matchedVariants = const [],
     this.hasImages = false,
   });
@@ -66,16 +66,13 @@ class EvaluateRateCount {
   final int star;
   final int count;
 
-  const EvaluateRateCount({
-    required this.star,
-    required this.count,
-  });
+  const EvaluateRateCount({required this.star, required this.count});
 }
 
 class ProductEvaluateSummary {
   final int productId;
   final double averageRate;
-  final int totalReviews;
+  final int totalEvaluates;
   final int totalWithImages;
   final String? summaryText;
   final List<EvaluateRateCount> rateCounts;
@@ -83,7 +80,7 @@ class ProductEvaluateSummary {
   const ProductEvaluateSummary({
     required this.productId,
     required this.averageRate,
-    required this.totalReviews,
+    required this.totalEvaluates,
     required this.totalWithImages,
     this.summaryText,
     this.rateCounts = const [],

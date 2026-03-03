@@ -2,19 +2,13 @@
   <div class="row g-3">
     <!-- Header -->
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
           <h4 class="mb-1">Cấp tài khoản</h4>
           <div class="small opacity-75">Quản lý danh sách cấp</div>
         </div>
 
-        <RouterLink
-          class="icon-btn icon-add"
-          :to="{ name: 'tiers.create' }"
-          title="Thêm cấp"
-        >
+        <RouterLink class="icon-btn icon-add" :to="{ name: 'tiers.create' }" title="Thêm cấp">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
@@ -29,12 +23,8 @@
               <SearchToggle v-model="keyword" placeholder="Tìm theo tên hoặc mã..." />
             </div>
 
-            <div
-              class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2"
-            >
-              <span
-                class="badge bg-secondary-subtle text-secondary align-self-center"
-              >
+            <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
+              <span class="badge bg-secondary-subtle text-secondary align-self-center">
                 Tổng: {{ meta.total }}
               </span>
             </div>
@@ -70,39 +60,24 @@
                   </td>
 
                   <td>
-                    <span
-                      class="badge"
-                      :class="t.status === 'actived' ? 'badge-on' : 'badge-off'"
-                    >
+                    <span class="badge" :class="t.status === 'actived' ? 'badge-on' : 'badge-off'">
                       {{ t.status === "actived" ? "Bật" : "Tắt" }}
                     </span>
                   </td>
 
                   <td>
-                    <i
-                      class="fa-solid fa-circle-check"
-                      v-if="t.default"
-                      style="color: #16a34a"
-                      title="Default"
-                    ></i>
+                    <i class="fa-solid fa-circle-check" v-if="t.default" style="color: #16a34a" title="Default"></i>
                     <span class="opacity-50" v-else>--</span>
                   </td>
 
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
-                      <RouterLink
-                        class="icon-btn icon-edit"
-                        :to="{ name: 'tiers.edit', params: { id: t.id } }"
-                        title="Chỉnh sửa"
-                      >
+                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'tiers.edit', params: { id: t.id } }"
+                        title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button
-                        class="icon-btn icon-delete"
-                        title="Xoá"
-                        @click="onDeleteClick(t.id)"
-                      >
+                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(t.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -114,9 +89,7 @@
                 <tr>
                   <td colspan="5" class="text-center py-5">
                     <div class="opacity-75">
-                      <i
-                        class="fa-regular fa-folder-open fs-4 d-block mb-2"
-                      ></i>
+                      <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
                       Không có cấp phù hợp.
                     </div>
                   </td>
@@ -126,10 +99,7 @@
           </div>
 
           <!-- Pagination -->
-          <div
-            class="d-flex justify-content-between align-items-center p-3 border-top"
-            v-if="meta.total"
-          >
+          <div class="d-flex justify-content-between align-items-center p-3 border-top" v-if="meta.total">
             <div class="small opacity-75">
               Hiển thị {{ (meta.current_page - 1) * meta.per_page + 1 }}
               -
@@ -139,21 +109,14 @@
             </div>
 
             <div class="btn-group">
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                :disabled="page === 1"
-                @click="page--"
-              >
+              <button class="btn btn-outline-secondary btn-sm" :disabled="page === 1" @click="page--">
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               <button class="btn btn-outline-secondary btn-sm" disabled>
                 Trang {{ page }}
               </button>
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                :disabled="meta.current_page >= meta.last_page"
-                @click="page++"
-              >
+              <button class="btn btn-outline-secondary btn-sm" :disabled="meta.current_page >= meta.last_page"
+                @click="page++">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
@@ -260,6 +223,7 @@ async function onDeleteClick(id) {
   border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
   color: var(--font-color);
 }
+
 .badge-off {
   background: var(--status-danger-bg);
   border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
@@ -279,22 +243,24 @@ async function onDeleteClick(id) {
   text-decoration: none;
   transition: 0.12s ease;
 }
+
 .icon-btn:hover {
   background: var(--hover-background-color);
   border-color: var(--hover-border-color);
 }
+
 .icon-add {
   color: #16a34a;
   width: 42px;
   height: 42px;
   border-radius: 1rem;
 }
+
 .icon-edit {
   color: #f59e0b;
 }
+
 .icon-delete {
   color: #ef4444;
 }
 </style>
-
-

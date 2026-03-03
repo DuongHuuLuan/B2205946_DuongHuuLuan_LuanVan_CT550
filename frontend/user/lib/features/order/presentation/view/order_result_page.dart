@@ -10,11 +10,15 @@ import 'package:url_launcher/url_launcher.dart';
 class OrderResultPage extends StatefulWidget {
   final int orderId;
   final String paymentUrl;
+  final String callbackStatus;
+  final String callbackValid;
 
   const OrderResultPage({
     super.key,
     required this.orderId,
     required this.paymentUrl,
+    this.callbackStatus = "",
+    this.callbackValid = "",
   });
 
   @override
@@ -70,8 +74,8 @@ class _OrderResultPageState extends State<OrderResultPage>
     final uri = Uri.parse(widget.paymentUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      setState(() => _error = "Không mở được link thanh toán");
+    } else if (mounted) {
+      setState(() => _error = "Không thể mở liên kết thanh toán");
     }
     _isLaunching = false;
   }
@@ -107,11 +111,31 @@ class _OrderResultPageState extends State<OrderResultPage>
 
   bool _isFailed(String status) => status == "cancelled";
 
+  bool get _hasSuccessCallback {
+    return widget.callbackStatus == "success" && widget.callbackValid != "0";
+  }
+
+  bool get _hasFailedCallback {
+    if (widget.callbackValid == "0") return true;
+    return widget.callbackStatus == "failed";
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = _order?.status;
-    final isSuccess = status != null && _isSuccess(status);
-    final isFailed = status != null && _isFailed(status);
+    final orderIsSuccess = status != null && _isSuccess(status);
+    final orderIsFailed = status != null && _isFailed(status);
+    final isSuccess = orderIsSuccess;
+    final isFailed = orderIsFailed || (!orderIsSuccess && _hasFailedCallback);
+    final isWaiting = !isSuccess && !isFailed;
+
+    final titleText = isSuccess
+        ? "Thanh toán thành công"
+        : isFailed
+        ? "Thanh toán thất bại"
+        : (_hasSuccessCallback
+              ? "Đang đồng bộ kết quả thanh toán..."
+              : "Đang chờ xác nhận thanh toán");
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
@@ -120,7 +144,7 @@ class _OrderResultPageState extends State<OrderResultPage>
         centerTitle: true,
         leading: IconButton(
           onPressed: () => context.go("/"),
-          icon: Icon(Icons.close),
+          icon: const Icon(Icons.close),
         ),
       ),
       body: Padding(
@@ -129,32 +153,35 @@ class _OrderResultPageState extends State<OrderResultPage>
           child: Column(
             children: [
               const SizedBox(height: 24),
-              Icon(
-                isSuccess
-                    ? Icons.check_circle
-                    : isFailed
-                    ? Icons.cancel
-                    : Icons.pending,
-                size: 72,
-                color: isSuccess
-                    ? Colors.green
-                    : isFailed
-                    ? Colors.red
-                    : Colors.orange,
+              SizedBox(
+                width: 72,
+                height: 72,
+                child: isWaiting
+                    ? Center(
+                        child: SizedBox(
+                          width: 42,
+                          height: 42,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        isSuccess ? Icons.check_circle : Icons.cancel,
+                        size: 72,
+                        color: isSuccess ? Colors.green : Colors.red,
+                      ),
               ),
               const SizedBox(height: 16),
               Text(
-                isSuccess
-                    ? "Thanh toán thành công"
-                    : isFailed
-                    ? "Thanh toán thất bại"
-                    : "Đang chờ xác nhận thanh toán",
+                titleText,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                "Mã đơn hàng : #ĐH-${widget.orderId}",
+                "Mã đơn hàng: #DH-${widget.orderId}",
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 24),
@@ -164,9 +191,16 @@ class _OrderResultPageState extends State<OrderResultPage>
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               const Spacer(),
-              if (!isSuccess && !isFailed)
+              if (isWaiting)
                 ElevatedButton.icon(
                   onPressed: _isChecking ? null : _checkStatus,
+                  icon: _isChecking
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh),
                   label: Text(
                     _isChecking ? "Đang kiểm tra..." : "Kiểm tra lại",
                   ),
@@ -174,7 +208,12 @@ class _OrderResultPageState extends State<OrderResultPage>
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => context.go("/orders/${widget.orderId}"),
-                child: const Text("Xem đơn hàng"),
+                child: Text(
+                  "Xem đơn hàng",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
               ),
             ],
           ),

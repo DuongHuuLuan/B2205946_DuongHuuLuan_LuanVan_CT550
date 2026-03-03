@@ -7,13 +7,19 @@ class DioClient {
   static Dio? _dio;
 
   static Dio get instance {
+    final baseUrl = AppConstants.baseUrl;
+    final headers = <String, dynamic>{'Content-Type': 'application/json'};
+    if (baseUrl.contains("ngrok-free.app")) {
+      headers["ngrok-skip-browser-warning"] = "69420";
+    }
+
     _dio ??=
         Dio(
             BaseOptions(
-              baseUrl: AppConstants.baseUrl,
+              baseUrl: baseUrl,
               connectTimeout: AppConstants.connectTimeout,
               receiveTimeout: AppConstants.receiveTimeout,
-              headers: {'Content-Type': 'application/json'},
+              headers: headers,
             ),
           )
           ..interceptors.add(AuthInterceptor())

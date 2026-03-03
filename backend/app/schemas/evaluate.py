@@ -41,8 +41,8 @@ class EvaluateOut(BaseModel):
 
 
 class ProductEvaluateOut(EvaluateOut):
-    reviewer_name: Optional[str] = None
-    reviewer_name_masked: Optional[str] = None
+    evaluater_name: Optional[str] = None
+    evaluater_name_masked: Optional[str] = None
     matched_variants: List[str] = Field(default_factory=list)
     has_images: bool = False
 
@@ -55,7 +55,7 @@ class EvaluateProductRateCount(BaseModel):
 class EvaluateProductSummaryOut(BaseModel):
     product_id: int
     average_rate: float = 0
-    total_reviews: int = 0
+    total_evaluates: int = 0
     total_with_images: int = 0
     summary_text: Optional[str] = None
     rate_counts: List[EvaluateProductRateCount] = Field(default_factory=list)

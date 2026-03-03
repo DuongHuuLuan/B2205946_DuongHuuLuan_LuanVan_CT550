@@ -26,7 +26,7 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-3">
-                            <button class="btn btn-primary w-100" @click="applyFilters" :disabled="loading">
+                            <button class="btn btn-warning-action w-100" @click="applyFilters" :disabled="loading">
                                 Lọc
                             </button>
                         </div>
@@ -78,7 +78,7 @@
                                     </td>
                                     <td class="small opacity-75">{{ formatDate(r.created_at) }}</td>
                                     <td class="text-end pe-3">
-                                        <button class="btn btn-sm btn-outline-primary" @click="openReply(r.id)">
+                                        <button class="btn btn-sm btn-warning-outline" @click="openReply(r.id)">
                                             {{ r.admin_reply ? "Xem/Sửa phản hồi" : "Phản hồi" }}
                                         </button>
                                     </td>
@@ -158,7 +158,7 @@
                             :disabled="replyDialog.submitting">
                             Đóng
                         </button>
-                        <button class="btn btn-primary" @click="submitReply"
+                        <button class="btn btn-warning-action" @click="submitReply"
                             :disabled="replyDialog.submitting || replyDialog.loadingDetail">
                             {{ replyDialog.submitting ? "Đang gửi..." : "Gửi phản hồi" }}
                         </button>
@@ -299,3 +299,30 @@ async function submitReply() {
 
 onMounted(fetchItems);
 </script>
+
+<style scoped>
+.btn-warning-action,
+.btn-warning-outline {
+    border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+    color: #8a6700;
+    background: transparent;
+    font-weight: 600;
+    transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-warning-action:hover,
+.btn-warning-action:focus-visible,
+.btn-warning-action:active,
+.btn-warning-outline:hover,
+.btn-warning-outline:focus-visible,
+.btn-warning-outline:active {
+    background: var(--status-warning-bg);
+    color: #8a6700;
+}
+
+.btn-warning-action:hover,
+.btn-warning-outline:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+</style>

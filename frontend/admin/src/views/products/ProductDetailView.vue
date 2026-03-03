@@ -14,7 +14,7 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'products.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" @click="onDelete">
+          <button v-if="product?.can_delete !== false" class="btn btn-outline-danger" type="button" @click="onDelete">
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
@@ -144,7 +144,7 @@ async function onDelete() {
     } catch (err) {
       await Swal.fire({
         title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
+        text: err?.response?.data?.message || err?.response?.data?.detail || "Không thể xóa",
         icon: "error",
       });
     }

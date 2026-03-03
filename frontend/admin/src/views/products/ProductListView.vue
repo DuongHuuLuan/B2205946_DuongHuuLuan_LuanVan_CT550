@@ -88,7 +88,8 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(p.id)">
+                      <button v-if="p.can_delete !== false" class="icon-btn icon-delete" title="Xoá"
+                        @click="onDeleteClick(p.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -219,7 +220,7 @@ async function onDeleteClick(productId) {
     } catch (err) {
       await Swal.fire({
         title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
+        text: err?.response?.data?.message || err?.response?.data?.detail || "Không thể xóa",
         icon: "error",
       });
     }
@@ -314,5 +315,3 @@ async function onDeleteClick(productId) {
   border-radius: 1rem;
 }
 </style>
-
-

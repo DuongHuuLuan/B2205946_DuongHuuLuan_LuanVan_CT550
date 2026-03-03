@@ -49,9 +49,9 @@
                                     <th>Khách hàng</th>
                                     <th>Thanh toán</th>
                                     <th style="width: 160px">Trạng thái</th>
-                                    <th class="text-center pe-3" style="width: 160px">Ngày tạo</th>
-                                    <th class="text-end" style="width: 160px">Tổng tiền</th>
-                                    <th class="text-end pe-4" style="width: 140px">Thao tác</th>
+                                    <th class="text-center" style="width: 160px">Ngày tạo</th>
+                                    <th class="text-center" style="width: 160px">Tổng tiền</th>
+                                    <th class="text-center" style="width: 140px">Thao tác</th>
                                 </tr>
                             </thead>
 
@@ -85,25 +85,27 @@
                                         </span>
                                     </td>
 
-                                    <td class="text-end">
+                                    <td class="text-center">
                                         <span class="small opacity-75">{{ formatDateTimeVN(o?.created_at) }}</span>
                                     </td>
 
-                                    <td class="text-end fw-semibold">
+                                    <td class="text-center fw-semibold">
                                         {{ formatMoney(calcTotal(o)) }}
                                     </td>
 
                                     <td class="text-end pe-3">
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <RouterLink class="icon-btn icon-view"
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <RouterLink v-if="canUpdateStatus(o?.status)"
+                                                class="btn btn-sm btn-approve px-3"
+                                                :to="{ name: 'orders.detail', params: { id: o.id } }"
+                                                title="Đi đến trang duyệt đơn">
+                                                Duyệt đơn
+                                            </RouterLink>
+
+                                            <RouterLink v-else class="icon-btn icon-view"
                                                 :to="{ name: 'orders.detail', params: { id: o.id } }"
                                                 title="Xem chi tiết">
                                                 <i class="fa-solid fa-eye"></i>
-                                            </RouterLink>
-                                            <RouterLink v-if="canUpdateStatus(o?.status)" class="icon-btn icon-edit"
-                                                :to="{ name: 'orders.edit', params: { id: o.id } }"
-                                                title="Cập nhật trạng thái">
-                                                <i class="fa-solid fa-pen-to-square"></i>
                                             </RouterLink>
                                         </div>
                                     </td>
@@ -300,7 +302,17 @@ watch(page, async () => {
     color: #0ea5e9;
 }
 
-.icon-edit {
-    color: #f59e0b;
+.btn-approve {
+    border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+    /* color: #8a6700; */
+    background: var(--status-warning-bg);
+    /* font-weight: 600; */
+    color: var(--font-color);
+    font-weight: 600;
+}
+
+.btn-approve:hover {
+    filter: var(--brightness);
+    color: #8a6700;
 }
 </style>

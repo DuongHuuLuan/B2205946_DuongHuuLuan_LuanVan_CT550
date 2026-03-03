@@ -47,7 +47,6 @@ import ReceiptDetailView from "../views/receipts/ReceiptDetailView.vue";
 
 // Order pages
 import OrderListView from "../views/orders/OrderListView.vue";
-import OrderEditView from "../views/orders/OrderEditView.vue";
 import OrderDetailView from "../views/orders/OrderDetailView.vue";
 
 // Payment pages
@@ -64,7 +63,6 @@ import DiscountDetailView from "../views/discounts/DiscountDetailView.vue";
 
 // User pages
 import UserListView from "../views/users/UserListView.vue";
-import UserEditView from "../views/users/UserEditView.vue";
 import UserDetailView from "../views/users/UserDetailView.vue";
 
 import AuthService from "@/services/auth.service";
@@ -161,7 +159,7 @@ const routes = [
         path: "/tiers",
         name: "tiers.list",
         component: TierListView,
-        meta: { title: "Cấp tài khoản" },
+        meta: { title: "Câp tài khoản" },
       },
       {
         path: "/tiers/create",
@@ -354,13 +352,6 @@ const routes = [
         meta: { title: "Tài khoản" },
       },
       {
-        path: "/users/:id/edit",
-        name: "users.edit",
-        component: UserEditView,
-        meta: { title: "Chỉnh sửa tài khoản" },
-        props: true,
-      },
-      {
         path: "/users/:id",
         name: "users.detail",
         component: UserDetailView,
@@ -374,13 +365,6 @@ const routes = [
         name: "orders.list",
         component: OrderListView,
         meta: { title: "Đơn hàng" },
-      },
-      {
-        path: "/orders/:id/edit",
-        name: "orders.edit",
-        component: OrderEditView,
-        meta: { title: "Cập nhật đơn hàng" },
-        props: true,
       },
       {
         path: "/orders/:id",
@@ -421,6 +405,6 @@ router.beforeEach((to, from, next) => {
 });
 
 router.afterEach((to) => {
-  document.title = to.meta.title || "Quản lý hệ thống văn phòng phẩm";
+  document.title = to.meta.title || "Quản lý cửa hàng Nón Bảo Hiểm";
 });
 export default router;

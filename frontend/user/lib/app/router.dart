@@ -1,4 +1,6 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'dart:async';
+
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
@@ -20,67 +22,45 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmod
 import 'package:b2205946_duonghuuluan_luanvan/core/storage/secure_storage.dart';
 
 class AppRouter {
-  static bool _isRestored = false;
-
   static GoRouter createRouter(AuthViewmodel authVM) {
     final storage = SecureStorage();
 
     return GoRouter(
       initialLocation: "/",
       refreshListenable: authVM,
-      redirect: (context, state) async {
+      redirect: (context, state) {
         final String location = state.matchedLocation;
         final String fullLocation = state.uri.toString();
 
-        // 1. Kiểm tra trạng thái khởi tạo
-        if (!authVM.isInitialized) return "/splash";
+        final bool isPaymentFlow =
+            location == "/order-result" ||
+            location == "/payment-result" ||
+            location == "/order-success";
+
+        if (isPaymentFlow) return null;
+
+        if (!authVM.isInitialized) {
+          return (location == "/splash") ? null : "/splash";
+        }
 
         final bool loggedIn = authVM.isAuthenticated;
-        final bool isAtAuth =
-            location == "/login" ||
-            location == "/register" ||
-            location == "/splash";
+        final bool isAtAuthPage =
+            location == "/login" || location == "/register";
 
-        // 2. Nếu chưa đăng nhập
         if (!loggedIn) {
-          _isRestored = false;
-          // Nếu đang ở login/register thì cho phép ở lại, ngược lại ép về login
-          return (location == "/login" || location == "/register")
-              ? null
-              : "/login";
+          return isAtAuthPage ? null : "/login";
         }
 
-        // 3. Nếu đã đăng nhập
-        if (loggedIn) {
-          if (!_isRestored || isAtAuth) {
-            _isRestored = true;
-
-            try {
-              // Thêm timeout hoặc try-catch để tránh treo khi đọc storage lỗi
-              final lastRoute = await storage.getLastRoute().timeout(
-                const Duration(seconds: 2),
-                onTimeout: () => null,
-              );
-
-              if (lastRoute != null &&
-                  lastRoute.isNotEmpty &&
-                  lastRoute != "/" &&
-                  lastRoute != location) {
-                return lastRoute;
-              }
-            } catch (e) {
-              debugPrint("Router Error: Không thể khôi phục route cũ: $e");
-            }
-
-            // Nếu đang kẹt ở trang Auth mà ko có route cũ thì về Home
-            return isAtAuth ? "/" : null;
-          }
-
-          // Lưu route hiện tại để khôi phục sau này (tránh lưu trang Auth)
-          if (!isAtAuth) {
-            await storage.saveLastRoute(fullLocation).catchError((e) => null);
-          }
+        if (isAtAuthPage || location == "/splash") {
+          return "/";
         }
+
+        if (fullLocation.isNotEmpty && fullLocation != "/" && !isPaymentFlow) {
+          unawaited(
+            storage.saveLastRoute(fullLocation).catchError((e) => null),
+          );
+        }
+
         return null;
       },
       routes: [
@@ -179,15 +159,26 @@ class AppRouter {
                 int.tryParse(state.uri.queryParameters["orderId"] ?? "") ?? 0;
             final queryPaymentUrl =
                 state.uri.queryParameters["paymentUrl"] ?? "";
+            final queryStatus = state.uri.queryParameters["status"] ?? "";
+            final queryValid = state.uri.queryParameters["valid"] ?? "";
             final extra = state.extra;
             if (extra is Map) {
               final orderId = extra["orderId"] as int? ?? 0;
               final paymentUrl = extra["paymentUrl"] as String? ?? "";
-              return OrderResultPage(orderId: orderId, paymentUrl: paymentUrl);
+              final callbackStatus = extra["status"] as String? ?? queryStatus;
+              final callbackValid = extra["valid"] as String? ?? queryValid;
+              return OrderResultPage(
+                orderId: orderId,
+                paymentUrl: paymentUrl,
+                callbackStatus: callbackStatus,
+                callbackValid: callbackValid,
+              );
             }
             return OrderResultPage(
               orderId: queryOrderId,
               paymentUrl: queryPaymentUrl,
+              callbackStatus: queryStatus,
+              callbackValid: queryValid,
             );
           },
         ),

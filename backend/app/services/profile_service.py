@@ -42,6 +42,28 @@ class ProfileService:
         profile = ProfileService._get_or_create_profile(db, user_id)
 
         update_data = profile_in.model_dump(exclude_unset=True)
+        if "name" in update_data:
+            new_name = (update_data.get("name") or "").strip()
+            if not new_name:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ten khong duoc de trong",
+                )
+
+            exists = (
+                db.query(User)
+                .filter(User.username == new_name, User.id != user_id)
+                .first()
+            )
+            if exists:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username da ton tai",
+                )
+
+            update_data["name"] = new_name
+            profile.user.username = new_name
+
         for key, value in update_data.items():
             setattr(profile, key, value)
 

@@ -3,12 +3,12 @@
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Chỉnh sửa tài khoản</h4>
-          <div class="small opacity-75">Cập nhật thông tin tài khoản</div>
+          <h4 class="mb-1">Chinh sua tai khoan user</h4>
+          <div class="small opacity-75">Cap nhat thong tin tai khoan</div>
         </div>
 
         <RouterLink class="btn btn-outline-secondary" :to="{ name: 'users.list' }">
-          <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+          <i class="fa-solid fa-arrow-left me-1"></i> Quay lai
         </RouterLink>
       </div>
     </div>
@@ -17,7 +17,7 @@
       <div class="card card-soft">
         <div class="card-body">
           <div v-if="loading" class="py-4 text-center opacity-75">
-            <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải tài liệu...
+            <i class="fa-solid fa-spinner fa-spin me-2"></i> Dang tai tai lieu...
           </div>
 
           <Form v-else :key="formKey" :initial-values="initialValues" :validation-schema="schema" @submit="onSubmit"
@@ -40,29 +40,17 @@
                 </Field>
                 <ErrorMessage name="email" class="invalid-feedback d-block" />
               </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label">Vai trò</label>
-                <Field name="role" v-slot="{ field, meta }">
-                  <select v-bind="field" class="form-select bg-transparent"
-                    :class="{ 'is-invalid': meta.touched && !meta.valid }">
-                    <option value="admin">Admin</option>
-                    <option value="user">User</option>
-                  </select>
-                </Field>
-                <ErrorMessage name="role" class="invalid-feedback d-block" />
-              </div>
             </div>
 
             <div class="d-flex gap-2 mt-3">
               <button class="btn btn-accent" type="submit" :disabled="isSubmitting">
                 <i class="fa-solid fa-floppy-disk me-1"></i>
-                {{ isSubmitting ? "Đang lưu..." : "Lưu thay đổi" }}
+                {{ isSubmitting ? "Dang luu..." : "Luu thay doi" }}
               </button>
 
               <button class="btn btn-outline-secondary" type="button" :disabled="isSubmitting"
                 @click="onReset(resetForm)">
-                <i class="fa-solid fa-rotate-left me-1"></i> Làm mới
+                <i class="fa-solid fa-rotate-left me-1"></i> Lam moi
               </button>
             </div>
           </Form>
@@ -91,7 +79,6 @@ const formKey = ref(0);
 const initialValues = ref({
   username: "",
   email: "",
-  role: "user",
 });
 const originalValues = ref({ ...initialValues.value });
 
@@ -99,15 +86,14 @@ const schema = yup.object({
   username: yup
     .string()
     .trim()
-    .required("Vui lòng nhập username")
-    .min(2, "Username tối thiểu 2 ký tự")
-    .max(255, "Username tối đa 255 ký tự"),
+    .required("Vui long nhap username")
+    .min(2, "Username toi thieu 2 ky tu")
+    .max(255, "Username toi da 255 ky tu"),
   email: yup
     .string()
     .trim()
-    .email("Email không hợp lệ")
-    .required("Vui lòng nhập email"),
-  role: yup.string().required("Vui lòng chọn vai trò"),
+    .email("Email khong hop le")
+    .required("Vui long nhap email"),
 });
 
 async function fetchUser() {
@@ -119,7 +105,6 @@ async function fetchUser() {
     const mapped = {
       username: data?.username ?? "",
       email: data?.email ?? "",
-      role: data?.role ?? "user",
     };
 
     initialValues.value = mapped;
@@ -129,8 +114,8 @@ async function fetchUser() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Không thể tải tài khoản. Vui lòng thử lại.";
-    await Swal.fire("Lỗi", msg, "error");
+      "Khong the tai tai khoan. Vui long thu lai.";
+    await Swal.fire("Loi", msg, "error");
     router.push({ name: "users.list" });
   } finally {
     loading.value = false;
@@ -146,10 +131,9 @@ async function onSubmit(values, { resetForm, setErrors }) {
     await UserService.update(id, {
       username: values.username?.trim(),
       email: values.email?.trim(),
-      role: values.role,
     });
 
-    await Swal.fire("Thành công!", "Cập nhật tài khoản thành công!", "success");
+    await Swal.fire("Thanh cong!", "Cap nhat tai khoan thanh cong!", "success");
     originalValues.value = { ...values };
     resetForm({ values: { ...values } });
     router.push({ name: "users.list" });
@@ -157,15 +141,13 @@ async function onSubmit(values, { resetForm, setErrors }) {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Cập nhật tài khoản thất bại. Vui lòng thử lại.";
-    await Swal.fire("Lỗi", msg, "error");
+      "Cap nhat tai khoan that bai. Vui long thu lai.";
+    await Swal.fire("Loi", msg, "error");
 
     const errorsObj = e?.response?.data?.errors || {};
     const mapped = {};
     Object.keys(errorsObj).forEach((k) => {
-      mapped[k] = Array.isArray(errorsObj[k])
-        ? errorsObj[k][0]
-        : String(errorsObj[k]);
+      mapped[k] = Array.isArray(errorsObj[k]) ? errorsObj[k][0] : String(errorsObj[k]);
     });
     setErrors(mapped);
   }

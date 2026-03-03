@@ -33,9 +33,7 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
         final isSubmitting = vm.creatingOrderIds.contains(widget.orderId);
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text("Đánh giá đơn #DH-${widget.orderId}"),
-          ),
+          appBar: AppBar(title: Text("Đánh giá đơn #DH-${widget.orderId}")),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -117,7 +115,8 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
                             child: InkWell(
                               onTap: isSubmitting
                                   ? null
-                                  : () => setState(() => _images.removeAt(index)),
+                                  : () =>
+                                        setState(() => _images.removeAt(index)),
                               child: Container(
                                 decoration: const BoxDecoration(
                                   color: Colors.black87,
@@ -143,7 +142,9 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
                       vm.errorMessage!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 Row(
@@ -160,7 +161,14 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
                     Expanded(
                       child: FilledButton(
                         onPressed: isSubmitting ? null : _submit,
-                        child: Text(isSubmitting ? "Đang gửi..." : "Gửi đánh giá"),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                        ),
+                        child: Text(
+                          isSubmitting ? "Đang gửi..." : "Gửi đánh giá",
+                        ),
                       ),
                     ),
                   ],
@@ -175,7 +183,10 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
 
   Future<void> _pickImages() async {
     try {
-      final selected = await _picker.pickMultiImage(imageQuality: 85, maxWidth: 1400);
+      final selected = await _picker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1400,
+      );
       if (!mounted || selected.isEmpty) return;
 
       setState(() {
@@ -185,9 +196,9 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
       });
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Không thể chọn ảnh.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Không thể chọn ảnh.")));
     }
   }
 
@@ -203,9 +214,9 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
         imagePaths: _images.map((e) => e.path).toList(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gửi đánh giá thành công.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Gửi đánh giá thành công.")));
       Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) return;

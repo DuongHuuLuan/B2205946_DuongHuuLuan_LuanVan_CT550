@@ -3,11 +3,11 @@ import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.
 
 class EvaluateMapper {
   static EvaluateImage imageFromJson(Map<String, dynamic> json) {
-    final rawUrl = (json["image_url"] ?? "") as String;
+    final rawUrl = (json["image_url"] ?? "").toString();
     return EvaluateImage(
-      id: (json["id"] ?? 0) as int,
+      id: _toInt(json["id"]),
       imageUrl: _resolveUrl(rawUrl),
-      sortOrder: json["sort_order"] as int?,
+      sortOrder: json["sort_order"] == null ? null : _toInt(json["sort_order"]),
     );
   }
 
@@ -15,10 +15,10 @@ class EvaluateMapper {
     final rawImages = (json["images"] as List?) ?? const [];
     final rawMatchedVariants = (json["matched_variants"] as List?) ?? const [];
     return EvaluateItem(
-      id: (json["id"] ?? 0) as int,
-      orderId: (json["order_id"] ?? 0) as int,
-      userId: (json["user_id"] ?? 0) as int,
-      rate: (json["rate"] ?? 0) as int,
+      id: _toInt(json["id"]),
+      orderId: _toInt(json["order_id"]),
+      userId: _toInt(json["user_id"]),
+      rate: _toInt(json["rate"]),
       content: json["content"] as String?,
       adminReply: json["admin_reply"] as String?,
       createdAt: _parseDate(json["created_at"]),
@@ -28,10 +28,10 @@ class EvaluateMapper {
           .whereType<Map>()
           .map((e) => imageFromJson(e.cast<String, dynamic>()))
           .toList(),
-      reviewerName: json["reviewer_name"] as String?,
-      reviewerNameMasked: json["reviewer_name_masked"] as String?,
+      evaluaterName: json["evaluater_name"] as String?,
+      evaluaterNameMasked: json["evaluater_name_masked"] as String?,
       matchedVariants: rawMatchedVariants.map((e) => e.toString()).toList(),
-      hasImages: (json["has_images"] ?? false) == true,
+      hasImages: _toBool(json["has_images"]),
     );
   }
 
@@ -47,10 +47,10 @@ class EvaluateMapper {
           .whereType<Map>()
           .map((e) => fromJson(e.cast<String, dynamic>()))
           .toList(),
-      page: (meta["page"] ?? 1) as int,
-      perPage: (meta["per_page"] ?? 10) as int,
-      total: (meta["total"] ?? 0) as int,
-      totalPages: (meta["total_pages"] ?? 0) as int,
+      page: _toInt(meta["page"], defaultValue: 1),
+      perPage: _toInt(meta["per_page"], defaultValue: 10),
+      total: _toInt(meta["total"]),
+      totalPages: _toInt(meta["total_pages"]),
     );
   }
 
@@ -66,20 +66,25 @@ class EvaluateMapper {
         : const <String, dynamic>{};
     final rawRateCounts = (summary["rate_counts"] as List?) ?? const [];
 
+    final totalFromMeta = _toInt(meta["total"]);
+    final totalEvaluates = _toInt(
+      summary["total_evaluates"],
+      defaultValue: totalFromMeta,
+    );
     return ProductEvaluatePage(
       summary: ProductEvaluateSummary(
-        productId: (summary["product_id"] ?? 0) as int,
-        averageRate: ((summary["average_rate"] ?? 0) as num).toDouble(),
-        totalReviews: (summary["total_reviews"] ?? 0) as int,
-        totalWithImages: (summary["total_with_images"] ?? 0) as int,
+        productId: _toInt(summary["product_id"]),
+        averageRate: _toDouble(summary["average_rate"]),
+        totalEvaluates: totalEvaluates,
+        totalWithImages: _toInt(summary["total_with_images"]),
         summaryText: summary["summary_text"] as String?,
         rateCounts: rawRateCounts
             .whereType<Map>()
             .map((e) => e.cast<String, dynamic>())
             .map(
               (e) => EvaluateRateCount(
-                star: (e["star"] ?? 0) as int,
-                count: (e["count"] ?? 0) as int,
+                star: _toInt(e["star"]),
+                count: _toInt(e["count"]),
               ),
             )
             .toList(),
@@ -88,17 +93,17 @@ class EvaluateMapper {
           .whereType<Map>()
           .map((e) => fromJson(e.cast<String, dynamic>()))
           .toList(),
-      page: (meta["page"] ?? 1) as int,
-      perPage: (meta["per_page"] ?? 10) as int,
-      total: (meta["total"] ?? 0) as int,
-      totalPages: (meta["total_pages"] ?? 0) as int,
+      page: _toInt(meta["page"], defaultValue: 1),
+      perPage: _toInt(meta["per_page"], defaultValue: 10),
+      total: _toInt(meta["total"]),
+      totalPages: _toInt(meta["total_pages"]),
     );
   }
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
-    if (value is! String) return null;
-    return DateTime.tryParse(value);
+    if (value is String) return DateTime.tryParse(value);
+    return DateTime.tryParse(value.toString());
   }
 
   static String _resolveUrl(String raw) {
@@ -106,5 +111,31 @@ class EvaluateMapper {
     if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
     final base = AppConstants.baseUrl.replaceAll(RegExp(r"/+$"), "");
     return "$base${raw.startsWith("/") ? "" : "/"}$raw";
+  }
+
+  static int _toInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  static double _toDouble(dynamic value, {double defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  static bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == "true" || normalized == "1";
+    }
+    return false;
   }
 }

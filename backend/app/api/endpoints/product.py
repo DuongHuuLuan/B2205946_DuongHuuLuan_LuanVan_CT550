@@ -211,8 +211,9 @@ def delete_product(product_id: int, db: Session = Depends(get_db), current_admin
     """
     API xóa 1 sản phẩm theo Id
     """
+    ProductService.ensure_product_can_delete(db, product_id)
     ImageService.deleteAll_image(db, product_id)
-    return ProductService.delete_product(db,product_id)
+    return ProductService.delete_product(db, product_id, skip_validate=True)
 
 
 @router.post("/{product_id}/images")
@@ -240,3 +241,4 @@ def upload_product_images(
             for img in db_images
         ],
     }
+

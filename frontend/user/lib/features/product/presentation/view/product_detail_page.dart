@@ -30,20 +30,20 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  ProductEvaluatePage? _reviewPreview;
-  bool _isReviewLoading = false;
-  String? _reviewError;
+  ProductEvaluatePage? _evaluatePreview;
+  bool _isEvaluateLoading = false;
+  String? _evaluateError;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       context.read<ProductViewmodel>().productDetail(widget.productId);
-      _loadReviewPreview();
+      _loadEvaluatePreview();
     });
   }
 
-  Future<ProductEvaluatePage> _fetchProductReviews({
+  Future<ProductEvaluatePage> _fetchProductEvaluates({
     int page = 1,
     int perPage = 3,
   }) {
@@ -55,12 +55,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  Future<void> _loadReviewPreview() async {
+  Future<void> _loadEvaluatePreview() async {
     if (!mounted) return;
     final repo = context.read<EvaluateRepository>();
     setState(() {
-      _isReviewLoading = true;
-      _reviewError = null;
+      _isEvaluateLoading = true;
+      _evaluateError = null;
     });
 
     try {
@@ -70,17 +70,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       );
       if (!mounted) return;
       setState(() {
-        _reviewPreview = result;
+        _evaluatePreview = result;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _reviewError = e.toString();
+        _evaluateError = e.toString();
       });
     }
     if (!mounted) return;
     setState(() {
-      _isReviewLoading = false;
+      _isEvaluateLoading = false;
     });
   }
 
@@ -456,9 +456,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required TextTheme textTheme,
     required ColorScheme colorScheme,
   }) {
-    final data = _reviewPreview;
+    final data = _evaluatePreview;
 
-    if (_isReviewLoading && data == null) {
+    if (_isEvaluateLoading && data == null) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
         child: Container(
@@ -483,7 +483,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       );
     }
 
-    if (_reviewError != null && data == null) {
+    if (_evaluateError != null && data == null) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
         child: Container(
@@ -504,10 +504,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(_reviewError!, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                _evaluateError!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: _loadReviewPreview,
+                onPressed: _loadEvaluatePreview,
                 icon: const Icon(Icons.refresh),
                 label: const Text("Thử lại"),
               ),
@@ -517,8 +521,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       );
     }
 
-    final totalReviews = data?.summary.totalReviews ?? 0;
-    if (data == null || totalReviews == 0) {
+    final totalEvaluates = data?.summary.totalEvaluates ?? 0;
+    if (data == null || totalEvaluates == 0) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
         child: Container(
@@ -591,7 +595,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Đánh giá sản phẩm (${data.summary.totalReviews})",
+                        "Đánh giá sản phẩm (${data.summary.totalEvaluates})",
                         style: textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -687,7 +691,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           if ((data.summary.summaryText ?? "").trim().isEmpty)
             Text(
-              "Sản phẩm có ${data.summary.totalReviews} đánh giá, ${data.summary.totalWithImages} đánh giá có hình ảnh.",
+              "Sản phẩm có ${data.summary.totalEvaluates} đánh giá, ${data.summary.totalWithImages} đánh giá có hình ảnh.",
               style: textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
           const SizedBox(height: 12),
@@ -780,8 +784,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required ColorScheme colorScheme,
     bool compact = true,
   }) {
-    final reviewerName =
-        item.reviewerNameMasked ?? item.reviewerName ?? "Khách hàng";
+    final evaluaterName =
+        item.evaluaterNameMasked ?? item.evaluaterName ?? "Khách hàng";
     final variantText = item.matchedVariants.isNotEmpty
         ? item.matchedVariants.join(" | ")
         : null;
@@ -810,7 +814,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  reviewerName,
+                  evaluaterName,
                   style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
@@ -896,7 +900,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _showAllReviewsSheet(Product product) async {
-    final future = _fetchProductReviews(perPage: 50);
+    final future = _fetchProductEvaluates(perPage: 50);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

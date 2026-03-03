@@ -1,11 +1,19 @@
 import math
 from typing import Optional
+
 from fastapi import HTTPException, status
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+
 from app.models.user import User, UserRole
 
+
 class UserService:
+    @staticmethod
+    def _ensure_user_account(user: User):
+        if not user or user.role != UserRole.USER:
+            raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+
     @staticmethod
     def get_all(
         db: Session,
@@ -14,7 +22,11 @@ class UserService:
         keyword: str = None,
         role: Optional[str] = None,
     ):
-        query = db.query(User)
+        query = (
+            db.query(User)
+            .options(joinedload(User.profile))
+            .filter(User.role == UserRole.USER)
+        )
 
         if keyword:
             like = f"%{keyword}%"
@@ -26,12 +38,15 @@ class UserService:
             except ValueError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Role Không hợp lệ",
+                    detail="Role không hợp lệ",
                 ) from exc
-            query = query.filter(User.role == role_enum)
+            if role_enum != UserRole.USER:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Chỉ hỗ trợ quản lý tài khoản người dùng",
+                )
 
         total_count = query.count()
-
         if total_count == 0:
             return {
                 "items": [],
@@ -68,9 +83,13 @@ class UserService:
 
     @staticmethod
     def get_id(db: Session, user_id: int):
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+        user = (
+            db.query(User)
+            .options(joinedload(User.profile))
+            .filter(User.id == user_id)
+            .first()
+        )
+        UserService._ensure_user_account(user)
         return user
 
     @staticmethod
@@ -97,18 +116,18 @@ class UserService:
         role_value = update_data.pop("role", None)
         if role_value is not None:
             if isinstance(role_value, UserRole):
-                user.role = role_value
-            else:
-                try:
-                    user.role = UserRole(role_value)
-                except ValueError as exc:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Role không hợp lệ",
-                    ) from exc
+                role_value = role_value.value
+            if role_value != UserRole.USER.value:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Không được thay đổi vai trò tài khoản",
+                )
 
         for key, value in update_data.items():
             setattr(user, key, value)
+
+        if username and user.profile:
+            user.profile.name = username
 
         db.commit()
         db.refresh(user)
