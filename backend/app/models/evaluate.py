@@ -1,10 +1,13 @@
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class Evaluate(Base):
     __tablename__ = "evaluates"
+    __table_args__ = (
+        UniqueConstraint("order_id", name="uq_evaluates_order_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)

@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session, joinedload
 from app.models import Order, OrderDetail, ProductDetail, Evaluate, EvaluateImage
 from app.models.order import OrderStatus
 from app.models.user import User, UserRole
+from app.services.base import BaseService
 
-
-class EvaluateService:
+class EvaluateService(BaseService):
     @staticmethod
     def _mask_username(username: Optional[str]) -> Optional[str]:
         name = (username or "").strip()
@@ -101,9 +101,8 @@ class EvaluateService:
         content: Optional[str],
         image_urls: List[str],
     ):
-        order = db.query(Order).filter(Order.id == order_id, Order.user_id == user_id).first()
-        if not order:
-            raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
+        order = EvaluateService.get_or_404(db, Order, order_id, "Đơn hàng không tồn tại")
+        EvaluateService.assert_owner(user_id, order.user_id, "Bạn không có quyền đánh giá đơn hàng của người khác")
 
         if order.status != OrderStatus.COMPLETED:
             raise HTTPException(status_code=400, detail="Chỉ có thể đánh giá đơn hàng đã hoàn thành")

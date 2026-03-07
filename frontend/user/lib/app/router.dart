@@ -4,6 +4,7 @@ import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/view/chat_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_detail_page.dart';
@@ -204,6 +205,7 @@ class AppRouter {
           path: "/profile",
           builder: (context, state) => const ProfilePage(),
         ),
+        GoRoute(path: "/chat", builder: (context, state) => const ChatPage()),
       ],
     );
   }

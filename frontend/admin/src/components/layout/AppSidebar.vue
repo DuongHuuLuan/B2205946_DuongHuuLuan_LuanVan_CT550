@@ -53,14 +53,13 @@
         <span v-if="!collapsed">Nhà cung cấp</span>
       </RouterLink>
 
-      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('promotions.') }"
-        to="/discounts">
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('discounts.') }" to="/discounts">
         <i class="fa-solid fa-percent me-2"></i>
         <span v-if="!collapsed">Khuyến mãi</span>
       </RouterLink>
 
       <RouterLink class="nav-link" :class="{
-        active: route.name?.toString().startsWith('payment-methods.'),
+        active: route.name?.toString().startsWith('payments.'),
       }" to="/payments">
         <i class="fa-solid fa-credit-card me-2"></i>
         <span v-if="!collapsed">Phương thức thanh toán</span>
@@ -74,6 +73,11 @@
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('orders.') }" to="/orders">
         <i class="fa-solid fa-receipt me-2"></i>
         <span v-if="!collapsed">Đơn hàng</span>
+      </RouterLink>
+
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('chat') }" to="/chat">
+        <i class="fa-regular fa-comments me-2"></i>
+        <span v-if="!collapsed">Hỗ trợ khách hàng</span>
       </RouterLink>
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('evaluates.') }" to="/evaluates">
@@ -99,23 +103,25 @@ import router from "@/routers";
 import authService from "@/services/auth.service";
 import Swal from "sweetalert2";
 import { useRoute } from "vue-router";
+
 defineProps({ collapsed: { type: Boolean, default: false } });
+
 const route = useRoute();
 
 const onLogout = async () => {
   const confirm = await Swal.fire({
-    title: "Bạn có chắc chắn muốn đăng xuất?",
+    title: "Ban co chac chan muon dang xuat?",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Đăng xuất",
-    cancelButtonText: "Hủy",
+    confirmButtonText: "Dang xuat",
+    cancelButtonText: "Huy",
   });
   if (confirm.isConfirmed) {
     try {
       await authService.logout();
       router.push("/login");
     } catch (e) {
-      await Swal.fire("Lỗi!", "Đăng xuất không thành công!", "error");
+      await Swal.fire("Loi!", "Dang xuat khong thanh cong!", "error");
       router.push("/login");
       console.error("Logout error:", e);
     }
@@ -164,7 +170,6 @@ const onLogout = async () => {
   align-items: center;
   justify-content: center;
   background: #3e4a60;
-  /* Màu nền tối giống logo của bạn */
   border-radius: 50%;
   padding: 2px;
   border: 1px solid #5b687f;
@@ -183,7 +188,6 @@ const onLogout = async () => {
   letter-spacing: -0.5px;
 }
 
-/* Tùy chỉnh nút toggle cho đẹp hơn */
 .btn-toggle-sidebar {
   border: 1px solid #5b687f;
   color: #d3d9e4;

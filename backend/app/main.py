@@ -22,6 +22,8 @@ from app.api.endpoints import ghn
 from app.api.endpoints import dashboard
 from app.api.endpoints import profile
 from app.api.endpoints import profile
+from app.api.endpoints import chat
+from app.api.endpoints import push_notification
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
@@ -47,6 +49,8 @@ app.include_router(ghn.router)
 app.include_router(dashboard.router)
 app.include_router(profile.router)
 app.include_router(profile.router)
+app.include_router(chat.router)
+app.include_router(push_notification.router)
 
 from fastapi.middleware.cors import CORSMiddleware
 

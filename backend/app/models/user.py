@@ -22,3 +22,10 @@ class User(Base):
     profile = relationship("Profile", back_populates="user", uselist=False)
     cart = relationship("Cart", back_populates="user", uselist = False)
     orders = relationship("Order", back_populates="user")
+    user_conversations = relationship("Conversation", foreign_keys="Conversation.user_id", back_populates="user")
+    admin_conversations = relationship("Conversation", foreign_keys="Conversation.admin_id", back_populates="admin")
+    user_messages = relationship("Message", foreign_keys="Message.user_id", back_populates="user")
+    
+    devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
+    notification_jobs = relationship("NotificationOutbox", back_populates="user", cascade="all, delete-orphan")
+

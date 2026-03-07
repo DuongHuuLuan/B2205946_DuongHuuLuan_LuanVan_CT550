@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 from app.models import *
 from fastapi import HTTPException, status
 from app.schemas.distributor import DistributorCreate
+from app.services.base import BaseService
 
-class DistributorService:
+
+class DistributorService(BaseService):
     @staticmethod
     def create_distributor(db: Session, distributor_in: DistributorCreate):
         db_distributor = Distributor (**distributor_in.model_dump())
@@ -67,9 +69,7 @@ class DistributorService:
     
     @staticmethod
     def get_id(db: Session, distributor_id: int):
-        distributor = db.query(Distributor).filter(Distributor.id == distributor_id).first()
-        if not distributor:
-            raise HTTPException(status_code=404, detail="Nhà cung cấp không tồn tại")
+        distributor = DistributorService.get_or_404(db, Distributor, distributor_id, "Nhà cung cấp không tồn tại")
         db.commit()
         db.refresh(distributor)
         return distributor

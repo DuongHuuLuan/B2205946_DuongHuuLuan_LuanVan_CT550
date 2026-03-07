@@ -60,5 +60,15 @@ class Settings(BaseSettings):
     GHN_DEFAULT_HEIGHT: int = int(os.getenv("GHN_DEFAULT_HEIGHT", 20))
     GHN_PAYMENT_TYPE_ID: int = int(os.getenv("GHN_PAYMENT_TYPE_ID", 2))
     GHN_REQUIRED_NOTE: str = os.getenv("GHN_REQUIRED_NOTE", "KHONGCHOXEMHANG")
+
+    # Firebase Cloud Messaging
+    FCM_CREDENTIALS_FILE: str = os.getenv("FCM_CREDENTIALS_FILE", "")
+    FCM_PROJECT_ID: str = os.getenv("FCM_PROJECT_ID", "")
+
+    # Push outbox worker
+    PUSH_OUTBOX_BATCH_SIZE: int = int(os.getenv("PUSH_OUTBOX_BATCH_SIZE", 50))
+    PUSH_OUTBOX_POLL_INTERVAL_SECONDS: int = int(os.getenv("PUSH_OUTBOX_POLL_INTERVAL_SECONDS", 2))
+    PUSH_OUTBOX_MAX_RETRY: int = int(os.getenv("PUSH_OUTBOX_MAX_RETRY", 5))
+    PUSH_OUTBOX_RETRY_BASE_SECONDS: int = int(os.getenv("PUSH_OUTBOX_RETRY_BASE_SECONDS", 30))
     
 settings = Settings()

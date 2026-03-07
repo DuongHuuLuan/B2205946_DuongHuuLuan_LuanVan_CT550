@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from app.models.discount import Discount, DiscountStatus
 from typing import Dict, Iterable, List, Optional
 from datetime import datetime
+from app.services.base import BaseService
 
-class DiscountService:
+class DiscountService(BaseService):
 
     @staticmethod
     def get_all(
@@ -61,9 +62,7 @@ class DiscountService:
     
     @staticmethod
     def get_id(db: Session, discount_id: int):
-        discount = db.query(Discount).filter(Discount.id == discount_id).first()
-        if not discount:
-            raise HTTPException(status_code=404, detail="Không tìm thấy khuyến mãi")
+        discount = DiscountService.get_or_404(db, Discount, discount_id, "Không tìm thấy khuyến mãi")
         return discount
 
     @staticmethod

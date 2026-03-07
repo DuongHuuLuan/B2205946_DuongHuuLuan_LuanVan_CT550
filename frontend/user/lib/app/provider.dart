@@ -4,13 +4,17 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmod
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/data/discount_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/data/cart_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/data/chat_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/data/chat_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/data/discount_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/domain/chat_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/data/category_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_reponsitory_impl.dart';
@@ -72,6 +76,12 @@ final List<SingleChildWidget> Providers = [
   Provider(create: (context) => DiscountApi()),
   Provider<DiscountRepository>(
     create: (context) => DiscountRepositoryImpl(context.read<DiscountApi>()),
+  ),
+
+  //chat
+  Provider(create: (context) => ChatApi()),
+  Provider<ChatRepository>(
+    create: (context) => ChatRepositoryImpl(context.read<ChatApi>()),
   ),
 
   //Order
@@ -143,6 +153,11 @@ final List<SingleChildWidget> Providers = [
       context.read<CategoryRepository>(),
       context.read<DiscountRepository>(),
     ),
+  ),
+
+  //chat
+  ChangeNotifierProvider(
+    create: (context) => ChatViewmodel(context.read<ChatRepository>()),
   ),
 
   //EvaluateViewModel

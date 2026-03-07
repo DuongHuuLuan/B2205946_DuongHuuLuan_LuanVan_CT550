@@ -70,4 +70,11 @@ class ApiEndpoints {
   static String ghnDistricts(int provinceId) => "/ghn/districts/$provinceId";
   static String ghnWards(int districtId) => "/ghn/wards/$districtId";
   static const ghnServices = "/ghn/services";
+
+  // Chat
+  static const chatConversations = "/chat/conversations";
+  static String chatMessages(int conversationId) =>
+      "/chat/conversations/$conversationId/messages";
+  static String chatRead(int conversationId) =>
+      "/chat/conversations/$conversationId/read";
 }

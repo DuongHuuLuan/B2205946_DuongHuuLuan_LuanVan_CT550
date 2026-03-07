@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import DashboardView from "../views/DashboardView.vue";
+import ChatView from "../views/ChatView.vue";
 import LoginView from "../views/auth/LoginView.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 
@@ -357,6 +358,13 @@ const routes = [
         component: UserDetailView,
         meta: { title: "Chi tiết tài khoản" },
         props: true,
+      },
+
+      {
+        path: "/chat",
+        name: "chat",
+        component: ChatView,
+        meta: { title: "Support chat" },
       },
 
       // Orders

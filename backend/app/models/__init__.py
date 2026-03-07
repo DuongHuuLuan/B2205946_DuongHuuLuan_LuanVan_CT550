@@ -19,3 +19,8 @@ from app.models.distributor import Distributor
 from app.models.receipt import Receipt, ReceiptDetail
 from app.models.vnpay import VnPayTransaction
 from app.models.ghn import GhnShipment
+from app.models.conversation import Conversation
+from app.models.message import Message
+from app.models.message_media import MessageMedia
+from app.models.push_notification import UserDevice, NotificationOutbox
+

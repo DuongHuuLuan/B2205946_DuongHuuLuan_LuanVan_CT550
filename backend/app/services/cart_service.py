@@ -3,9 +3,10 @@ from fastapi import HTTPException, status
 from app.models import *
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
+from app.services.base import BaseService
 
 
-class CartService:
+class CartService(BaseService):
 
     @staticmethod
     def _pick_image_url(product: Product, color_id: int | None):
@@ -30,13 +31,14 @@ class CartService:
     def add_to_cart(db: Session, user_id: int, cart_detail_in: CartDetailCreate):
         cart = CartService.get_or_create_cart(db, user_id)
 
-        product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail_in.product_detail_id).first()
-        if not product_detail:
-            raise HTTPException(status_code=404, detail="San pham khong ton tai")
+        # product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail_in.product_detail_id).first()
+        # if not product_detail:
+        #     raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
+        product_detail = CartService.get_or_404(db,ProductDetail, "Sản phẩm không tồn tại")
 
         available_quantity = WarehouseService.get_total_stock(db, product_detail)
         if available_quantity < cart_detail_in.quantity:
-            raise HTTPException(status_code=400, detail=f"Chi con {available_quantity} san pham trong kho")
+            raise HTTPException(status_code=400, detail=f"Chỉ còn {available_quantity} sản phẩm trong kho")
 
         cart_detail = db.query(CartDetail).filter(
             CartDetail.cart_id == cart.id,
@@ -45,7 +47,7 @@ class CartService:
         if cart_detail:
             new_quantity = cart_detail.quantity + cart_detail_in.quantity
             if available_quantity < new_quantity:
-                raise HTTPException(status_code=400, detail="Tong so luong vuot qua ton kho")
+                raise HTTPException(status_code=400, detail="Tổng số lượng vượt quá tồn kho")
             cart_detail.quantity = new_quantity
         else:
             cart_detail = CartDetail(
@@ -61,9 +63,10 @@ class CartService:
 
     @staticmethod
     def get_cart2(db: Session, user_id: int):
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="Nguoi dung khong ton tai")
+        # user = db.query(User).filter(User.id == user_id).first()
+        # if not user:
+        #     raise HTTPException(status_code=404, detail="Nguoi dung khong ton tai")
+        user = CartService.get_or_404(db, User, "Người dùng không tồn tại")
         cart = user.cart.cart_details
         for cart_detail in cart:
             return cart_detail.product_detail.product.product_images
@@ -128,16 +131,16 @@ class CartService:
     def update_cart_detail(db: Session, user_id: int, cart_detail_id: int, new_quantity: int):
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
         if not cart:
-            raise HTTPException(status_code=404, detail="Gio hang trong")
+            raise HTTPException(status_code=404, detail="Giỏ hàng trống")
 
         cart_detail = db.query(CartDetail).filter(CartDetail.id == cart_detail_id, CartDetail.cart_id == cart.id).first()
         if not cart_detail:
-            raise HTTPException(status_code=404, detail="Khong tim thay mon hang")
+            raise HTTPException(status_code=404, detail="Không tìm thấy giỏ hàng")
 
         product_detail = cart_detail.product_detail
         available_quantity = WarehouseService.get_total_stock(db, product_detail)
         if available_quantity < new_quantity:
-            raise HTTPException(status_code=400, detail=f"Kho chi con {available_quantity} san pham")
+            raise HTTPException(status_code=400, detail=f"Kho chỉ còn {available_quantity} sản phẩm")
 
         cart_detail.quantity = new_quantity
         db.commit()
@@ -147,10 +150,11 @@ class CartService:
     @staticmethod
     def delete_cart_detail(db: Session, user_id: int, cart_detail_id: int):
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
-        cart_detail = db.query(CartDetail).filter(CartDetail.id == cart_detail_id, CartDetail.cart_id == cart.id).first()
-        if not cart_detail:
-            raise HTTPException(status_code=404, detail="Khong tim thay mon hang trong gio hang")
+        # cart_detail = db.query(CartDetail).filter(CartDetail.id == cart_detail_id, CartDetail.cart_id == cart.id).first()
+        # if not cart_detail:
+        #     raise HTTPException(status_code=404, detail="Không tìm thấy món hàng trong giỏ hàng")
+        cart_detail = CartService.get_or_404(db, CartDetail, cart_detail_id, "Không tìm thấy món hàng trong giỏ hàng")
 
         db.delete(cart_detail)
         db.commit()
-        return {"message": "Da xoa san pham khoi gio hang"}
+        return {"message": "Đã xóa sản phẩm khỏi giỏ hàng"}

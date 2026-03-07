@@ -1,5 +1,6 @@
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/view/evaluate_create_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
@@ -32,6 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     context.read<ProfileViewmodel>().load();
     context.read<EvaluateViewmodel>().load(perPage: 10);
+    context.read<ChatViewmodel>().loadConversations(silent: true);
   }
 
   @override
@@ -39,6 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final auth = context.watch<AuthViewmodel>();
     final vm = context.watch<ProfileViewmodel>();
     final evaluateVm = context.watch<EvaluateViewmodel>();
+    final chatVm = context.watch<ChatViewmodel>();
     final profile = vm.profile;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -75,6 +78,51 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         actions: [
           IconButton(
+            tooltip: "Liên hệ",
+            onPressed: () async {
+              await context.push("/chat");
+              if (!mounted) return;
+              await context.read<ChatViewmodel>().loadConversations(
+                silent: true,
+              );
+            },
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.chat_bubble_outline),
+                if (chatVm.unreadTotal > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.error,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        chatVm.unreadTotal > 99
+                            ? "99+"
+                            : "${chatVm.unreadTotal}",
+                        textAlign: TextAlign.center,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onError,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
             tooltip: "Tải lại",
             onPressed: vm.isLoading
                 ? null
@@ -82,6 +130,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     await vm.refresh();
                     if (!mounted) return;
                     await context.read<EvaluateViewmodel>().refresh();
+                    await context.read<ChatViewmodel>().loadConversations(
+                      silent: true,
+                    );
                   },
             icon: const Icon(Icons.refresh),
           ),
