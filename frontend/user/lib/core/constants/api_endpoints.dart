@@ -77,4 +77,7 @@ class ApiEndpoints {
       "/chat/conversations/$conversationId/messages";
   static String chatRead(int conversationId) =>
       "/chat/conversations/$conversationId/read";
+
+  // Push notification
+  static const pushDevices = "/push/devices";
 }

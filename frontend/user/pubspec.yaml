@@ -19,6 +19,9 @@ dependencies:
   app_links: ^6.4.0
   image_picker: ^1.1.2
   web_socket_channel: ^3.0.3
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.5
+  flutter_local_notifications: ^19.2.1
 
 dev_dependencies:
   flutter_test:

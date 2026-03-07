@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
@@ -10,6 +10,7 @@ from app.api.deps import require_user
 from app.core.config import settings
 from app.db.session import SessionLocal, get_db
 from app.models import Conversation, User
+from app.models.user import UserRole
 from app.schemas.chat import (
     ConversationCreateIn,
     ConversationOut,
@@ -119,6 +120,94 @@ def _mark_conversation_read(
         db.close()
 
 
+def _build_admin_conversation_snapshot(conversation_id: int) -> Optional[Tuple[int, Dict[str, Any]]]:
+    db = SessionLocal()
+    try:
+        conversation = ChatService.get_conversation_with_user(db, conversation_id)
+        if not conversation:
+            return None
+
+        admin = db.query(User).filter(User.id == conversation.admin_id).first()
+        if not admin:
+            return None
+
+        conversation_out = ChatService.build_conversation_out(
+            db=db,
+            conversation=conversation,
+            current_user=admin,
+        )
+        return conversation.admin_id, jsonable_encoder(conversation_out)
+    finally:
+        db.close()
+
+
+def _build_admin_message_new_payload(
+    conversation_id: int,
+    message_out: MessageOut,
+) -> Optional[Tuple[int, Dict[str, Any]]]:
+    snapshot = _build_admin_conversation_snapshot(conversation_id)
+    if not snapshot:
+        return None
+
+    admin_id, conversation_payload = snapshot
+    return admin_id, {
+        "event": "message:new",
+        "conversation_id": conversation_id,
+        "data": jsonable_encoder(message_out),
+        "conversation": conversation_payload,
+    }
+
+
+def _build_admin_message_read_payload(
+    conversation_id: int,
+    user_id: int,
+    read_out: ConversationReadOut,
+) -> Optional[Tuple[int, Dict[str, Any]]]:
+    snapshot = _build_admin_conversation_snapshot(conversation_id)
+    if not snapshot:
+        return None
+
+    admin_id, conversation_payload = snapshot
+    return admin_id, {
+        "event": "message:read",
+        "conversation_id": conversation_id,
+        "user_id": user_id,
+        "data": jsonable_encoder(read_out),
+        "conversation": conversation_payload,
+    }
+
+
+async def _broadcast_admin_message_new(conversation_id: int, message_out: MessageOut) -> None:
+    payload = await run_in_threadpool(
+        _build_admin_message_new_payload,
+        conversation_id,
+        message_out,
+    )
+    if not payload:
+        return
+
+    admin_id, event_payload = payload
+    await chat_ws_manager.broadcast_admin(admin_id=admin_id, payload=event_payload)
+
+
+async def _broadcast_admin_message_read(
+    conversation_id: int,
+    user_id: int,
+    read_out: ConversationReadOut,
+) -> None:
+    payload = await run_in_threadpool(
+        _build_admin_message_read_payload,
+        conversation_id,
+        user_id,
+        read_out,
+    )
+    if not payload:
+        return
+
+    admin_id, event_payload = payload
+    await chat_ws_manager.broadcast_admin(admin_id=admin_id, payload=event_payload)
+
+
 @router.get("/conversations", response_model=List[ConversationOut])
 def get_conversations(
     db: Session = Depends(get_db),
@@ -180,6 +269,7 @@ async def send_message_with_uploads(
         conversation_id=conversation_id,
         payload=_message_new_payload(conversation_id=conversation_id, message_out=message_out),
     )
+    await _broadcast_admin_message_new(conversation_id=conversation_id, message_out=message_out)
     return message_out
 
 
@@ -204,7 +294,88 @@ async def mark_conversation_read(
                 read_out=read_out,
             ),
         )
+        await _broadcast_admin_message_read(
+            conversation_id=conversation_id,
+            user_id=current_user.id,
+            read_out=read_out,
+        )
     return read_out
+
+
+@router.websocket("/ws/admin")
+async def websocket_admin(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=1008, reason="Missing token")
+        return
+
+    db = SessionLocal()
+    admin_id: Optional[int] = None
+    try:
+        user = _get_ws_user_from_token(db, token)
+        if not user or user.role != UserRole.ADMIN:
+            await websocket.close(code=1008, reason="Forbidden")
+            return
+
+        admin_id = user.id
+    finally:
+        db.close()
+
+    await chat_ws_manager.connect_admin(admin_id=admin_id, websocket=websocket)
+    try:
+        await chat_ws_manager.send_personal(
+            websocket,
+            {
+                "event": "connected",
+                "scope": "admin",
+                "user_id": admin_id,
+            },
+        )
+        while True:
+            try:
+                payload = await websocket.receive_json()
+            except ValueError:
+                await chat_ws_manager.send_personal(
+                    websocket,
+                    {
+                        "event": "error",
+                        "code": "invalid_json",
+                        "message": "Payload must be valid JSON.",
+                    },
+                )
+                continue
+
+            if not isinstance(payload, dict):
+                await chat_ws_manager.send_personal(
+                    websocket,
+                    {
+                        "event": "error",
+                        "code": "invalid_payload",
+                        "message": "Payload must be a JSON object.",
+                    },
+                )
+                continue
+
+            if payload.get("event") == "ping":
+                await chat_ws_manager.send_personal(websocket, {"event": "pong"})
+                continue
+
+            await chat_ws_manager.send_personal(
+                websocket,
+                {
+                    "event": "error",
+                    "code": "unsupported_event",
+                    "message": "Unsupported event.",
+                },
+            )
+    except WebSocketDisconnect:
+        chat_ws_manager.disconnect_admin(admin_id, websocket)
+    except Exception:
+        chat_ws_manager.disconnect_admin(admin_id, websocket)
+        try:
+            await websocket.close(code=1011)
+        except Exception:
+            pass
 
 
 @router.websocket("/ws/conversations/{conversation_id}")
@@ -332,6 +503,10 @@ async def websocket_conversation(websocket: WebSocket, conversation_id: int):
                     conversation_id=conversation_id,
                     payload=_message_new_payload(conversation_id=conversation_id, message_out=message_out),
                 )
+                await _broadcast_admin_message_new(
+                    conversation_id=conversation_id,
+                    message_out=message_out,
+                )
                 continue
 
             if event == "message:read":
@@ -385,6 +560,11 @@ async def websocket_conversation(websocket: WebSocket, conversation_id: int):
                     await chat_ws_manager.broadcast(
                         conversation_id=conversation_id,
                         payload=read_payload,
+                    )
+                    await _broadcast_admin_message_read(
+                        conversation_id=conversation_id,
+                        user_id=user_id,
+                        read_out=read_out,
                     )
                 else:
                     await chat_ws_manager.send_personal(websocket, read_payload)

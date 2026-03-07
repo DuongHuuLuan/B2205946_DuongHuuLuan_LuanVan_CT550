@@ -96,7 +96,7 @@ class _ChatPageState extends State<ChatPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Support chat"),
+            const Text("Liên hệ hỗ trợ"),
             Text(
               vm.isSocketConnected ? "Realtime connected" : "Syncing...",
               style: Theme.of(context).textTheme.bodySmall,

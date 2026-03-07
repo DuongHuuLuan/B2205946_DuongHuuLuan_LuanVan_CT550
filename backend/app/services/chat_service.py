@@ -48,6 +48,7 @@ class ChatService(BaseService):
             "id": conversation.id,
             "user_id": conversation.user_id,
             "admin_id": conversation.admin_id,
+            "user": ChatService._serialize_user_summary(conversation.user),
             "status": conversation.status,
             "last_message_id": conversation.last_message_id,
             "last_read_user_message_id": conversation.last_read_user_message_id,
@@ -58,6 +59,32 @@ class ChatService(BaseService):
             "created_at": conversation.created_at,
             "updated_at": conversation.updated_at,
         }
+
+    @staticmethod
+    def _serialize_user_summary(user: Optional[User]) -> Optional[dict]:
+        if not user:
+            return None
+
+        profile = user.profile
+        return {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "profile": {
+                "name": profile.name if profile else None,
+                "phone": profile.phone if profile else None,
+                "avatar": profile.avatar if profile else None,
+            } if profile else None,
+        }
+
+    @staticmethod
+    def get_conversation_with_user(db: Session, conversation_id: int) -> Optional[Conversation]:
+        return (
+            db.query(Conversation)
+            .options(joinedload(Conversation.user).joinedload(User.profile))
+            .filter(Conversation.id == conversation_id)
+            .first()
+        )
 
     @staticmethod
     def _get_unread_counts(
@@ -161,7 +188,9 @@ class ChatService(BaseService):
 
     @staticmethod
     def list_conversations(db: Session, current_user: User) -> List[dict]:
-        query = db.query(Conversation)
+        query = db.query(Conversation).options(
+            joinedload(Conversation.user).joinedload(User.profile)
+        )
         if current_user.role == UserRole.ADMIN:
             query = query.filter(Conversation.admin_id == current_user.id)
         else:

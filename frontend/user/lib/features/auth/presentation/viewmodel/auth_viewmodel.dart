@@ -1,3 +1,4 @@
+import 'package:b2205946_duonghuuluan_luanvan/core/notifications/push_notification_service.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/domain/user.dart';
@@ -54,6 +55,11 @@ class AuthViewmodel extends ChangeNotifier {
 
   //logout - xóa token và trạng thái user
   Future<void> logout() async {
+    try {
+      await PushNotificationService.instance.deactivateCurrentDevice();
+    } catch (_) {
+      // Keep logout working even if push cleanup fails.
+    }
     await _repository.logout();
     _user = null;
     notifyListeners();

@@ -364,7 +364,7 @@ const routes = [
         path: "/chat",
         name: "chat",
         component: ChatView,
-        meta: { title: "Support chat" },
+        meta: { title: "Hỗ trợ" },
       },
 
       // Orders

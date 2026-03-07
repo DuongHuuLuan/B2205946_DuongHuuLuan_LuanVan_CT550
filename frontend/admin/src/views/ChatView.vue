@@ -4,8 +4,8 @@
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
         <div>
           <h4 class="mb-1">Hỗ trợ khách hàng</h4>
-          <div class="small opacity-75">
-          </div>
+          <!-- <div class="small opacity-75">
+          </div> -->
         </div>
 
         <div class="d-flex gap-2">
@@ -46,10 +46,13 @@
               :class="{ active: conversation.id === activeConversationId }"
               @click="selectConversation(conversation.id)">
               <div class="d-flex align-items-start justify-content-between gap-2">
-                <div class="text-start">
-                  <div class="fw-semibold">
-                    Khách hàng #{{ conversation.user_id }}
+                <div class="text-start conversation-copy">
+                  <div class="fw-semibold text-truncate" :title="getCustomerDisplayName(conversation.user_id)">
+                    {{ getCustomerDisplayName(conversation.user_id) }}
                   </div>
+                  <!-- <div class="small opacity-75 text-truncate" :title="getCustomerSecondaryText(conversation.user_id)">
+                    {{ getCustomerSecondaryText(conversation.user_id) }}
+                  </div> -->
                   <div class="small opacity-75">
                     {{ formatConversationStamp(conversation) }}
                   </div>
@@ -68,8 +71,11 @@
               class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 p-3 border-bottom">
               <div>
                 <div class="fw-semibold">
-                  Khách hàng #{{ activeConversation.user_id }}
+                  {{ getCustomerDisplayName(activeConversation.user_id) }}
                 </div>
+                <!-- <div class="small opacity-75">
+                  {{ getCustomerSecondaryText(activeConversation.user_id) }}
+                </div> -->
                 <div class="small opacity-75">
                   {{ socketConnected ? "Đã kết nối trực tuyến" : "Mất kết nối trực tuyến" }}
                 </div>
@@ -186,6 +192,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import ChatService from "@/services/chat.service";
+import UserService from "@/services/user.service";
+import {
+  chatNotificationState,
+  clearActiveChatConversation,
+  setActiveChatConversation,
+  setChatPageActive,
+} from "@/state/chat-notification.state";
 
 const route = useRoute();
 
@@ -200,10 +213,9 @@ const draft = ref("");
 const selectedFiles = ref([]);
 const fileInput = ref(null);
 const messagesContainer = ref(null);
-const socketConnected = ref(false);
+const customerMap = ref({});
 
-let socket = null;
-let pollTimer = null;
+const loadingCustomerIds = new Set();
 
 const currentAdmin = computed(() => {
   try {
@@ -214,6 +226,7 @@ const currentAdmin = computed(() => {
 });
 
 const currentAdminId = computed(() => Number(currentAdmin.value?.id || 0));
+const socketConnected = computed(() => chatNotificationState.socketConnected);
 
 const activeConversation = computed(() =>
   conversations.value.find((item) => item.id === activeConversationId.value) || null
@@ -241,6 +254,63 @@ function normalizeMessage(item = {}) {
   };
 }
 
+function getCachedCustomer(userId) {
+  if (!userId) return null;
+  return customerMap.value[String(userId)] || null;
+}
+
+function customerIdLabel(userId) {
+  return userId ? `Mã KH: U${userId}` : "Khách hàng";
+}
+
+function getCustomerDisplayName(userId) {
+  const customer = getCachedCustomer(userId);
+  return (
+    customer?.profile?.name ||
+    customer?.full_name ||
+    customer?.name ||
+    customer?.username ||
+    customerIdLabel(userId)
+  );
+}
+
+function getCustomerSecondaryText(userId) {
+  const customer = getCachedCustomer(userId);
+  if (!customer) return customerIdLabel(userId);
+  if (customer?.profile?.name) {
+    return customer?.username || customer?.email || customerIdLabel(userId);
+  }
+  return customer?.email || customerIdLabel(userId);
+}
+
+async function loadCustomer(userId) {
+  const normalizedId = Number(userId || 0);
+  if (!normalizedId || getCachedCustomer(normalizedId) || loadingCustomerIds.has(normalizedId)) {
+    return;
+  }
+
+  loadingCustomerIds.add(normalizedId);
+  try {
+    const response = await UserService.get(normalizedId);
+    const customer = response?.data ?? response ?? null;
+    if (!customer) return;
+
+    customerMap.value = {
+      ...customerMap.value,
+      [normalizedId]: customer,
+    };
+  } catch (_) {
+    // Giữ fallback theo ID nếu không tải được thông tin khách hàng.
+  } finally {
+    loadingCustomerIds.delete(normalizedId);
+  }
+}
+
+async function hydrateConversationCustomers(list = []) {
+  const userIds = [...new Set(list.map((item) => Number(item?.user_id || 0)).filter(Boolean))];
+  await Promise.all(userIds.map((userId) => loadCustomer(userId)));
+}
+
 function sortConversations() {
   conversations.value.sort((left, right) => {
     const leftTime = new Date(
@@ -256,6 +326,7 @@ function sortConversations() {
 function upsertConversation(conversation, { moveToTop = false } = {}) {
   const normalized = normalizeConversation(conversation);
   const index = conversations.value.findIndex((item) => item.id === normalized.id);
+  void loadCustomer(normalized.user_id);
   if (index >= 0) {
     conversations.value.splice(index, 1, {
       ...conversations.value[index],
@@ -350,6 +421,7 @@ async function loadConversations({ silent = false } = {}) {
     const items = await ChatService.getConversations();
     conversations.value = items.map(normalizeConversation);
     sortConversations();
+    await hydrateConversationCustomers(conversations.value);
   } catch (error) {
     errorMessage.value =
       error?.response?.data?.detail || error?.message || "Không thể tải danh sách hội thoại.";
@@ -415,26 +487,6 @@ function touchConversationAfterMessage(message) {
   upsertConversation(updated, { moveToTop: true });
 }
 
-function buildSocketUrl(conversationId) {
-  const token = localStorage.getItem("access_token");
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
-  const url = new URL(baseUrl);
-
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  url.pathname = `${url.pathname.replace(/\/$/, "")}/chat/ws/conversations/${conversationId}`;
-  url.searchParams.set("token", token || "");
-
-  return url.toString();
-}
-
-function disconnectSocket() {
-  if (socket) {
-    socket.close();
-    socket = null;
-  }
-  socketConnected.value = false;
-}
-
 async function markConversationRead(messageId = null) {
   if (!activeConversation.value) return;
 
@@ -449,66 +501,16 @@ async function markConversationRead(messageId = null) {
   }
 }
 
-function handleSocketMessage(rawEvent) {
-  try {
-    const payload = JSON.parse(rawEvent.data);
-
-    if (payload.event === "connected") {
-      socketConnected.value = true;
-      return;
-    }
-
-    if (payload.event === "message:new" && payload.data) {
-      const message = normalizeMessage(payload.data);
-      upsertMessage(message);
-      touchConversationAfterMessage(message);
-      scrollToBottom();
-
-      if (!isMine(message)) {
-        markConversationRead(message.id);
-      }
-      return;
-    }
-
-    if (payload.event === "message:read" && payload.data) {
-      applyReadPayload(payload.user_id, payload.data);
-      return;
-    }
-
-    if (payload.event === "error") {
-      errorMessage.value = payload.message || "Lỗi kết nối thời gian thực (Socket).";
-    }
-  } catch (_) {
-    errorMessage.value = "Nhận dữ liệu không hợp lệ từ máy chủ.";
-  }
-}
-
-function connectSocket(conversationId) {
-  disconnectSocket();
-
-  const token = localStorage.getItem("access_token");
-  if (!token) return;
-
-  socket = new WebSocket(buildSocketUrl(conversationId));
-  socket.onopen = () => {
-    socketConnected.value = true;
-  };
-  socket.onmessage = handleSocketMessage;
-  socket.onerror = () => {
-    socketConnected.value = false;
-  };
-  socket.onclose = () => {
-    socketConnected.value = false;
-  };
-}
-
 async function selectConversation(conversationId) {
-  if (Number(activeConversationId.value) === Number(conversationId)) return;
+  if (Number(activeConversationId.value) === Number(conversationId)) {
+    setActiveChatConversation(conversationId);
+    return;
+  }
 
   activeConversationId.value = Number(conversationId);
+  setActiveChatConversation(conversationId);
   errorMessage.value = "";
   await loadMessages(conversationId);
-  connectSocket(conversationId);
   await markConversationRead();
 }
 
@@ -613,29 +615,60 @@ watch(
   }
 );
 
+watch(
+  () => chatNotificationState.lastEventTick,
+  async () => {
+    const payload = chatNotificationState.lastEvent;
+    if (!payload) return;
+
+    if (payload.event === "message:new" && payload.data) {
+      const message = normalizeMessage(payload.data);
+      if (payload.conversation) {
+        upsertConversation(payload.conversation, { moveToTop: true });
+      } else {
+        touchConversationAfterMessage(message);
+      }
+
+      if (Number(payload.conversation_id) !== Number(activeConversationId.value)) {
+        return;
+      }
+
+      upsertMessage(message);
+      await scrollToBottom();
+      if (!isMine(message)) {
+        await markConversationRead(message.id);
+      }
+      return;
+    }
+
+    if (payload.event === "message:read" && payload.data) {
+      if (payload.conversation) {
+        upsertConversation(payload.conversation);
+      } else {
+        applyReadPayload(payload.user_id, payload.data);
+      }
+      return;
+    }
+
+    if (payload.event === "conversation:upsert" && payload.conversation) {
+      upsertConversation(payload.conversation, { moveToTop: true });
+    }
+  }
+);
+
 onMounted(async () => {
+  setChatPageActive(true);
   await loadConversations();
 
   const openedFromRoute = await ensureConversationFromRoute();
   if (!openedFromRoute && conversations.value.length) {
     await selectConversation(conversations.value[0].id);
   }
-
-  pollTimer = window.setInterval(() => {
-    loadConversations({ silent: true });
-    if (activeConversationId.value && !socketConnected.value) {
-      loadMessages(activeConversationId.value);
-      markConversationRead();
-    }
-  }, 15000);
 });
 
 onBeforeUnmount(() => {
-  disconnectSocket();
-  if (pollTimer) {
-    window.clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  clearActiveChatConversation();
+  setChatPageActive(false);
 });
 </script>
 
@@ -671,6 +704,11 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--border-color);
   background: transparent;
   color: inherit;
+}
+
+.conversation-copy {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .conversation-item:hover,

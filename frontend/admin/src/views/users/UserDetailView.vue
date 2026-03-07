@@ -1,24 +1,19 @@
 <template>
   <div class="row g-3">
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Chi tiet tai khoan</h4>
+          <h4 class="mb-1">Chi tiết tài khoản</h4>
           <div class="small opacity-75">ID: {{ id }}</div>
         </div>
 
         <div class="d-flex gap-2">
-          <RouterLink
-            v-if="user?.role === 'user'"
-            class="btn btn-outline-primary"
-            :to="{ name: 'chat', query: { userId: id } }"
-          >
+          <RouterLink v-if="user?.role === 'user'" class="btn btn-outline-primary"
+            :to="{ name: 'chat', query: { userId: id } }">
             <i class="fa-regular fa-comments me-1"></i> Chat
           </RouterLink>
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'users.list' }">
-            <i class="fa-solid fa-arrow-left me-1"></i> Quay lai
+            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
           </RouterLink>
         </div>
       </div>
@@ -28,49 +23,42 @@
       <div class="card card-soft">
         <div class="card-body">
           <div v-if="loading" class="py-4 text-center opacity-75">
-            <i class="fa-solid fa-spinner fa-spin me-2"></i> Dang tai du lieu...
+            <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...
           </div>
 
           <div v-else-if="!user" class="py-4 text-center opacity-75">
-            Khong tim thay tai khoan.
+            Không tìm thấy tài khoản.
           </div>
 
           <div v-else class="row g-3">
             <div class="col-12 col-md-8">
               <div class="mb-2">
-                <span class="label">Ho ten:</span> {{ user?.profile?.name || "-" }}
+                <span class="label">Họ tên:</span> {{ user?.profile?.name || "-" }}
               </div>
               <div class="mb-2">
                 <span class="label">Email:</span> {{ user.email || "-" }}
               </div>
               <div class="mb-2">
-                <span class="label">So dien thoai:</span> {{ user?.profile?.phone || "-" }}
+                <span class="label">Số điện thoại:</span> {{ user?.profile?.phone || "-" }}
               </div>
               <div class="mb-2">
-                <span class="label">Gioi tinh:</span> {{ genderLabel(user?.profile?.gender) }}
+                <span class="label">Giới tính:</span> {{ genderLabel(user?.profile?.gender) }}
               </div>
               <div class="mb-2">
-                <span class="label">Ngay sinh:</span> {{ formatBirthday(user?.profile?.birthday) }}
+                <span class="label">Ngày sinh:</span> {{ formatBirthday(user?.profile?.birthday) }}
               </div>
               <div class="mb-2">
-                <span class="label">Vai tro:</span> {{ roleLabel(user.role) }}
+                <span class="label">Vai trò:</span> {{ roleLabel(user.role) }}
               </div>
               <div class="mb-2">
-                <span class="label">Ngay tao:</span> {{ formatDate(user.created_at) }}
+                <span class="label">Ngày tạo:</span> {{ formatDate(user.created_at) }}
               </div>
             </div>
 
-            <div
-              class="col-12 col-md-4 text-center d-flex flex-column align-items-center"
-            >
-              <div class="label mb-2">Anh dai dien</div>
+            <div class="col-12 col-md-4 text-center d-flex flex-column align-items-center">
+              <div class="label mb-2">Ảnh đại diện</div>
               <div class="avatar-box">
-                <img
-                  v-if="user?.profile?.avatar"
-                  :src="user.profile.avatar"
-                  alt="avatar"
-                  class="avatar-img"
-                />
+                <img v-if="user?.profile?.avatar" :src="user.profile.avatar" alt="avatar" class="avatar-img" />
                 <div v-else class="avatar-empty">
                   <i class="fa-regular fa-user"></i>
                 </div>
@@ -98,9 +86,9 @@ const user = ref(null);
 function roleLabel(value) {
   switch (value) {
     case "admin":
-      return "Quan tri vien";
+      return "Quản trị viên";
     case "user":
-      return "Khach hang";
+      return "Khách hàng";
     default:
       return "-";
   }
@@ -111,9 +99,9 @@ function genderLabel(value) {
     case "male":
       return "Nam";
     case "female":
-      return "Nu";
+      return "Nữ";
     case "other":
-      return "Khac";
+      return "Khác";
     default:
       return "-";
   }
@@ -142,8 +130,8 @@ async function fetchUser() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Khong the tai tai khoan.";
-    await Swal.fire("Loi", msg, "error");
+      "Không thể tải tài khoản.";
+    await Swal.fire("Lỗi", msg, "error");
     router.push({ name: "users.list" });
   } finally {
     loading.value = false;

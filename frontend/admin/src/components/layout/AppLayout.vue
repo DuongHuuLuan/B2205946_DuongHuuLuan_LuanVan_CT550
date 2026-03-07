@@ -11,16 +11,30 @@
         <AppFooter />
       </div>
     </div>
+    <ChatToastStack />
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import ChatToastStack from "@/components/chat/ChatToastStack.vue";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import {
+  startChatNotifications,
+  stopChatNotifications,
+} from "@/state/chat-notification.state";
 
 const collapsed = ref(false);
+
+onMounted(() => {
+  void startChatNotifications();
+});
+
+onBeforeUnmount(() => {
+  stopChatNotifications();
+});
 </script>
 
 <style scoped>

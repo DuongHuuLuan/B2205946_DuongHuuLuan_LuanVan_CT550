@@ -17,7 +17,14 @@
         <button class="icon-btn" :class="{ 'has-dot': notificationCount > 0 }" aria-label="Notifications">
           <i class="fa-regular fa-bell"></i>
         </button>
-        <button class="icon-btn" :class="{ 'has-badge': messageCount > 0 }" aria-label="Messages">
+        <button
+          class="icon-btn"
+          type="button"
+          :class="{ 'has-badge': messageCount > 0 }"
+          :data-badge="messageBadgeLabel"
+          aria-label="Messages"
+          @click="goToChat"
+        >
           <i class="fa-regular fa-envelope"></i>
         </button>
         <button class="icon-btn" :class="{ 'has-dot': alertCount > 0 }" aria-label="Alerts">
@@ -38,13 +45,18 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import AuthService from "@/services/auth.service";
+import {
+  chatNotificationState,
+  formatUnreadBadge,
+} from "@/state/chat-notification.state";
 
 const emit = defineEmits(["toggleSidebar"]);
+const router = useRouter();
 
 const user = ref(null);
 const notificationCount = ref(0);
-const messageCount = ref(0);
 const alertCount = ref(0);
 
 function readCachedUser() {
@@ -74,6 +86,8 @@ function getInitials(value) {
 
 const displayName = computed(() => getDisplayName(user.value));
 const initials = computed(() => getInitials(user.value));
+const messageCount = computed(() => chatNotificationState.totalUnreadCount);
+const messageBadgeLabel = computed(() => formatUnreadBadge(messageCount.value));
 const avatarUrl = computed(
   () =>
     user.value?.avatar_url ||
@@ -82,6 +96,10 @@ const avatarUrl = computed(
     user.value?.photo ||
     ""
 );
+
+function goToChat() {
+  router.push({ name: "chat" }).catch(() => {});
+}
 
 async function fetchProfile() {
   const cached = readCachedUser();
@@ -154,7 +172,7 @@ onMounted(fetchProfile);
 }
 
 .icon-btn.has-badge::after {
-  content: "3";
+  content: attr(data-badge);
   position: absolute;
   top: -4px;
   right: -2px;

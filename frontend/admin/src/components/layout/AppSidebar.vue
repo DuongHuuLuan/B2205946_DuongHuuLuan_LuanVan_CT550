@@ -75,9 +75,17 @@
         <span v-if="!collapsed">Đơn hàng</span>
       </RouterLink>
 
-      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('chat') }" to="/chat">
-        <i class="fa-regular fa-comments me-2"></i>
-        <span v-if="!collapsed">Hỗ trợ khách hàng</span>
+      <RouterLink class="nav-link nav-link-chat" :class="{
+        active: route.name?.toString().startsWith('chat'),
+        'has-chat-dot': collapsed && chatUnreadCount > 0,
+      }" to="/chat">
+        <span class="nav-link-chat__main">
+          <i class="fa-regular fa-comments me-2"></i>
+          <span v-if="!collapsed">Hỗ trợ khách hàng</span>
+        </span>
+        <span v-if="!collapsed && chatUnreadCount > 0" class="chat-badge">
+          {{ chatBadgeLabel }}
+        </span>
       </RouterLink>
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('evaluates.') }" to="/evaluates">
@@ -99,14 +107,21 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import router from "@/routers";
 import authService from "@/services/auth.service";
 import Swal from "sweetalert2";
 import { useRoute } from "vue-router";
+import {
+  chatNotificationState,
+  formatUnreadBadge,
+} from "@/state/chat-notification.state";
 
 defineProps({ collapsed: { type: Boolean, default: false } });
 
 const route = useRoute();
+const chatUnreadCount = computed(() => chatNotificationState.totalUnreadCount);
+const chatBadgeLabel = computed(() => formatUnreadBadge(chatUnreadCount.value));
 
 const onLogout = async () => {
   const confirm = await Swal.fire({
@@ -161,6 +176,48 @@ const onLogout = async () => {
   background: #3e4a60;
   border-color: #394356;
   color: #ffffff;
+}
+
+.nav-link-chat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.nav-link-chat__main {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.chat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: #ff6b6b;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.nav-link-chat.has-chat-dot::after {
+  content: "";
+  position: absolute;
+  top: 0.45rem;
+  right: 0.55rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #ff6b6b;
+  box-shadow: 0 0 0 2px #3e4a60;
 }
 
 .logo-wrapper {

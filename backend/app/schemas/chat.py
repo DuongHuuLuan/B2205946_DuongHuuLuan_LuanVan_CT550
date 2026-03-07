@@ -11,10 +11,30 @@ class ConversationCreateIn(BaseModel):
     admin_id: Optional[int] = None
 
 
+class ChatProfileSummaryOut(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ChatUserSummaryOut(BaseModel):
+    id: int
+    username: str
+    email: str
+    profile: Optional[ChatProfileSummaryOut] = None
+
+    class Config:
+        from_attributes = True
+
+
 class ConversationOut(BaseModel):
     id: int
     user_id: int
     admin_id: int
+    user: Optional[ChatUserSummaryOut] = None
     status: ConversationStatus
     last_message_id: Optional[int] = None
     last_read_user_message_id: Optional[int] = None
