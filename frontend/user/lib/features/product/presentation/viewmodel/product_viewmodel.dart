@@ -216,7 +216,6 @@ class ProductViewmodel extends ChangeNotifier {
     }
 
     _stockLoading = true;
-    _availableQuantity = null;
     notifyListeners();
     try {
       final quantity = await _warehouseRepository.getTotalStock(
@@ -225,8 +224,14 @@ class ProductViewmodel extends ChangeNotifier {
         sizeId: detail.sizeId,
       );
       _availableQuantity = quantity;
+
+      if (_quantity > quantity && quantity > 0) {
+        _quantity = quantity;
+      }
+      if (quantity <= 0) {
+        _quantity = 1;
+      }
     } catch (_) {
-      _availableQuantity = null;
     } finally {
       _stockLoading = false;
       notifyListeners();

@@ -32,6 +32,9 @@ class CartViewmodel extends ChangeNotifier {
   bool get isDiscountLoading => _isDiscountLoading;
   String? get discountError => _discountError;
 
+  int get cartBadgeCount =>
+      cartDetails.fold(0, (total, item) => total + item.quantity);
+
   List<CartDetail> get cartDetails => cart?.cartDetails ?? [];
   double get totalPrice => cart?.totalPrice ?? 0;
   Product? productForDetail(int detailId) => _productByDetailid[detailId];

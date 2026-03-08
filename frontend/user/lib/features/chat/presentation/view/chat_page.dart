@@ -60,7 +60,8 @@ class _ChatPageState extends State<ChatPage> {
       _scrollToBottom();
     } catch (_) {
       if (!mounted) return;
-      final message = vm.errorMessage ?? "Unable to send message.";
+      // Chuyển đổi thông báo lỗi sang tiếng Việt
+      final message = vm.errorMessage ?? "Không thể gửi tin nhắn.";
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -98,7 +99,9 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             const Text("Liên hệ hỗ trợ"),
             Text(
-              vm.isSocketConnected ? "Realtime connected" : "Syncing...",
+              vm.isSocketConnected
+                  ? "Đã kết nối trực tuyến"
+                  : "Đang đồng bộ...",
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -111,7 +114,9 @@ class _ChatPageState extends State<ChatPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
                 ? const Center(
-                    child: Text("No messages yet. Start the conversation."),
+                    child: Text(
+                      "Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện.",
+                    ),
                   )
                 : ListView.builder(
                     controller: _scrollController,
@@ -209,7 +214,7 @@ class _ChatPageState extends State<ChatPage> {
                       maxLines: 4,
                       textInputAction: TextInputAction.newline,
                       decoration: const InputDecoration(
-                        hintText: "Type a message...",
+                        hintText: "Nhập tin nhắn...",
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -222,7 +227,10 @@ class _ChatPageState extends State<ChatPage> {
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.send),
                   ),

@@ -234,7 +234,8 @@ class ChatViewmodel extends ChangeNotifier {
         final data = map["data"];
         if (data is Map) {
           final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
-          final isIncoming = message.userId != (_activeConversation?.userId ?? -1);
+          final isIncoming =
+              message.userId != (_activeConversation?.userId ?? -1);
           _upsertMessage(message);
           _touchConversationAfterMessage(message, isIncoming: isIncoming);
           if (_activeConversation?.id == message.conversationId && isIncoming) {
@@ -291,7 +292,9 @@ class ChatViewmodel extends ChangeNotifier {
 
     final unreadCount = _activeConversation?.id == message.conversationId
         ? 0
-        : (isIncoming ? conversation.unreadCount + 1 : conversation.unreadCount);
+        : (isIncoming
+              ? conversation.unreadCount + 1
+              : conversation.unreadCount);
 
     final updated = conversation.copyWith(
       lastMessageId: message.id,
@@ -335,7 +338,9 @@ class ChatViewmodel extends ChangeNotifier {
     ChatConversation conversation, {
     bool moveToTop = false,
   }) {
-    final index = _conversations.indexWhere((item) => item.id == conversation.id);
+    final index = _conversations.indexWhere(
+      (item) => item.id == conversation.id,
+    );
     if (index >= 0) {
       _conversations.removeAt(index);
     }

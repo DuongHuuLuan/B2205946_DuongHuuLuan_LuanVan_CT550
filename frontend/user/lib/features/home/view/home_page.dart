@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category_strip.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/circle_icon_button.dart';
@@ -34,6 +35,10 @@ class _HomePageState extends State<HomePage> {
         perPage: _perPage,
       );
       await context.read<CategoryViewModel>().load();
+      final cartVm = context.read<CartViewmodel>();
+      if (cartVm.cart == null && !cartVm.isLoading) {
+        await cartVm.fetchCart();
+      }
     });
   }
 
@@ -225,7 +230,7 @@ class _HomeSliverAppBar extends StatelessWidget {
                     const Spacer(),
                     CircleIconButton(icon: Icons.person, onTap: onProfile),
                     const SizedBox(width: 8),
-                    CircleIconButton(icon: Icons.shopping_bag, onTap: onCart),
+                    _HomeCartAction(onTap: onCart),
                     const SizedBox(width: 8),
                     CircleIconButton(icon: Icons.search, onTap: onSearch),
                     const SizedBox(width: 8),
@@ -240,3 +245,24 @@ class _HomeSliverAppBar extends StatelessWidget {
     );
   }
 }
+
+class _HomeCartAction extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HomeCartAction({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<CartViewmodel, int>(
+      selector: (_, vm) => vm.cartBadgeCount,
+      builder: (context, count, _) {
+        return CircleIconButton(
+          icon: Icons.shopping_cart_outlined,
+          onTap: onTap,
+          badgeCount: count,
+        );
+      },
+    );
+  }
+}
+

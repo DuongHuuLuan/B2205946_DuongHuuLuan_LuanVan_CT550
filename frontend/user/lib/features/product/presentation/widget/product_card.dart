@@ -112,18 +112,16 @@ class _ProductCardState extends State<ProductCard> {
       setState(() => _availableQuantity = null);
       return;
     }
-    if (mounted) setState(() => _availableQuantity = null);
     try {
-      final qty = await context.read<WarehouseRepository>().getTotalStock(
+      final quantity = await context.read<WarehouseRepository>().getTotalStock(
         productId: _p.id,
         colorId: detail.colorId,
         sizeId: detail.sizeId,
       );
       if (!mounted) return;
-      setState(() => _availableQuantity = qty);
+      setState(() => _availableQuantity = quantity);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _availableQuantity = null);
     }
   }
 

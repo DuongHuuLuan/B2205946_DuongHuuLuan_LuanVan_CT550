@@ -39,6 +39,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     super.initState();
     Future.microtask(() {
       context.read<ProductViewmodel>().productDetail(widget.productId);
+
+      final cartVm = context.read<CartViewmodel>();
+      if (cartVm.cart == null && !cartVm.isLoading) {
+        cartVm.fetchCart();
+      }
+
       _loadEvaluatePreview();
     });
   }
@@ -139,7 +145,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         : null;
 
     final priceText = (productDetail?.price ?? 0).toVnd();
-    final inStock = availableQuantity != null && availableQuantity > 0;
+    // final inStock = availableQuantity != null && availableQuantity > 0;
+    final hasResolvedStock = availableQuantity != null;
+    final isOutOfStock = hasResolvedStock && availableQuantity <= 0;
+    final canAddToCart =
+        productDetail != null && !vm.isStockLoading && !isOutOfStock;
 
     return Scaffold(
       backgroundColor: colorScheme.onPrimary,
@@ -160,6 +170,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 onPressed: () =>
                     context.canPop() ? context.pop() : context.go('/'),
               ),
+              actions: [_ProductCartAction(), SizedBox(width: 8)],
             ),
 
             SliverToBoxAdapter(
@@ -403,14 +414,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           style: ElevatedButton.styleFrom(
             backgroundColor: colorScheme.secondary,
             foregroundColor: colorScheme.onPrimary,
+            disabledBackgroundColor: colorScheme.secondary.withOpacity(0.92),
+            disabledForegroundColor: colorScheme.onPrimary,
             minimumSize: const Size(double.infinity, 54),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: (!inStock || productDetail == null)
-              ? null
-              : () async {
+          onPressed: canAddToCart
+              ? () async {
                   if (widget.onAddToCart != null) {
                     widget.onAddToCart!(p, productDetail, vm.quantity);
                   } else {
@@ -423,9 +435,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       productDetailId: productDetail.id,
                     );
                   }
-                },
+                }
+              : null,
           child: Text(
-            inStock ? "THÊM VÀO GIỎ HÀNG" : "TẠM HẾT HÀNG",
+            isOutOfStock ? "TẠM HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG",
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
@@ -729,55 +742,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  // Widget _buildReviewGallery(List<String> urls, ColorScheme colorScheme) {
-  //   final display = urls.take(3).toList();
-  //   final remain = urls.length - display.length;
-
-  //   return Row(
-  //     children: List.generate(display.length, (index) {
-  //       final isLast = index == display.length - 1;
-  //       final showOverlay = remain > 0 && isLast;
-  //       return Expanded(
-  //         child: Padding(
-  //           padding: EdgeInsets.only(right: isLast ? 0 : 8),
-  //           child: AspectRatio(
-  //             aspectRatio: 1.1,
-  //             child: ClipRRect(
-  //               borderRadius: BorderRadius.circular(12),
-  //               child: Stack(
-  //                 fit: StackFit.expand,
-  //                 children: [
-  //                   CachedNetworkImage(
-  //                     imageUrl: display[index],
-  //                     fit: BoxFit.cover,
-  //                     placeholder: (context, url) =>
-  //                         _imagePlaceholder(colorScheme),
-  //                     errorWidget: (context, url, error) =>
-  //                         _imagePlaceholder(colorScheme),
-  //                   ),
-  //                   if (showOverlay)
-  //                     Container(
-  //                       color: Colors.black.withOpacity(0.35),
-  //                       alignment: Alignment.center,
-  //                       child: Text(
-  //                         "+$remain",
-  //                         style: const TextStyle(
-  //                           color: Colors.white,
-  //                           fontSize: 20,
-  //                           fontWeight: FontWeight.bold,
-  //                         ),
-  //                       ),
-  //                     ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     }),
-  //   );
-  // }
-
   Widget _buildReviewCard({
     required EvaluateItem item,
     required TextTheme textTheme,
@@ -1056,5 +1020,66 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (byColor.isNotEmpty) return byColor.first.url;
     if (product.images.isNotEmpty) return product.images.first.url;
     return null;
+  }
+}
+
+class _ProductCartAction extends StatelessWidget {
+  const _ProductCartAction();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Selector<CartViewmodel, int>(
+      selector: (_, vm) => vm.cartBadgeCount,
+      builder: (context, count, _) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: "Giỏ hàng",
+                onPressed: () => context.push("/cart"),
+                icon: const Icon(Icons.shopping_cart_outlined),
+              ),
+              if (count > 0)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: colorScheme.onError,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      count > 99 ? "99+" : "$count",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colorScheme.onError,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

@@ -21,9 +21,7 @@ const AndroidNotificationChannel _chatNotificationChannel =
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
-  } catch (_) {
-    // Firebase may already be initialized or not configured yet.
-  }
+  } catch (_) {}
 }
 
 class PushNotificationService {
