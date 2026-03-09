@@ -32,3 +32,18 @@ from app.schemas.warehouse import (
 )
 from app.schemas.vnpay import VnpayCreateRequest, VnpayPaymentUrlOut, VnpayTransactionOut
 from app.schemas.ghn import GhnFeeRequest, GhnFeeOut, GhnCreateOrderRequest, GhnShipmentOut
+from app.schemas.statistics import (
+    StatisticsAlertsOut,
+    StatisticsAlertItemOut,
+    StatisticsFilterParams,
+    StatisticsOrderMixItemOut,
+    StatisticsOrderMixOut,
+    StatisticsOrderStatus,
+    StatisticsOverviewOut,
+    StatisticsRange,
+    StatisticsRevenuePointOut,
+    StatisticsRevenueSeriesOut,
+    StatisticsScope,
+    StatisticsTopProductItemOut,
+    StatisticsTopProductsOut,
+)

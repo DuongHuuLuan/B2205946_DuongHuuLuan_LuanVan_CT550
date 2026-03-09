@@ -222,7 +222,10 @@ class _HomeSliverAppBar extends StatelessWidget {
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          image: AssetImage("assets/images/logo.webp"),
+                          // image: AssetImage("assets/images/logo.webp"),
+                          image: AssetImage(
+                            "assets/images/logo_royalStore2.png",
+                          ),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -265,4 +268,3 @@ class _HomeCartAction extends StatelessWidget {
     );
   }
 }
-

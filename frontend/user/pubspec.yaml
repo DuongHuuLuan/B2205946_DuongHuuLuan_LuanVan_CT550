@@ -38,11 +38,12 @@ flutter:
     - assets/images/banner2.webp
     - assets/images/banner3.webp
     - assets/images/banner4.webp
+    - assets/images/logo_royalStore.png
+    - assets/images/logo_royalStore2.png
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: "ic_launcher"
   ios: true
-  image_path: "assets/images/logo.png"
+  image_path: "assets/images/logo_royalStore2.png"
   min_sdk_android: 21
-  # adaptive_icon_background: "#0F1E31" # Màu nền cho Android (nếu cần)
-  adaptive_icon_foreground: "assets/images/logo.png" # Ảnh logo chính
+  adaptive_icon_foreground: "assets/images/logo_royalStore2.png" # Ảnh logo chính

@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               Form(
                 key: _formKey,
                 child: Column(
@@ -58,18 +58,18 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Container(
-                      width: 200,
-                      height: 200,
+                      width: 250,
+                      height: 250,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: colorScheme
-                            .surfaceVariant, // Thay AppColors.surface2
+                        color: colorScheme.primary, // Thay AppColors.surface2
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: colorScheme.outlineVariant,
+                          color: colorScheme.primary,
                         ), // Thay AppColors.border
                       ),
-                      child: Image.asset('assets/images/logo.webp'),
+                      // child: Image.asset('assets/images/logo.webp'),
+                      child: Image.asset('assets/images/logo_royalStore2.png'),
                     ),
                     const SizedBox(height: 25),
 

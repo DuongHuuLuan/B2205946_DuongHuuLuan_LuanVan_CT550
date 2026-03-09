@@ -3,7 +3,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
       <div class="d-flex align-items-center gap-2 overflow-hidden">
         <div class="logo-wrapper flex-shrink-0">
-          <img src="@/assets/logo1.jpeg" alt="Logo" class="brand-logo" />
+          <img src="@/assets/logo_royalStore2.png" alt="Logo" class="brand-logo" />
         </div>
         <span v-if="!collapsed" class="fw-bold text-nowrap brand-name">
           RoyalStore
@@ -23,6 +23,12 @@
       <RouterLink class="nav-link" :class="{ active: route.name === 'dashboard' }" to="/">
         <i class="fa-solid fa-gauge-high me-2"></i>
         <span v-if="!collapsed">Trang chủ</span>
+      </RouterLink>
+
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('statistics') }"
+        to="/statistics">
+        <i class="fa-solid fa-chart-column me-2"></i>
+        <span v-if="!collapsed">Thống kê</span>
       </RouterLink>
 
       <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('products.') }" to="/products">
@@ -125,18 +131,18 @@ const chatBadgeLabel = computed(() => formatUnreadBadge(chatUnreadCount.value));
 
 const onLogout = async () => {
   const confirm = await Swal.fire({
-    title: "Ban co chac chan muon dang xuat?",
+    title: "Bạn có chắc chắn muốn đăng xuất?",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Dang xuat",
-    cancelButtonText: "Huy",
+    confirmButtonText: "Đăng xuất",
+    cancelButtonText: "Hủy",
   });
   if (confirm.isConfirmed) {
     try {
       await authService.logout();
       router.push("/login");
     } catch (e) {
-      await Swal.fire("Loi!", "Dang xuat khong thanh cong!", "error");
+      await Swal.fire("Lỗi!", "Đăng xuất không thành công!", "error");
       router.push("/login");
       console.error("Logout error:", e);
     }

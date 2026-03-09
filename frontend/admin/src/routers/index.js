@@ -82,6 +82,13 @@ const routes = [
         component: DashboardView,
         // beforeEnter: requireAuth,
       },
+      {
+        path: "/statistics",
+        alias: "/staticstics",
+        name: "statistics",
+        component: () => import("../views/StatisticsView.vue"),
+        meta: { title: "Thống kê" },
+      },
 
       // Categories
       {
