@@ -45,7 +45,7 @@
                   <th>Tên nhà cung cấp</th>
                   <th>Email</th>
                   <th>Địa chỉ</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
+                  <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -71,8 +71,8 @@
                     <span class="opacity-75">{{ s.address || "--" }}</span>
                   </td>
 
-                  <td class="text-end pe-3">
-                    <div class="d-flex justify-content-end gap-2">
+                  <td class="text-center">
+                    <div class="d-flex justify-content-center gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'distributors.edit', params: { id: s.id } }"
                         title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -267,5 +267,3 @@ async function onDeleteClick(id) {
   color: #ef4444;
 }
 </style>
-
-

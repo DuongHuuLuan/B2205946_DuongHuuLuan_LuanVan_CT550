@@ -173,7 +173,7 @@ class ProductService:
                 page = 1
 
         skip = (page - 1) * per_page
-        items = query.order_by(Product.id.asc()).offset(skip).limit(per_page).all()
+        items = query.order_by(Product.id.desc()).offset(skip).limit(per_page).all()
         ProductService._attach_delete_permissions(db, items)
 
         last_page = math.ceil(total_count / per_page)

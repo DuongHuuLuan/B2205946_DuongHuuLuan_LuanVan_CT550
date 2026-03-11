@@ -1,18 +1,16 @@
 <template>
   <div class="card card-soft h-100">
     <div class="card-body">
-      <div class="d-flex align-items-start justify-content-between">
-        <div>
-          <div class="stats-label">{{ label }}</div>
-          <div class="stats-value">
-            <span class="value-number">{{ formatValue(value).number }}</span>
-            <span class="value-unit">{{ formatValue(value).unit }}</span>
-          </div>
-        </div>
-
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="stats-label mb-0">{{ label }}</div>
         <div class="icon-box">
           <i :class="icon"></i>
         </div>
+      </div>
+
+      <div class="stats-value">
+        <span class="value-number">{{ formatValue(value).number }}</span>
+        <span class="value-unit">{{ formatValue(value).unit }}</span>
       </div>
     </div>
   </div>
@@ -45,45 +43,47 @@ const formatValue = (val) => {
 
 <style scoped>
 .stats-label {
-  font-size: 0.85rem;
-  opacity: 0.75;
-  /* Chỉnh con số này để tăng/giảm khoảng cách */
-  margin-bottom: 10px;
-  line-height: 1.2;
+  font-size: 0.9rem;
+  color: #6c757d;
+  /* Màu xám nhẹ cho label */
+  font-weight: 500;
+  margin-bottom: 0;
 }
 
 .stats-value {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
   gap: 4px;
 }
 
 .value-number {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 800;
   line-height: 1;
+  color: #333;
 }
 
 .value-unit {
   font-size: 1rem;
-  /* VNĐ nhỏ hơn */
   font-weight: 700;
-  opacity: 0.9;
-  text-transform: uppercase;
+  opacity: 0.8;
 }
 
-/* Chỉnh lại icon-box cho tròn và giống mẫu hơn */
 .icon-box {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  /* Thu nhỏ nhẹ để cân đối với text */
+  height: 38px;
   border-radius: 50%;
-  /* Chỉnh thành hình tròn */
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7ede2;
-  /* Màu beige nhạt như hình bạn gửi */
+  background: #fdf5eb;
   color: #c6a67d;
-  /* Màu icon nâu vàng */
+  flex-shrink: 0;
+}
+
+/* Khoảng cách giữa hàng tiêu đề và hàng số */
+.mb-2 {
+  margin-bottom: 0.75rem !important;
 }
 </style>

@@ -42,11 +42,11 @@
               <thead>
                 <tr>
                   <th class="ps-3" style="width: 180px">Mã phiếu nhập</th>
-                  <th>Kho nhập</th>
+                  <th class="text-start">Kho nhập</th>
                   <th>Nhà cung cấp</th>
-                  <th class="text-end" style="width: 160px">Số sản phẩm</th>
-                  <th class="text-end" style="width: 180px">Trạng thái</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
+                  <th class="text-center" style="width: 160px">Số sản phẩm</th>
+                  <th class="text-center" style="width: 180px">Trạng thái</th>
+                  <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -56,7 +56,7 @@
                     <span class="code-pill">R{{ r.id }}</span>
                   </td>
 
-                  <td class="ps-3">
+                  <td class="text-start">
                     <RouterLink class="name-link" :to="{ name: 'receipts.detail', params: { id: r.id } }">
                       <div class="fw-semibold">
                         {{ r.warehouse?.address || "-" }}
@@ -70,22 +70,27 @@
                     </div>
                   </td>
 
-                  <td class="text-center ps-5">
+                  <td class="text-center">
                     <span class="badge count-badge">
                       {{ r.items_count ?? 8 }}
                     </span>
                   </td>
 
-                  <td class="text-end">
+                  <td class="text-center">
                     <span class="badge" :class="statusTableBadgeClass(r?.status)">
                       {{ statusLabel(r?.status) }}
                     </span>
                   </td>
 
-                  <td class="text-end pe-4">
-                    <div class="d-flex justify-content-end gap-2">
-                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'receipts.detail', params: { id: r.id } }"
-                        title="Xem chi tiết">
+                  <td class="text-center">
+                    <div class="d-flex justify-content-center gap-2">
+                      <RouterLink v-if="canUpdateStatus(r?.status)" class="btn btn-sm btn-approve px-3"
+                        :to="{ name: 'receipts.detail', params: { id: r.id } }" title="Đi đến trang duyệt phiếu nhập">
+                        Duyệt phiếu
+                      </RouterLink>
+
+                      <RouterLink v-else class="icon-btn icon-view"
+                        :to="{ name: 'receipts.detail', params: { id: r.id } }" title="Xem chi tiết">
                         <i class="fa-solid fa-eye"></i>
                       </RouterLink>
                     </div>
@@ -155,6 +160,10 @@ const meta = ref({
   last_page: 1,
 });
 const loading = ref(false);
+
+function canUpdateStatus(receiptStatus) {
+  return String(receiptStatus || "").toLowerCase() === "pending";
+}
 
 async function fetchReceipts() {
   loading.value = true;
@@ -292,16 +301,27 @@ async function onDeleteClick(receiptId) {
 }
 
 /* green */
-.icon-edit {
-  color: #f59e0b;
+.icon-view {
+  color: #0ea5e9;
 }
 
-/* amber */
 .icon-delete {
   color: #ef4444;
 }
 
 /* red */
+
+.btn-approve {
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+  background: var(--status-warning-bg);
+  color: var(--font-color);
+  font-weight: 600;
+}
+
+.btn-approve:hover {
+  filter: var(--brightness);
+  color: #8a6700;
+}
 
 /* Header add button bigger */
 .icon-add {
@@ -310,5 +330,3 @@ async function onDeleteClick(receiptId) {
   border-radius: 1rem;
 }
 </style>
-
-

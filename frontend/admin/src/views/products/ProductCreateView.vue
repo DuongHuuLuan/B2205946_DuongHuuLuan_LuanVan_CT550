@@ -123,10 +123,10 @@
                           <div class="d-flex flex-column gap-2">
                             <input type="file" accept="image/*" class="form-control form-control-sm"
                               @change="(e) => onProduct_detailImageChange(v, e)" />
-                            <div v-if="v.image_preview" class="product_detail-thumb">
-                              <img :src="v.image_preview" alt="product_detail" />
-                              <button type="button" class="img-remove" @click="clearProduct_detailImage(v)"
-                                title="Xóa ảnh">
+                            <div v-if="getProductDetailDisplayImage(v)" class="product_detail-thumb">
+                              <img :src="getProductDetailDisplayImage(v)" alt="product_detail" />
+                              <button v-if="v.image_preview" type="button" class="img-remove"
+                                @click="clearProduct_detailImage(v)" title="Xóa ảnh">
                                 <i class="fa-solid fa-xmark"></i>
                               </button>
                             </div>
@@ -299,11 +299,54 @@ function removeProduct_detail(index) {
   product_details.value.splice(index, 1);
 }
 
+function getProductDetailColorKey(product_detail) {
+  const colorId = product_detail?.color_id;
+  return colorId !== null && colorId !== undefined && colorId !== ""
+    ? String(colorId)
+    : "";
+}
+
+function getProductDetailDisplayImage(product_detail) {
+  const colorKey = getProductDetailColorKey(product_detail);
+  if (!colorKey) {
+    return product_detail?.image_preview || "";
+  }
+
+  const sameColorDetails = product_details.value.filter(
+    (item) => getProductDetailColorKey(item) === colorKey
+  );
+  return sameColorDetails.find((item) => item?.image_preview)?.image_preview || "";
+}
+
+function getProductDetailComboKey(colorId, sizeId) {
+  return `${colorId}::${sizeId}`;
+}
+
+function getProductDetailComboLabel(colorId, sizeId) {
+  const colorName =
+    colors.value.find((item) => String(item.id) === String(colorId))?.name || `Màu #${colorId}`;
+  const sizeName =
+    sizes.value.find((item) => String(item.id) === String(sizeId))?.size || `Size #${sizeId}`;
+  return `${colorName} / ${sizeName}`;
+}
+
 
 function collectProduct_details() {
   const valid = [];
   const invalid = [];
   const missingImage = [];
+  const imageUploadsByColor = new Map();
+  const duplicateCombos = [];
+  const seenCombos = new Set();
+  const colorWithImage = new Set();
+  const missingImageColors = new Set();
+
+  product_details.value.forEach((v) => {
+    const colorId = v.color_id ? Number(v.color_id) : null;
+    if (colorId && (v.image_file || v.image_preview)) {
+      colorWithImage.add(colorId);
+    }
+  });
 
   product_details.value.forEach((v) => {
     const hasAny = v.color_id || v.size_id || v.price !== "" || v.image_file;
@@ -317,17 +360,31 @@ function collectProduct_details() {
       return;
     }
 
-    if (isValid && !v.image_file) {
-      missingImage.push(v);
-      return;
-    }
-
     if (isValid) {
+      const comboKey = getProductDetailComboKey(colorId, sizeId);
+      if (seenCombos.has(comboKey)) {
+        duplicateCombos.push(getProductDetailComboLabel(colorId, sizeId));
+      } else {
+        seenCombos.add(comboKey);
+      }
+      if (!colorWithImage.has(colorId) && !missingImageColors.has(colorId)) {
+        missingImage.push(v);
+        missingImageColors.add(colorId);
+      }
+      if (v.image_file) {
+        imageUploadsByColor.set(colorId, { color_id: colorId, image_file: v.image_file });
+      }
       valid.push({ color_id: colorId, size_id: sizeId, price, image_file: v.image_file });
     }
   });
 
-  return { valid, invalid, missingImage };
+  return {
+    valid,
+    invalid,
+    missingImage,
+    duplicateCombos: [...new Set(duplicateCombos)],
+    imageUploads: Array.from(imageUploadsByColor.values()),
+  };
 }
 
 
@@ -353,10 +410,16 @@ async function onSubmit(values, { resetForm, setErrors }) {
       valid: validProduct_details,
       invalid: invalidProduct_details,
       missingImage,
+      duplicateCombos,
+      imageUploads,
     } = collectProduct_details();
 
     if (invalidProduct_details.length) {
       product_detailsError.value = "Vui lòng chọn màu sắc, kích thước là gì?";
+      return;
+    }
+    if (duplicateCombos.length) {
+      product_detailsError.value = `Biến thể bị trùng màu và kích thước: ${duplicateCombos.join(", ")}`;
       return;
     }
     if (missingImage.length) {
@@ -378,9 +441,9 @@ async function onSubmit(values, { resetForm, setErrors }) {
       colorIds.forEach((id) => fd.append("color_ids[]", id));
     }
 
-    validProduct_details.forEach((v) => {
-      fd.append("images[]", v.image_file);
-      fd.append("image_color_ids[]", v.color_id);
+    imageUploads.forEach((img) => {
+      fd.append("images[]", img.image_file);
+      fd.append("image_color_ids[]", img.color_id);
     });
 
     console.log("FormData entries:");

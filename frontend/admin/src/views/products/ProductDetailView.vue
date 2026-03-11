@@ -14,7 +14,7 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'products.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button v-if="product?.can_delete !== false" class="btn btn-outline-danger" type="button" @click="onDelete">
+          <button v-if="canDelete" class="btn btn-outline-danger" type="button" @click="onDelete">
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
@@ -106,8 +106,38 @@ const router = useRouter();
 const loading = ref(true);
 const product = ref(null);
 
-const images = computed(() => product.value.product_images ?? []);
+const images = computed(() => {
+  const rawImages = Array.isArray(product.value?.product_images)
+    ? [...product.value.product_images]
+    : [];
+
+  rawImages.sort((left, right) => {
+    const leftTime = Date.parse(left?.created_at || "") || 0;
+    const rightTime = Date.parse(right?.created_at || "") || 0;
+    if (rightTime !== leftTime) return rightTime - leftTime;
+    return Number(right?.id || 0) - Number(left?.id || 0);
+  });
+
+  const seenKeys = new Set();
+  const deduped = [];
+
+  rawImages.forEach((img) => {
+    const colorId = img?.color_id;
+    const key =
+      colorId !== null && colorId !== undefined
+        ? `color:${colorId}`
+        : `generic:${img?.public_id || img?.url || img?.id || deduped.length}`;
+
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+    deduped.push(img);
+  });
+
+  return deduped;
+});
+
 const details = computed(() => product.value.product_details ?? []);
+const canDelete = computed(() => Boolean(product.value) && product.value.can_delete !== false);
 
 async function fetchProduct() {
   loading.value = true;
@@ -127,6 +157,15 @@ async function fetchProduct() {
 }
 
 async function onDelete() {
+  if (!canDelete.value) {
+    await Swal.fire(
+      "Không thể xóa",
+      product.value?.delete_block_reason || "Sản phẩm này không được phép xóa.",
+      "info"
+    );
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa sản phẩm này?",
     text: "Không thể hoàn tác!",

@@ -43,8 +43,8 @@
                 <tr>
                   <th class="ps-3" style="width: 160px">Mã danh mục</th>
                   <th class="ps-5">Tên danh mục</th>
-                  <th class="text-end">Số sản phẩm</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
+                  <th class="text-center">Số sản phẩm</th>
+                  <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -59,12 +59,12 @@
                     </RouterLink>
                   </td>
 
-                  <td class="text-end pe-5">
+                  <td class="text-center">
                     <span class="badge count-badge">{{ c.products_count }}</span>
                   </td>
 
-                  <td class="text-end pe-3">
-                    <div class="d-flex justify-content-end gap-2">
+                  <td class="text-center">
+                    <div class="d-flex justify-content-center gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'categories.edit', params: { id: c.id } }"
                         title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -272,5 +272,3 @@ async function onDeleteClick(categoryId) {
   border-radius: 1rem;
 }
 </style>
-
-

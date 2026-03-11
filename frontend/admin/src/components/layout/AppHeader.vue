@@ -1,34 +1,9 @@
 <template>
   <header class="topbar">
-    <div class="container-fluid d-flex align-items-center justify-content-between">
-      <div class="header-left d-flex align-items-center gap-2">
-        <button class="icon-btn d-lg-none" @click="emit('toggleSidebar')">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <button class="icon-btn d-none d-lg-inline-flex" aria-label="Menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <button class="icon-btn" aria-label="Search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-      </div>
-
+    <div class="container-fluid d-flex align-items-center justify-content-end">
       <div class="header-right d-flex align-items-center gap-2">
         <button class="icon-btn" :class="{ 'has-dot': notificationCount > 0 }" aria-label="Notifications">
           <i class="fa-regular fa-bell"></i>
-        </button>
-        <button
-          class="icon-btn"
-          type="button"
-          :class="{ 'has-badge': messageCount > 0 }"
-          :data-badge="messageBadgeLabel"
-          aria-label="Messages"
-          @click="goToChat"
-        >
-          <i class="fa-regular fa-envelope"></i>
-        </button>
-        <button class="icon-btn" :class="{ 'has-dot': alertCount > 0 }" aria-label="Alerts">
-          <i class="fa-regular fa-circle-question"></i>
         </button>
 
         <div class="profile d-flex align-items-center gap-2">
@@ -45,19 +20,11 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import AuthService from "@/services/auth.service";
-import {
-  chatNotificationState,
-  formatUnreadBadge,
-} from "@/state/chat-notification.state";
 
-const emit = defineEmits(["toggleSidebar"]);
-const router = useRouter();
-
+// Đã xóa emit toggleSidebar và useRouter vì không dùng đến nữa
 const user = ref(null);
 const notificationCount = ref(0);
-const alertCount = ref(0);
 
 function readCachedUser() {
   try {
@@ -86,8 +53,7 @@ function getInitials(value) {
 
 const displayName = computed(() => getDisplayName(user.value));
 const initials = computed(() => getInitials(user.value));
-const messageCount = computed(() => chatNotificationState.totalUnreadCount);
-const messageBadgeLabel = computed(() => formatUnreadBadge(messageCount.value));
+
 const avatarUrl = computed(
   () =>
     user.value?.avatar_url ||
@@ -96,10 +62,6 @@ const avatarUrl = computed(
     user.value?.photo ||
     ""
 );
-
-function goToChat() {
-  router.push({ name: "chat" }).catch(() => {});
-}
 
 async function fetchProfile() {
   const cached = readCachedUser();
@@ -115,6 +77,7 @@ async function fetchProfile() {
       localStorage.setItem("currentUser", JSON.stringify(nextUser));
     }
   } catch {
+    // Error handling
   }
 }
 
@@ -124,11 +87,9 @@ onMounted(fetchProfile);
 <style scoped>
 .topbar {
   height: 64px;
-  background: linear-gradient(
-      90deg,
+  background: linear-gradient(90deg,
       rgba(86, 204, 242, 0.08),
-      transparent 55%
-    ),
+      transparent 55%),
     var(--main-extra-bg);
   border-bottom: 1px solid color-mix(in srgb, var(--extra-color) 35%, var(--border-color));
   color: var(--font-color);

@@ -46,9 +46,9 @@
                                     <th>Đơn hàng</th>
                                     <th>Số sao</th>
                                     <th>Nội dung</th>
-                                    <th>Ảnh</th>
+                                    <th class="text-start pe-5">Ảnh</th>
                                     <th>Ngày tạo</th>
-                                    <th class="text-end pe-3">Thao tác</th>
+                                    <th class="text-center">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody v-if="items.length">
@@ -77,7 +77,7 @@
                                         </div>
                                     </td>
                                     <td class="small opacity-75">{{ formatDate(r.created_at) }}</td>
-                                    <td class="text-end pe-3">
+                                    <td class="text-center">
                                         <button class="btn btn-sm btn-warning-outline" @click="openReply(r.id)">
                                             {{ r.admin_reply ? "Xem/Sửa phản hồi" : "Phản hồi" }}
                                         </button>

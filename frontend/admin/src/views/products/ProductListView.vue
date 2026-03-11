@@ -41,17 +41,17 @@
             <table class="table table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th class="ps-3" style="width: 140px">Mã SP</th>
-                  <th style="width: 110px">Ảnh</th>
+                  <th class="text-start ps-3" style="width: 140px">Mã SP</th>
+                  <th class="text-center" style="width: 110px">Ảnh</th>
                   <th class="ps-5">Tên Sản Phẩm</th>
-                  <th style="width: 180px">Đơn vị tính</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
+                  <th class="text-center" style="width: 180px">Đơn vị tính</th>
+                  <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
               <tbody v-if="items.length">
                 <tr v-for="p in items" :key="p.id">
-                  <td class="ps-3">
+                  <td class="text-start ps-3">
                     <span class="code-pill">P{{ p.id }}</span>
                   </td>
 
@@ -74,15 +74,15 @@
                   </td>
 
                   <!-- Unit -->
-                  <td>
+                  <td class="text-center">
                     <span class="badge unit-badge">
                       {{ p.unit || "-" }}
                     </span>
                   </td>
 
                   <!-- Actions: edit + delete icons -->
-                  <td class="text-end pe-3">
-                    <div class="d-flex justify-content-end gap-2">
+                  <td class="text-center">
+                    <div class="d-flex justify-content-center gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'products.edit', params: { id: p.id } }"
                         title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>

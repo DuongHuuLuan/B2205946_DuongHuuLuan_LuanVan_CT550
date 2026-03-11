@@ -14,7 +14,7 @@
             <i class="fa-solid fa-user me-1"></i>
             Quay lại người dùng
           </RouterLink>
-          <button class="btn btn-outline-primary" type="button" :disabled="loadingConversations" @click="refreshAll">
+          <button class="btn btn-outline-secondary" type="button" :disabled="loadingConversations" @click="refreshAll">
             <i class="fa-solid fa-rotate-right me-1"></i>
             Làm mới
           </button>
@@ -814,5 +814,17 @@ onBeforeUnmount(() => {
   .message-bubble {
     max-width: 88%;
   }
+}
+
+.btn-primary {
+  background-color: var(--main-color) !important;
+  border-color: var(--main-color) !important;
+  color: #112033 !important;
+  /* Hoặc #fff tùy vào độ sáng của màu vàng */
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(0.9);
+  /* Tự động làm tối màu một chút */
 }
 </style>

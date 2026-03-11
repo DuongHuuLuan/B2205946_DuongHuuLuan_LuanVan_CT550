@@ -40,7 +40,7 @@
                 <tr>
                   <th class="ps-3" style="width: 180px">Mã phương thức</th>
                   <th>Tên phương thức</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
+                  <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -56,8 +56,8 @@
                     </RouterLink>
                   </td>
 
-                  <td class="text-end pe-3">
-                    <div class="d-flex justify-content-end gap-2">
+                  <td class="text-center">
+                    <div class="d-flex justify-content-center gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'payments.edit', params: { id: p.id } }"
                         title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -258,5 +258,3 @@ async function onDeleteClick(id) {
   border-radius: 1rem;
 }
 </style>
-
-

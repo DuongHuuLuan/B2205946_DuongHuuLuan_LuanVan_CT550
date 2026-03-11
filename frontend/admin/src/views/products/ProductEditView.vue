@@ -113,7 +113,12 @@
               <!-- variants -->
               <div class="col-12">
                 <div class="d-flex align-items-center justify-content-between">
-                  <label class="form-label mb-0">Biến thể sản phẩm</label>
+                  <div>
+                    <label class="form-label mb-0">Biến thể sản phẩm</label>
+                    <div class="small opacity-75 mt-1">
+                      Biến thể đã có chỉ sửa được giá và ảnh. Màu và kích thước của biến thể đã tạo sẽ bị khóa.
+                    </div>
+                  </div>
                   <button type="button" class="btn btn-sm btn-outline-secondary" @click="addVariant">
                     <i class="fa-solid fa-plus me-1"></i> Thêm biến thể
                   </button>
@@ -152,9 +157,11 @@
                           <div class="d-flex flex-column gap-2">
                             <input type="file" accept="image/*" class="form-control form-control-sm"
                               @change="(e) => onVariantImageChange(v, e)" />
-                            <div v-if="v.image_preview || v.image_url" class="variant-thumb">
-                              <img :src="v.image_preview || v.image_url" alt="variant" />
-                              <button type="button" class="img-remove" @click="clearVariantImage(v)" title="Xóa ảnh">
+                            <div v-if="getVariantDisplayImage(v)" class="variant-thumb">
+                              <img :src="getVariantDisplayImage(v)" alt="variant" />
+                              <button v-if="v.image_preview || v.image_url" type="button" class="img-remove"
+                                :class="{ 'img-remove--disabled': !canDelete }" :disabled="!canDelete"
+                                @click="clearVariantImage(v)" :title="canDelete ? 'Xóa ảnh' : deleteBlockedMessage">
                                 <i class="fa-solid fa-xmark"></i>
                               </button>
                             </div>
@@ -165,8 +172,13 @@
                             placeholder="Giá" />
                         </td>
                         <td class="text-end">
-                          <button type="button" class="btn btn-sm btn-outline-danger" @click="removeVariant(idx)">
-                            <i class="fa-solid fa-trash"></i>
+                          <button type="button" class="btn btn-sm"
+                            :class="canDelete ? 'btn-outline-danger' : 'btn-cannot-delete'" :disabled="!canDelete"
+                            @click="removeVariant(idx)" :title="canDelete ? 'Xóa biến thể' : deleteBlockedMessage">
+                            <i class="fa-solid" :class="canDelete ? 'fa-trash' : 'fa-lock'"></i>
+                            <span class="ms-1 d-none d-xl-inline">
+                              {{ canDelete ? "Xóa" : "Không thể xóa" }}
+                            </span>
                           </button>
                         </td>
                       </tr>
@@ -225,6 +237,7 @@ const id = route.params.id;
 
 const loading = ref(true);
 const formKey = ref(0);
+const product = ref(null);
 
 const categories = ref([]);
 const colors = ref([]);
@@ -290,6 +303,13 @@ const filteredCategories = computed(() => {
   return arr;
 });
 
+const canDelete = computed(() => Boolean(product.value) && product.value.can_delete !== false);
+const deleteBlockedMessage = computed(
+  () =>
+    product.value?.delete_block_reason ||
+    "Sản phẩm này không được phép xóa vì đã phát sinh dữ liệu liên quan."
+);
+
 const schema = yup.object({
   name: yup
     .string()
@@ -315,19 +335,16 @@ const schema = yup.object({
 async function getCategories() {
   const res = await CategoryService.getAll({ per_page: 200 });
   categories.value = res.items
-  console.log("Loaded categories:", res);
 }
 
 async function getColors() {
   const res = await ColorService.getAll();
   colors.value = Array.isArray(res) ? res : [];
-  console.log("Loaded color:", colors.value);
 }
 
 async function getSizes() {
   const res = await SizeService.getAll();
   sizes.value = Array.isArray(res) ? res : [];
-  console.log("Loaded sizes:", sizes.value);
 }
 
 async function getProduct() {
@@ -335,6 +352,7 @@ async function getProduct() {
     try {
       const res = await ProductService.get(id);
       const p = res;
+      product.value = p;
 
       let colorIds = Array.from(
         new Set(
@@ -458,6 +476,8 @@ function addVariant() {
 }
 
 function removeVariant(index) {
+  if (!canDelete.value) return;
+
   const v = variants.value[index];
   if (v) {
     clearVariantImage(v);
@@ -468,13 +488,65 @@ function removeVariant(index) {
   variants.value.splice(index, 1);
 }
 
+function getVariantColorKey(variant) {
+  const colorId = variant?.color_id;
+  return colorId !== null && colorId !== undefined && colorId !== ""
+    ? String(colorId)
+    : "";
+}
+
+function getVariantDisplayImage(variant) {
+  const colorKey = getVariantColorKey(variant);
+  if (!colorKey) {
+    return variant?.image_preview || variant?.image_url || "";
+  }
+
+  const sameColorVariants = variants.value.filter(
+    (item) => getVariantColorKey(item) === colorKey
+  );
+
+  const previewSource = sameColorVariants.find((item) => item?.image_preview);
+  if (previewSource?.image_preview) return previewSource.image_preview;
+
+  const imageSource = sameColorVariants.find((item) => item?.image_url);
+  return imageSource?.image_url || "";
+}
+
+function getVariantComboKey(colorId, sizeId) {
+  return `${colorId}::${sizeId}`;
+}
+
+function getVariantComboLabel(colorId, sizeId) {
+  const colorName =
+    colors.value.find((item) => String(item.id) === String(colorId))?.name || `Màu #${colorId}`;
+  const sizeName =
+    sizes.value.find((item) => String(item.id) === String(sizeId))?.size || `Size #${sizeId}`;
+  return `${colorName} / ${sizeName}`;
+}
+
 function collectVariants() {
   const invalid = [];
   const newVariants = [];
   const updates = [];
   const missingImage = [];
-  const imageUploads = [];
+  const imageUploadsByColor = new Map();
+  const duplicateCombos = [];
+  const seenCombos = new Set();
+  const colorWithImage = new Set();
+  const colorWithImageId = new Map();
+  const missingImageColors = new Set();
   let validCount = 0;
+
+  variants.value.forEach((v) => {
+    const colorId = v.color_id ? Number(v.color_id) : null;
+    if (!colorId) return;
+    if (v.image_url || v.image_preview || v.image_file) {
+      colorWithImage.add(colorId);
+    }
+    if (v.image_id !== null && v.image_id !== undefined && !colorWithImageId.has(colorId)) {
+      colorWithImageId.set(colorId, v.image_id);
+    }
+  });
 
   variants.value.forEach((v) => {
     const hasAny = v.color_id || v.size_id || v.price !== "" || v.image_file;
@@ -488,16 +560,24 @@ function collectVariants() {
     }
 
     if (isValid) {
+      const comboKey = getVariantComboKey(colorId, sizeId);
+      if (seenCombos.has(comboKey)) {
+        duplicateCombos.push(getVariantComboLabel(colorId, sizeId));
+      } else {
+        seenCombos.add(comboKey);
+      }
+
       validCount += 1;
-      if (!v.image_url && !v.image_file) {
+      if (!colorWithImage.has(colorId) && !missingImageColors.has(colorId)) {
         missingImage.push(v);
+        missingImageColors.add(colorId);
       }
 
       if (v.image_file) {
-        imageUploads.push({
+        imageUploadsByColor.set(colorId, {
           file: v.image_file,
           color_id: colorId,
-          image_id: v.image_id,
+          image_id: v.image_id || colorWithImageId.get(colorId) || null,
         });
       }
 
@@ -512,7 +592,15 @@ function collectVariants() {
     }
   });
 
-  return { invalid, newVariants, updates, validCount, missingImage, imageUploads };
+  return {
+    invalid,
+    newVariants,
+    updates,
+    validCount,
+    missingImage,
+    imageUploads: Array.from(imageUploadsByColor.values()),
+    duplicateCombos: [...new Set(duplicateCombos)],
+  };
 }
 
 function collectOrphanImageIds(imageUploads) {
@@ -558,10 +646,22 @@ function onReset(resetFormFn) {
 async function onSubmit(values, { setErrors }) {
   try {
     variantsError.value = "";
-    const { invalid, newVariants, updates, validCount, missingImage, imageUploads } = collectVariants();
+    const {
+      invalid,
+      newVariants,
+      updates,
+      validCount,
+      missingImage,
+      imageUploads,
+      duplicateCombos,
+    } = collectVariants();
     const orphanImageIds = collectOrphanImageIds(imageUploads);
     if (invalid.length) {
       variantsError.value = "Vui lòng nhập đầy đủ màu, kích thước, và giá";
+      return;
+    }
+    if (duplicateCombos.length) {
+      variantsError.value = `Biến thể bị trùng màu và kích thước: ${duplicateCombos.join(", ")}`;
       return;
     }
     if (missingImage.length) {
@@ -722,6 +822,14 @@ onMounted(async () => {
   filter: brightness(1.1);
 }
 
+.img-remove:disabled,
+.img-remove--disabled {
+  cursor: not-allowed;
+  background: rgba(79, 79, 79, 0.7);
+  color: rgba(255, 255, 255, 0.75);
+  filter: none;
+}
+
 .img-item--deleted {
   opacity: 0.75;
   filter: grayscale(0.2);
@@ -744,5 +852,16 @@ onMounted(async () => {
 
 .img-undo:hover {
   filter: brightness(1.1);
+}
+
+.btn-cannot-delete {
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  background: color-mix(in srgb, var(--main-extra-bg) 92%, #7f8c8d 8%);
+  color: var(--font-extra-color);
+}
+
+.btn-cannot-delete:disabled {
+  opacity: 1;
+  cursor: not-allowed;
 }
 </style>

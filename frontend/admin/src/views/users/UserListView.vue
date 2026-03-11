@@ -38,7 +38,7 @@
                   <!-- <th>Username</th> -->
                   <th>Họ Tên</th>
                   <th>Email</th>
-                  <th class="text-end" style="width: 160px">Ngày tạo</th>
+                  <th class="text-center" style="width: 160px">Ngày tạo</th>
                 </tr>
               </thead>
 
@@ -65,7 +65,7 @@
                     <span class="opacity-75">{{ u.email || "-" }}</span>
                   </td>
 
-                  <td class="text-end">
+                  <td class="text-center">
                     <span class="small opacity-75">{{ formatDate(u.created_at) }}</span>
                   </td>
 

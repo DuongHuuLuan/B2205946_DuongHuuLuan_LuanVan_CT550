@@ -557,7 +557,6 @@ onMounted(load);
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   background: rgba(233, 122, 43, 0.15);
-  color: #9a4f1e;
   font-weight: 600;
 }
 
