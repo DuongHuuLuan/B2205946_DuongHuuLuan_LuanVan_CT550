@@ -122,6 +122,9 @@ class _OrderResultPageState extends State<OrderResultPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final status = _order?.status;
     final orderIsSuccess = status != null && _isSuccess(status);
     final orderIsFailed = status != null && _isFailed(status);
@@ -138,7 +141,7 @@ class _OrderResultPageState extends State<OrderResultPage>
               : "Đang chờ xác nhận thanh toán");
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Thanh toán"),
         centerTitle: true,
@@ -150,72 +153,89 @@ class _OrderResultPageState extends State<OrderResultPage>
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              SizedBox(
-                width: 72,
-                height: 72,
-                child: isWaiting
-                    ? Center(
-                        child: SizedBox(
-                          width: 42,
-                          height: 42,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 4,
-                            color: Theme.of(context).colorScheme.secondary,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: isWaiting
+                        ? Center(
+                            child: SizedBox(
+                              width: 42,
+                              height: 42,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 4,
+                                color: colorScheme.secondary,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            isSuccess ? Icons.check_circle : Icons.cancel,
+                            size: 72,
+                            color: isSuccess ? Colors.green : Colors.red,
                           ),
-                        ),
-                      )
-                    : Icon(
-                        isSuccess ? Icons.check_circle : Icons.cancel,
-                        size: 72,
-                        color: isSuccess ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    titleText,
+                    style: textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Mã đơn hàng: #DH-${widget.orderId}",
+                    style: textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_error != null)
+                    Text(
+                      _error!,
+                      style: TextStyle(color: colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  if (_error != null) const SizedBox(height: 12),
+                  if (isWaiting)
+                    ElevatedButton.icon(
+                      onPressed: _isChecking ? null : _checkStatus,
+                      icon: _isChecking
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh),
+                      label: Text(
+                        _isChecking ? "Đang kiểm tra..." : "Kiểm tra lại",
                       ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                titleText,
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Mã đơn hàng: #DH-${widget.orderId}",
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 24),
-              if (_error != null)
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              const Spacer(),
-              if (isWaiting)
-                ElevatedButton.icon(
-                  onPressed: _isChecking ? null : _checkStatus,
-                  icon: _isChecking
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh),
-                  label: Text(
-                    _isChecking ? "Đang kiểm tra..." : "Kiểm tra lại",
+                    ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () => context.go("/orders/${widget.orderId}"),
+                    child: Text(
+                      "Xem đơn hàng",
+                      style: TextStyle(color: colorScheme.secondary),
+                    ),
                   ),
-                ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => context.go("/orders/${widget.orderId}"),
-                child: Text(
-                  "Xem đơn hàng",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

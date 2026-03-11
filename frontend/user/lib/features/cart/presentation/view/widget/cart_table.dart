@@ -30,7 +30,7 @@ class CartTable extends StatelessWidget {
     return Container(
       // padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surface.withOpacity(1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: colorScheme.outlineVariant),
       ),

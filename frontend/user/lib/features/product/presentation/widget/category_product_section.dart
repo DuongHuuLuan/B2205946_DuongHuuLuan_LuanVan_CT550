@@ -95,7 +95,7 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       margin: const EdgeInsets.only(bottom: 15),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -110,15 +110,32 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSecondary,
-                      fontSize: 18,
-                    ),
+                const Expanded(
+                  child: Divider(
+                    thickness: 1, // Độ dày của đường kẻ
+                    color: Color(0xFFE0E0E0),
+                    endIndent: 16, // Khoảng cách từ đường kẻ đến chữ
+                  ),
+                ),
+
+                // Tiêu đề ở giữa
+                Text(
+                  widget.title
+                      .toUpperCase(), // Chuyển sang chữ in hoa nếu muốn giống ảnh
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSecondary,
+                    fontSize: 18,
+                    letterSpacing: 1, // Khoảng cách giữa các chữ cái
+                  ),
+                ),
+
+                // Đường gạch bên phải
+                const Expanded(
+                  child: Divider(
+                    thickness: 1,
+                    color: Color(0xFFE0E0E0),
+                    indent: 16, // Khoảng cách từ chữ đến đường kẻ
                   ),
                 ),
               ],
@@ -127,7 +144,7 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
           const SizedBox(height: 16),
 
           SizedBox(
-            height: 530,
+            height: 390,
             child: Stack(
               children: [
                 ListView.separated(
@@ -194,7 +211,7 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: Row(

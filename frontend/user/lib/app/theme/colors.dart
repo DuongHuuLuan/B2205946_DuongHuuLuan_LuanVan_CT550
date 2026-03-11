@@ -46,7 +46,7 @@ class AppColors {
   );
 
   static const light = AppPalette(
-    background: Color(0xFFF6F8FC),
+    background: Color(0xFFF7F4F1),
     surface: Color(0xFFFFFFFF),
     surface2: Color(0xFFF0F4FA),
     textPrimary: Color(0xFF0A1524),

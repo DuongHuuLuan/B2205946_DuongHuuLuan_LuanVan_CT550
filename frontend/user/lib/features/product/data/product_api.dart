@@ -8,6 +8,7 @@ class ProductApi {
     int? categoryId,
     int? page,
     int? perPage,
+    String? keyword,
   }) async {
     try {
       final params = <String, dynamic>{};
@@ -16,6 +17,9 @@ class ProductApi {
       }
       if (perPage != null) {
         params["per_page"] = perPage;
+      }
+      if (keyword != null && keyword.trim().isNotEmpty) {
+        params["q"] = keyword.trim();
       }
 
       if (categoryId != null) {

@@ -215,7 +215,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
           onPressed: _isBusy ? null : () => Navigator.of(context).pop(),
           child: Text(
             "Hủy",
-            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),
         ElevatedButton(

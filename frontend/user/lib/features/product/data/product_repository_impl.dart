@@ -14,12 +14,14 @@ class ProductRepositoryImpl extends ProductRepository {
     int? categoryId,
     int? page,
     int? perPage,
+    String? keyword,
   }) async {
     try {
       final response = await _api.getAllProduct(
         categoryId: categoryId,
         page: page,
         perPage: perPage,
+        keyword: keyword,
       );
       final data = response.data;
       dynamic raw;

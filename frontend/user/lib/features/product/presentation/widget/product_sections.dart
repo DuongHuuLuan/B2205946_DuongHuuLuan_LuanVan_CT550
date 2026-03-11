@@ -43,10 +43,7 @@ class ProductSections extends StatelessWidget {
               productDetailId: v.id,
               quantity: quantity,
             );
-            await CartDrawer.show(
-              context,
-              productDetailId: v.id,
-            );
+            await CartDrawer.show(context, productDetailId: v.id);
           },
         );
       }).toList(),

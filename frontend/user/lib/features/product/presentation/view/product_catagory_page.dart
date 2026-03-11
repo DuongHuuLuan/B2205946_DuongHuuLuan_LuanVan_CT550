@@ -1,16 +1,26 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_drawer.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
+import 'dart:async';
+
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/widget/category_grid.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_drawer.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_card.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_search_field.dart';
+
 class ProductCatagoryPage extends StatefulWidget {
   final int? categoryId;
-  const ProductCatagoryPage({super.key, this.categoryId});
+  final String initialKeyword;
+
+  const ProductCatagoryPage({
+    super.key,
+    this.categoryId,
+    this.initialKeyword = '',
+  });
 
   @override
   State<ProductCatagoryPage> createState() => _ProductCatagoryPageState();
@@ -20,21 +30,47 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
   final ScrollController _scrollController = ScrollController();
   static const double _loadMoreThreshold = 300;
   static const int _perPage = 8;
+  static const Duration _debounceDuration = Duration(milliseconds: 400);
 
   int? _selectedCategoryId;
+  late final TextEditingController _searchController;
+  Timer? _searchDebounce;
+  String _keyword = '';
+
+  String? get _effectiveKeyword => _keyword.isEmpty ? null : _keyword;
 
   @override
   void initState() {
     super.initState();
     _selectedCategoryId = widget.categoryId;
+    _keyword = widget.initialKeyword.trim();
+    _searchController = TextEditingController(text: _keyword);
     _scrollController.addListener(_onScroll);
 
     Future.microtask(() async {
       await context.read<CategoryViewModel>().load();
-      await context.read<ProductViewmodel>().loadInitialPaged(
-        categoryId: _selectedCategoryId,
-        perPage: _perPage,
-      );
+      await _reloadProducts();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductCatagoryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final shouldReload =
+        oldWidget.categoryId != widget.categoryId ||
+        oldWidget.initialKeyword != widget.initialKeyword;
+    if (!shouldReload) return;
+
+    final nextKeyword = widget.initialKeyword.trim();
+    _selectedCategoryId = widget.categoryId;
+    _keyword = nextKeyword;
+    _searchController.value = TextEditingValue(
+      text: nextKeyword,
+      selection: TextSelection.collapsed(offset: nextKeyword.length),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _reloadProducts();
     });
   }
 
@@ -46,28 +82,45 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  Future<void> _reloadProducts() {
+    return context.read<ProductViewmodel>().loadInitialPaged(
+      categoryId: _selectedCategoryId,
+      perPage: _perPage,
+      keyword: _effectiveKeyword,
+    );
   }
 
   Future<void> _selectCategory(int? categoryId) async {
     setState(() {
       _selectedCategoryId = categoryId;
     });
-    await context.read<ProductViewmodel>().loadInitialPaged(
-      categoryId: categoryId,
-      perPage: _perPage,
-    );
+    await _reloadProducts();
+  }
+
+  void _onSearchChanged(String value) {
+    final nextKeyword = value.trim();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(_debounceDuration, () {
+      if (!mounted || nextKeyword == _keyword) return;
+      setState(() {
+        _keyword = nextKeyword;
+      });
+      _reloadProducts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final categoryVm = context.watch<CategoryViewModel>();
     final productVm = context.watch<ProductViewmodel>();
-
-    // 1. Lấy thông tin Theme
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -77,7 +130,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
         backgroundColor: colorScheme.primary,
         elevation: 0,
         title: Text(
-          "Danh Mục Sản Phẩm",
+          "Danh mục sản phẩm",
           style: textTheme.titleLarge?.copyWith(
             color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
@@ -96,12 +149,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
       ),
       body: RefreshIndicator(
         color: colorScheme.primary,
-        onRefresh: () async {
-          await productVm.loadInitialPaged(
-            categoryId: _selectedCategoryId,
-            perPage: _perPage,
-          );
-        },
+        onRefresh: _reloadProducts,
         child: ListView(
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(8, 16, 8, 24),
@@ -113,13 +161,19 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               onSelectCategory: (c) => _selectCategory(c.id),
             ),
             const SizedBox(height: 20),
-
-            // TITLE PRODUCTS SECTION
+            ProductSearchField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              hintText: "Tìm trong danh mục đang chọn",
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    _selectedCategoryId == null
+                    _keyword.isNotEmpty
+                        ? 'kết quả cho "$_keyword"'
+                        : _selectedCategoryId == null
                         ? "Tất cả sản phẩm"
                         : "Sản phẩm theo danh mục",
                     style: textTheme.titleMedium?.copyWith(
@@ -139,10 +193,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                   ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            // Product Grid Area
             if (productVm.errorMessage != null && productVm.products.isEmpty)
               _buildEmptyState(
                 message: productVm.errorMessage!,
@@ -150,11 +201,12 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
               )
             else if (!productVm.isLoading && productVm.products.isEmpty)
               _buildEmptyState(
-                message: "Không có sản phẩm nào trong danh mục này",
+                message: _keyword.isNotEmpty
+                    ? "Không tìm thấy sản phẩm phù hợp"
+                    : "Không có sản phẩm nào trong danh mục này",
                 color: colorScheme.onSurfaceVariant,
               )
             else
-              // card sản phẩm
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -163,7 +215,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 14,
-                  mainAxisExtent: 500,
+                  mainAxisExtent: 350,
                 ),
                 itemBuilder: (context, index) {
                   final product = productVm.products[index];

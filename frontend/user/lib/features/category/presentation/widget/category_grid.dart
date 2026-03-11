@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/domain/category.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 
@@ -18,10 +18,15 @@ class CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (categories.isEmpty) {
       return const SizedBox(
         height: 48,
-        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -54,10 +59,12 @@ class CategoryGrid extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected ? AppColors.secondary : Colors.transparent,
+                color: selected ? AppColors.secondary : colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: selected ? Colors.transparent : Colors.white70,
+                  color: selected
+                      ? Colors.transparent
+                      : AppColors.primary.withOpacity(0.14),
                   width: 1,
                 ),
               ),
@@ -66,7 +73,7 @@ class CategoryGrid extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: selected ? AppColors.onPrimary : Colors.white,
+                  color: selected ? AppColors.onSecondary : colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),

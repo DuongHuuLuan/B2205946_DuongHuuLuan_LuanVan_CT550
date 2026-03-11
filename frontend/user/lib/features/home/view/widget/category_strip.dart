@@ -95,6 +95,10 @@ class _CategoryStripState extends State<CategoryStrip> {
                     decoration: BoxDecoration(
                       color: colorScheme.onPrimary,
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withOpacity(0.5),
+                        width: 1.2,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: colorScheme.shadow.withOpacity(0.08),

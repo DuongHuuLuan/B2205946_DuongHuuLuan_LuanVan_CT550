@@ -60,8 +60,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final productVm = context.watch<ProductViewmodel>();
     final categoryVm = context.watch<CategoryViewModel>();
+    final theme = Theme.of(context);
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = theme.colorScheme;
 
     final Map<int, String> categoryThumbs = {};
     for (final p in productVm.products) {
@@ -72,13 +73,13 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const HomeDrawer(),
-      backgroundColor: colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
           _HomeSliverAppBar(
             onCart: () => context.go("/cart"),
-            onSearch: () {},
+            onSearch: () => context.go("/products"),
             onProfile: () => context.go("/profile"),
             onMenu: () => _scaffoldKey.currentState?.openDrawer(),
           ),

@@ -22,6 +22,7 @@ class ProductViewmodel extends ChangeNotifier {
   bool _hasMore = true;
   bool _isLoadingMore = false;
   int? _currentCategoryId;
+  String _currentKeyword = '';
 
   List<Product> products = []; // danh sách cho ProductPage
   Product? product; // Chi tiết cho trang ProductDetail
@@ -43,6 +44,8 @@ class ProductViewmodel extends ChangeNotifier {
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
   int get perPage => _perPage;
+  String get currentKeyword => _currentKeyword;
+  bool get hasActiveKeyword => _currentKeyword.isNotEmpty;
 
   List<ProductDetail> get colors => product?.uniqueColors ?? [];
   List<ProductDetail> get sizes =>
@@ -61,17 +64,24 @@ class ProductViewmodel extends ChangeNotifier {
     return map;
   }
 
-  Future<void> getAllProduct({int? categoryId, int? page, int? perPage}) async {
+  Future<void> getAllProduct({
+    int? categoryId,
+    int? page,
+    int? perPage,
+    String? keyword,
+  }) async {
     isLoading = true;
     errorMessage = null;
     _isLoadingMore = false;
     _currentCategoryId = categoryId;
+    _currentKeyword = keyword?.trim() ?? '';
     notifyListeners();
     try {
       products = await _repository.getAllProduct(
         categoryId: categoryId,
         page: page,
         perPage: perPage,
+        keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
       if (page != null || perPage != null) {
         _page = page ?? 1;
@@ -89,10 +99,15 @@ class ProductViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<void> loadInitialPaged({int? categoryId, int? perPage}) async {
+  Future<void> loadInitialPaged({
+    int? categoryId,
+    int? perPage,
+    String? keyword,
+  }) async {
     isLoading = true;
     errorMessage = null;
     _currentCategoryId = categoryId;
+    _currentKeyword = keyword?.trim() ?? '';
     _page = 1;
     _perPage = perPage ?? _defaultPerPage;
     _hasMore = true;
@@ -104,6 +119,7 @@ class ProductViewmodel extends ChangeNotifier {
         categoryId: categoryId,
         page: _page,
         perPage: _perPage,
+        keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
       products = list;
       if (list.length < _perPage) {
@@ -130,6 +146,7 @@ class ProductViewmodel extends ChangeNotifier {
         categoryId: _currentCategoryId,
         page: nextPage,
         perPage: _perPage,
+        keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
       if (list.isEmpty) {
         _hasMore = false;

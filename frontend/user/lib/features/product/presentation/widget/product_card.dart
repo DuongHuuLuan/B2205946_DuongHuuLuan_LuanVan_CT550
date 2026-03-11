@@ -1,16 +1,17 @@
 ﻿import 'dart:math';
-import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
-import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
-// Giữ nguyên các import domain của bạn
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_reponsitory.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
-import 'package:provider/provider.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
@@ -33,15 +34,25 @@ class ProductCard extends StatefulWidget {
   State<ProductCard> createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<ProductCard> {
+class _ProductCardState extends State<ProductCard>
+    with SingleTickerProviderStateMixin {
+  static final Map<int, ProductEvaluateSummary> _evaluateSummaryCache = {};
+  static final Map<int, Future<ProductEvaluateSummary?>> _evaluateRequests = {};
+
+  // Animation variables cho hiệu ứng Pulse (Phóng to/thu nhỏ)
+  late AnimationController _pulseController;
+  late Animation<double> _scaleAnimation;
+
   int _imgIndex = 0;
   int? _selectedColorId;
   int? _selectedSizeId;
   int? _availableQuantity;
+  ProductEvaluateSummary? _evaluateSummary;
+  bool _isStockLoading = false;
 
   Product get _p => widget.product;
 
-  // ====== Giữ nguyên helpers images ======
+  // ====== Helpers images ======
   List<ProductImage> _imagesByColor(int colorId) =>
       _p.images.where((img) => img.colorId == colorId).toList();
 
@@ -51,13 +62,12 @@ class _ProductCardState extends State<ProductCard> {
   List<ProductImage> get _displayImages =>
       _p.filterProductImages(_selectedColorId);
 
-  // ====== Giữ nguyên UI data ======
+  // ====== UI data ======
   List<ProductDetail> get _colors => _p.uniqueColors;
   List<ProductDetail> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
   ProductDetail? get _selectedProductDetail =>
       _p.findProductDetail(_selectedColorId, _selectedSizeId);
 
-  // ====== Giữ nguyên Color thumbnails ======
   List<_ColorThumb> get _colorThumbs {
     if (_colors.isEmpty) return [];
     final result = <_ColorThumb>[];
@@ -80,11 +90,38 @@ class _ProductCardState extends State<ProductCard> {
   @override
   void initState() {
     super.initState();
-    if (_p.productDetails.isNotEmpty) {
-      _selectedColorId = _p.productDetails.first.colorId;
-      _selectedSizeId = _p.productDetails.first.sizeId;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStock());
+
+    // Khởi tạo Controller cho hiệu ứng phóng to thu nhỏ
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    // Tween từ kích thước gốc (1.0) lên 1.2 (lớn hơn 20%)
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Chạy lặp lại liên tục và đảo chiều (reverse) để tạo hiệu ứng nhịp tim
+    _pulseController.repeat(reverse: true);
+
+    _syncProductState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadStock();
+      _loadEvaluateSummary();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  // Hàm reset lại hiệu ứng khi tương tác nếu cần
+  void _resetPulse() {
+    _pulseController.forward(from: 0.0);
+    _pulseController.repeat(reverse: true);
   }
 
   void _selectColor(int colorId) {
@@ -97,40 +134,93 @@ class _ProductCardState extends State<ProductCard> {
         _selectedSizeId = sizes.isNotEmpty ? sizes.first.sizeId : null;
       }
     });
+    _resetPulse();
     _loadStock();
   }
 
   void _selectSize(int sizeId) {
     setState(() => _selectedSizeId = sizeId);
+    _resetPulse();
     _loadStock();
   }
 
+  void _syncProductState() {
+    _imgIndex = 0;
+    _availableQuantity = null;
+    _selectedColorId = null;
+    _selectedSizeId = null;
+
+    if (_p.productDetails.isNotEmpty) {
+      _selectedColorId = _p.productDetails.first.colorId;
+      _selectedSizeId = _p.productDetails.first.sizeId;
+    }
+
+    _evaluateSummary = _evaluateSummaryCache[_p.id];
+  }
+
   Future<void> _loadStock() async {
+    final productId = _p.id;
     final detail = _selectedProductDetail;
+
     if (detail == null) {
       if (!mounted) return;
-      setState(() => _availableQuantity = null);
+      setState(() {
+        _availableQuantity = null;
+        _isStockLoading = false;
+      });
       return;
     }
+
+    setState(() => _isStockLoading = true);
+
     try {
       final quantity = await context.read<WarehouseRepository>().getTotalStock(
-        productId: _p.id,
+        productId: productId,
         colorId: detail.colorId,
         sizeId: detail.sizeId,
       );
-      if (!mounted) return;
-      setState(() => _availableQuantity = quantity);
+
+      if (!mounted || widget.product.id != productId) return;
+
+      setState(() {
+        _availableQuantity = quantity;
+        _isStockLoading = false;
+      });
     } catch (_) {
-      if (!mounted) return;
+      if (mounted) setState(() => _isStockLoading = false);
     }
+  }
+
+  Future<void> _loadEvaluateSummary() async {
+    final productId = _p.id;
+    if (_evaluateSummaryCache.containsKey(productId)) {
+      if (!mounted || widget.product.id != productId) return;
+      setState(() => _evaluateSummary = _evaluateSummaryCache[productId]);
+      return;
+    }
+
+    final summary = await _evaluateRequests.putIfAbsent(productId, () async {
+      try {
+        final result = await context
+            .read<EvaluateRepository>()
+            .getProductEvaluates(productId: productId, perPage: 1);
+        _evaluateSummaryCache[productId] = result.summary;
+        return result.summary;
+      } catch (_) {
+        return null;
+      } finally {
+        _evaluateRequests.remove(productId);
+      }
+    });
+
+    if (!mounted || summary == null || widget.product.id != productId) return;
+    setState(() => _evaluateSummary = summary);
   }
 
   @override
   Widget build(BuildContext context) {
     final productDetail = _selectedProductDetail;
     final images = _displayImages;
-
-    // Khai báo theme để sử dụng bên dưới
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -143,44 +233,107 @@ class _ProductCardState extends State<ProductCard> {
         ? productDetail.price.toVnd()
         : "Liên hệ";
 
+    final showRating =
+        _evaluateSummary != null && _evaluateSummary!.totalEvaluates > 0;
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.onPrimary,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: colorScheme.outline,
-            width: 1.25,
-          ), // Thay Colors.black12
+          border: Border.all(color: colorScheme.outlineVariant, width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(14),
-              ),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: mainUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: mainUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            _imageLoading(colorScheme),
-                        errorWidget: (context, url, error) =>
-                            _imagePlaceholder(colorScheme),
-                      )
-                    : _imagePlaceholder(colorScheme),
-              ),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: mainUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: mainUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) =>
+                                  _imageLoading(colorScheme),
+                              errorWidget: (context, url, error) =>
+                                  _imagePlaceholder(colorScheme),
+                            )
+                          : _imagePlaceholder(colorScheme),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: _isStockLoading
+                      ? _buildLoadingIndicator(colorScheme)
+                      : ScaleTransition(
+                          // Chỉ phóng to nếu còn hàng (inStock)
+                          scale: inStock
+                              ? _scaleAnimation
+                              : const AlwaysStoppedAnimation(1.0),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: (!inStock || productDetail == null)
+                                  ? null
+                                  : () => widget.onAddToCart?.call(
+                                      _p,
+                                      productDetail,
+                                      1,
+                                    ),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: inStock
+                                      ? colorScheme.secondary.withOpacity(0.9)
+                                      : Colors.grey.withOpacity(0.9),
+
+                                  shape: BoxShape.circle,
+
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+
+                                      blurRadius: 4,
+
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  inStock
+                                      ? Icons.add_shopping_cart
+                                      : Icons.remove_shopping_cart,
+                                  size: 25,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+
+                if (!_isStockLoading && !inStock) _buildOutOfStockOverlay(),
+              ],
             ),
 
-            if (_colorThumbs.length > 1)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            // Color Thumbnails
+            if (_colorThumbs.isNotEmpty)
+              _buildSectionPadding(
                 child: SizedBox(
-                  height: 48,
+                  height: 45,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _colorThumbs.length,
@@ -191,8 +344,8 @@ class _ProductCardState extends State<ProductCard> {
                       return InkWell(
                         onTap: () => _selectColor(t.colorId),
                         child: Container(
-                          width: 48,
-                          height: 48,
+                          width: 45,
+                          height: 45,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
@@ -206,10 +359,6 @@ class _ProductCardState extends State<ProductCard> {
                           child: CachedNetworkImage(
                             imageUrl: t.url,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: colorScheme.surfaceVariant),
-                            errorWidget: (context, url, error) =>
-                                Container(color: colorScheme.surfaceVariant),
                           ),
                         ),
                       );
@@ -218,9 +367,9 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
+            // Detail Images
             if (images.length > 1)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+              _buildSectionPadding(
                 child: SizedBox(
                   height: 44,
                   child: ListView.separated(
@@ -228,7 +377,6 @@ class _ProductCardState extends State<ProductCard> {
                     itemCount: min(images.length, 4),
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, i) {
-                      final url = images[i].url;
                       final active = i == _imgIndex;
                       return InkWell(
                         onTap: () => setState(() => _imgIndex = i),
@@ -245,12 +393,8 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: CachedNetworkImage(
-                            imageUrl: url,
+                            imageUrl: images[i].url,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: colorScheme.surfaceVariant),
-                            errorWidget: (context, url, error) =>
-                                Container(color: colorScheme.surfaceVariant),
                           ),
                         ),
                       );
@@ -259,10 +403,9 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            // Size
+            // Size Selection
             if (_sizes.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+              _buildSectionPadding(
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -299,11 +442,11 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            // Product Name
+            _buildSectionPadding(
               child: Text(
                 _p.name.toUpperCase(),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
@@ -312,41 +455,78 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
 
+            // Price and Rating
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-              child: Text(
-                priceText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: colorScheme.error,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: SizedBox(
-                height: 44,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: inStock
-                        ? colorScheme.secondary
-                        : colorScheme.surfaceVariant,
-                    foregroundColor: inStock
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      priceText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: colorScheme.error,
+                      ),
+                    ),
                   ),
-                  onPressed: (!inStock || productDetail == null)
-                      ? null
-                      : () => widget.onAddToCart?.call(_p, productDetail, 1),
-                  child: Text(inStock ? "THÊM VÀO GIỎ HÀNG" : "HẾT HÀNG"),
-                ),
+                  if (showRating)
+                    _ProductRatingInline(summary: _evaluateSummary!),
+                ],
               ),
             ),
+            const SizedBox(height: 10),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ====== Các Widget phụ trợ ======
+
+  Widget _buildSectionPadding({required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+      child: child,
+    );
+  }
+
+  Widget _buildLoadingIndicator(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      width: 41,
+      height: 41,
+      decoration: BoxDecoration(
+        color: colorScheme.secondary.withOpacity(0.5),
+        shape: BoxShape.circle,
+      ),
+      child: const CircularProgressIndicator(
+        strokeWidth: 2,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildOutOfStockOverlay() {
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.4),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+        ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: Colors.black54,
+            child: const Text(
+              "HẾT HÀNG",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -363,6 +543,46 @@ class _ProductCardState extends State<ProductCard> {
     alignment: Alignment.center,
     child: const CircularProgressIndicator(strokeWidth: 2),
   );
+}
+
+class _ProductRatingInline extends StatelessWidget {
+  final ProductEvaluateSummary summary;
+  const _ProductRatingInline({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+          const SizedBox(width: 2),
+          Text(
+            summary.averageRate.toStringAsFixed(1),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: colorScheme.onSecondary,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Text(
+            "(${summary.totalEvaluates})",
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 10,
+              color: colorScheme.onSecondary.withOpacity(0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ColorThumb {

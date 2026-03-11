@@ -57,7 +57,8 @@ class _OrderPageState extends State<OrderPage> {
     final vm = context.watch<OrderViewmodel>();
     final cartVm = context.read<CartViewmodel>();
     final discountByCategory = <int, double>{
-      for (final d in widget.appliedDiscounts) d.categoryId: d.percent.toDouble(),
+      for (final d in widget.appliedDiscounts)
+        d.categoryId: d.percent.toDouble(),
     };
     final subtotal = widget.cartDetails.fold<double>(
       0,
@@ -65,7 +66,9 @@ class _OrderPageState extends State<OrderPage> {
     );
     final discountAmount = widget.cartDetails.fold<double>(0, (sum, item) {
       final categoryId = cartVm.categoryIdForDetail(item.productDetailId);
-      final percent = categoryId == null ? 0.0 : (discountByCategory[categoryId] ?? 0.0);
+      final percent = categoryId == null
+          ? 0.0
+          : (discountByCategory[categoryId] ?? 0.0);
       return sum + (item.lineTotal * (percent / 100));
     });
     final discountedTotal = subtotal - discountAmount;
@@ -116,7 +119,9 @@ class _OrderPageState extends State<OrderPage> {
                     detail: item,
                     product: product,
                     discountPercent: (() {
-                      final categoryId = cartVm.categoryIdForDetail(item.productDetailId);
+                      final categoryId = cartVm.categoryIdForDetail(
+                        item.productDetailId,
+                      );
                       return categoryId == null
                           ? 0.0
                           : (discountByCategory[categoryId] ?? 0.0);
@@ -237,10 +242,7 @@ class _OrderPageState extends State<OrderPage> {
       return;
     }
 
-    context.go(
-      "/order-success",
-      extra: {"orderId": vm.lastOrderId ?? 0},
-    );
+    context.go("/order-success", extra: {"orderId": vm.lastOrderId ?? 0});
   }
 }
 
@@ -372,7 +374,13 @@ class _BottomBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Tổng cộng"),
+                  Text(
+                    "Tổng cộng",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   Text(
                     total.toVnd(),
                     style: const TextStyle(

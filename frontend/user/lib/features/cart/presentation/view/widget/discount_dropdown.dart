@@ -63,7 +63,7 @@ class DiscountDropdown extends StatelessWidget {
                       title: Text("${d.name} - ${d.percent}%"),
                       subtitle: d.description.isEmpty
                           ? Text("Danh mục #${d.categoryId}")
-                          : Text("${d.description}\nDanh mục #${d.categoryId}"),
+                          : Text(d.description),
                     ),
                   )
                   .toList(),

@@ -39,9 +39,10 @@ class AppTheme {
       ),
 
       appBarTheme: AppBarTheme(
-        backgroundColor: p.background,
+        backgroundColor: p.surface,
         foregroundColor: p.textPrimary,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
 
       dividerTheme: DividerThemeData(color: p.divider, thickness: 1),
@@ -51,6 +52,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: p.surface,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
           side: BorderSide(color: p.border),

@@ -13,7 +13,7 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              decoration: BoxDecoration(color: AppColors.secondary),
+              decoration: BoxDecoration(color: AppColors.primary),
               height: 120,
               width: double.infinity,
               alignment: Alignment.centerLeft,
@@ -24,7 +24,8 @@ class HomeDrawer extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(50),
                     child: Image.asset(
-                      "assets/images/logo.webp",
+                      // "assets/images/logo.webp",
+                      "assets/images/logo_royalStore2.png",
                       width: 70,
                       height: 70,
                       fit: BoxFit.cover,

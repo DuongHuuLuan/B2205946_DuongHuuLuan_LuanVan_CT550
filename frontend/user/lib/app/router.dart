@@ -75,8 +75,9 @@ class AppRouter {
         GoRoute(
           path: "/splash",
           builder: (context, state) => Scaffold(
+            backgroundColor: AppColors.light.background,
             body: Center(
-              child: CircularProgressIndicator(color: AppColors.onPrimary),
+              child: CircularProgressIndicator(color: AppColors.primary),
             ),
           ),
         ),
@@ -84,7 +85,9 @@ class AppRouter {
         GoRoute(
           path: "/products/categories",
           builder: (context, state) {
-            return const ProductCatagoryPage();
+            return ProductCatagoryPage(
+              initialKeyword: state.uri.queryParameters["q"] ?? "",
+            );
           },
         ),
 
@@ -92,13 +95,17 @@ class AppRouter {
           path: "/products/categories/:id",
           builder: (context, state) {
             final categoryId = int.parse(state.pathParameters["id"]!);
-            return ProductCatagoryPage(categoryId: categoryId);
+            return ProductCatagoryPage(
+              categoryId: categoryId,
+              initialKeyword: state.uri.queryParameters["q"] ?? "",
+            );
           },
         ),
 
         GoRoute(
           path: "/products",
-          builder: (context, state) => const ProductPage(),
+          builder: (context, state) =>
+              ProductPage(initialKeyword: state.uri.queryParameters["q"] ?? ""),
         ),
         GoRoute(
           path: "/products/:id",

@@ -92,14 +92,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final vm = context.watch<ProductViewmodel>();
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     // Trạng thái Loading
     if (vm.isLoading && vm.product == null) {
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: Center(
           child: CircularProgressIndicator(color: colorScheme.primary),
         ),
@@ -152,7 +153,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         productDetail != null && !vm.isStockLoading && !isOutOfStock;
 
     return Scaffold(
-      backgroundColor: colorScheme.onPrimary,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [

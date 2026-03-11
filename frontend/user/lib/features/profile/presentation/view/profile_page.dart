@@ -418,7 +418,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text(
                 "Đóng",
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),

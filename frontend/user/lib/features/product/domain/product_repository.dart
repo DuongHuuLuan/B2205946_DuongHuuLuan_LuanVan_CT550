@@ -5,6 +5,7 @@ abstract class ProductRepository {
     int? categoryId,
     int? page,
     int? perPage,
+    String? keyword,
   });
   Future<Product> productDetail(int id);
 }
