@@ -5,6 +5,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/lo
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/view/chat_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_designer_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_try_on_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_detail_page.dart';
@@ -207,6 +209,31 @@ class AppRouter {
         ),
 
         GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
+
+        GoRoute(
+          path: "/helmet-designer",
+          builder: (context, state) {
+            final designId =
+                int.tryParse(state.uri.queryParameters["designId"] ?? "");
+            final extra = state.extra;
+            final payload = extra is Map ? extra : const <Object?, Object?>{};
+            final helmetProductId = payload["helmetProductId"];
+
+            return HelmetDesignerPage(
+              designId: designId,
+              initialHelmetProductId: helmetProductId is int
+                  ? helmetProductId
+                  : int.tryParse("$helmetProductId"),
+              initialHelmetName: payload["helmetName"]?.toString(),
+              initialHelmetBaseImageUrl:
+                  payload["helmetBaseImageUrl"]?.toString(),
+            );
+          },
+        ),
+        GoRoute(
+          path: "/helmet-try-on",
+          builder: (context, state) => const HelmetTryOnPage(),
+        ),
 
         GoRoute(
           path: "/profile",

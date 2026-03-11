@@ -46,7 +46,7 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Ung dung can truy cap camera de chup anh dai dien.</string>
+	<string>Ung dung can truy cap camera de thu non ao va chup anh preview.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Ung dung can truy cap thu vien anh de chon anh dai dien.</string>
 </dict>

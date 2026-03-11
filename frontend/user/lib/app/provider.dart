@@ -20,6 +20,10 @@ import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_ap
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/data/evaluate_reponsitory_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_reponsitory.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/helmet_designer_api.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/helmet_designer_repository_impl.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_designer_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/viewmodel/helmet_designer_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_api.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/data/product_repository_impl.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
@@ -102,6 +106,15 @@ final List<SingleChildWidget> Providers = [
     create: (context) => EvaluateRepositoryImpl(context.read<EvaluateApi>()),
   ),
 
+  // helmet designer
+  Provider(create: (context) => HelmetDesignerApi()),
+  Provider<HelmetDesignerRepository>(
+    create: (context) => HelmetDesignerRepositoryImpl(
+      context.read<HelmetDesignerApi>(),
+      useMockData: true,
+    ),
+  ),
+
   ///-------------------------------------------------------------------------
 
   // AuthViewModel
@@ -163,5 +176,11 @@ final List<SingleChildWidget> Providers = [
   //EvaluateViewModel
   ChangeNotifierProvider(
     create: (context) => EvaluateViewmodel(context.read<EvaluateRepository>()),
+  ),
+
+  // helmet designer
+  ChangeNotifierProvider(
+    create: (context) =>
+        HelmetDesignerViewModel(context.read<HelmetDesignerRepository>()),
   ),
 ];

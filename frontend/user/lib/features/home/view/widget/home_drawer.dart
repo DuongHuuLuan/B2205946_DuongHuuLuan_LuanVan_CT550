@@ -13,7 +13,7 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              decoration: BoxDecoration(color: AppColors.primary),
+              decoration: const BoxDecoration(color: AppColors.primary),
               height: 120,
               width: double.infinity,
               alignment: Alignment.centerLeft,
@@ -24,7 +24,6 @@ class HomeDrawer extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(50),
                     child: Image.asset(
-                      // "assets/images/logo.webp",
                       "assets/images/logo_royalStore2.png",
                       width: 70,
                       height: 70,
@@ -36,38 +35,42 @@ class HomeDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _DrawerItem(
-              title: "Hồ sơ",
+              title: "Ho so",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/profile");
               },
               trailing: const Icon(Icons.person_outline, color: Colors.black),
             ),
-
             _DrawerItem(
-              title: "Về Chúng tôi",
+              title: "Ve chung toi",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/about");
               },
             ),
-
             _DrawerItem(
-              title: "Sản Phẩm",
+              title: "San pham",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/products/categories");
               },
               trailing: const Icon(Icons.chevron_right, color: Colors.black),
             ),
-
             _DrawerItem(
-              title: "Tin Tức",
+              title: "Helmet Designer",
+              onTap: () {
+                Navigator.pop(context);
+                context.go("/helmet-designer");
+              },
+              trailing: const Icon(Icons.brush_outlined, color: Colors.black),
+            ),
+            _DrawerItem(
+              title: "Tin tuc",
               onTap: () {},
               trailing: const Icon(Icons.chevron_right, color: Colors.black),
             ),
-
-            _DrawerItem(title: "Liên Hệ", onTap: () {}),
+            _DrawerItem(title: "Lien he", onTap: () {}),
           ],
         ),
       ),
@@ -79,14 +82,19 @@ class _DrawerItem extends StatelessWidget {
   final String title;
   final Widget? trailing;
   final VoidCallback onTap;
-  const _DrawerItem({required this.title, required this.onTap, this.trailing});
+
+  const _DrawerItem({
+    required this.title,
+    required this.onTap,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.black,

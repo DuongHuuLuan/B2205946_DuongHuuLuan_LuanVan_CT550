@@ -90,6 +90,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
   }
 
+  void _openHelmetDesigner(Product product, String? baseImageUrl) {
+    context.push(
+      "/helmet-designer",
+      extra: {
+        "helmetProductId": product.id,
+        "helmetName": product.name,
+        "helmetBaseImageUrl": baseImageUrl ?? "",
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -411,37 +422,79 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
           ],
         ),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.secondary,
-            foregroundColor: colorScheme.onPrimary,
-            disabledBackgroundColor: colorScheme.secondary.withOpacity(0.92),
-            disabledForegroundColor: colorScheme.onPrimary,
-            minimumSize: const Size(double.infinity, 54),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 5,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.primary,
+                  side: BorderSide(color: colorScheme.primary),
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => _openHelmetDesigner(
+                  p,
+                  mainUrl ?? (p.images.isNotEmpty ? p.images.first.url : null),
+                ),
+                icon: const Icon(Icons.design_services_outlined),
+                label: const Text(
+                  "THIET KE NON",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-          ),
-          onPressed: canAddToCart
-              ? () async {
-                  if (widget.onAddToCart != null) {
-                    widget.onAddToCart!(p, productDetail, vm.quantity);
-                  } else {
-                    await context.read<CartViewmodel>().addToCart(
-                      productDetailId: productDetail.id,
-                      quantity: vm.quantity,
-                    );
-                    await CartDrawer.show(
-                      context,
-                      productDetailId: productDetail.id,
-                    );
-                  }
-                }
-              : null,
-          child: Text(
-            isOutOfStock ? "TẠM HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 7,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.secondary,
+                  foregroundColor: colorScheme.onPrimary,
+                  disabledBackgroundColor: colorScheme.secondary.withOpacity(
+                    0.92,
+                  ),
+                  disabledForegroundColor: colorScheme.onPrimary,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: canAddToCart
+                    ? () async {
+                        final selectedDetail = productDetail;
+                        if (selectedDetail == null) return;
+
+                        if (widget.onAddToCart != null) {
+                          widget.onAddToCart!(
+                            p,
+                            selectedDetail,
+                            vm.quantity,
+                          );
+                        } else {
+                          await context.read<CartViewmodel>().addToCart(
+                            productDetailId: selectedDetail.id,
+                            quantity: vm.quantity,
+                          );
+                          await CartDrawer.show(
+                            context,
+                            productDetailId: selectedDetail.id,
+                          );
+                        }
+                      }
+                    : null,
+                child: Text(
+                  isOutOfStock ? "TẠM HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
