@@ -15,5 +15,9 @@ abstract class HelmetDesignerRepository {
 
   Future<String> createShareLink(int designId);
 
-  Future<void> orderDesign(int designId);
+  Future<void> orderDesign(
+    int designId, {
+    required int productDetailId,
+    int quantity = 1,
+  });
 }

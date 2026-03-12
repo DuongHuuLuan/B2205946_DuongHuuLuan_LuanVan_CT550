@@ -7,6 +7,7 @@ import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 
@@ -262,6 +263,15 @@ class _CartItemCard extends StatelessWidget {
                 Text("Số lượng: ${detail.quantity}"),
                 const SizedBox(height: 4),
                 Text("Giá: ${discountedPrice.toVnd()}"),
+                if (detail.hasDesign) ...[
+                  const SizedBox(height: 8),
+                  DesignStickerInfo(
+                    designId: detail.designId,
+                    designName: detail.designName,
+                    designPreviewImageUrl: detail.designPreviewImageUrl,
+                    imageSize: 28,
+                  ),
+                ],
               ],
             ),
           ),

@@ -146,6 +146,7 @@ class OrderRepositoryImpl implements OrderRepository {
         "order_items": order.items
             .map(
               (item) => {
+                "cart_detail_id": item.cartDetailId,
                 "product_detail_id": item.productDetailId,
                 "quantity": item.quantity,
               },

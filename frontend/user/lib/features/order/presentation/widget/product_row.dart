@@ -1,5 +1,6 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -74,6 +75,14 @@ class ProductRow extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (detail.hasDesign) ...[
+                    const SizedBox(height: 8),
+                    DesignStickerInfo(
+                      designId: detail.designId,
+                      designName: detail.designName,
+                      designPreviewImageUrl: detail.designPreviewImageUrl,
+                    ),
+                  ],
                 ],
               ),
             ),

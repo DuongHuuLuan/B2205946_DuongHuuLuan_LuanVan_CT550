@@ -59,6 +59,7 @@ class OrderMapper {
       if (item is! Map) continue;
       result.add(
         OrderDetailOut(
+          designId: _toOptionalInt(item["design_id"]),
           productDetailId: _toInt(item["product_detail_id"]),
           quantity: _toInt(item["quantity"]),
           price: _toDouble(item["price"]),
@@ -66,6 +67,10 @@ class OrderMapper {
           colorName: _toNullableString(item["color_name"]),
           sizeName: _toNullableString(item["size_name"]),
           imageUrl: _toNullableString(item["image_url"]),
+          designName: _toNullableString(item["design_name"]),
+          designPreviewImageUrl: _toNullableString(
+            item["design_preview_image_url"],
+          ),
         ),
       );
     }
@@ -103,6 +108,11 @@ class OrderMapper {
     final text = value?.toString().trim() ?? "";
     if (text.isEmpty) return null;
     return text;
+  }
+
+  static int? _toOptionalInt(dynamic value) {
+    final parsed = (value as Object?).toInt();
+    return parsed > 0 ? parsed : null;
   }
 
   static int _toInt(dynamic value) => (value as Object?).toInt();

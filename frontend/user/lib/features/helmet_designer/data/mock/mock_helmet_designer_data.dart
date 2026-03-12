@@ -148,9 +148,19 @@ class MockHelmetDesignerData {
     return "https://royalstore.local/designs/$designId";
   }
 
-  static void orderDesign(int designId) {
+  static void orderDesign(
+    int designId, {
+    required int productDetailId,
+    int quantity = 1,
+  }) {
     if (!_designs.containsKey(designId)) {
       throw StateError("Design $designId not found");
+    }
+    if (productDetailId <= 0) {
+      throw StateError("Product detail is required");
+    }
+    if (quantity <= 0) {
+      throw StateError("Quantity must be greater than 0");
     }
   }
 }

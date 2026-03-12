@@ -1,6 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/view/evaluate_create_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
@@ -459,6 +460,14 @@ class _OrderProductTile extends StatelessWidget {
                 "Đơn giá: ${detail.price.toVnd()}",
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+              if (detail.hasDesign) ...[
+                const SizedBox(height: 8),
+                DesignStickerInfo(
+                  designId: detail.designId,
+                  designName: detail.designName,
+                  designPreviewImageUrl: detail.designPreviewImageUrl,
+                ),
+              ],
               const SizedBox(height: 2),
               Text(
                 "Thành tiền: ${lineTotal.toVnd()}",

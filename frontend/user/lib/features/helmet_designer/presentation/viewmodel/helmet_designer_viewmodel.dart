@@ -33,12 +33,18 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   String? shareUrl;
   int? selectedLayerId;
   int _nextLayerId = 1;
+  int? _selectedProductDetailId;
+  int _orderQuantity = 1;
 
   List<StickerTemplate> get stickerCatalog => List.unmodifiable(_stickerCatalog);
   List<StickerLayer> get stickerLayers => List.unmodifiable(_sortedLayers());
   HelmetDesign get currentDesign => _currentDesign;
   StickerLayer? get selectedLayer => _findLayerById(selectedLayerId);
   bool get hasLayers => _stickerLayers.isNotEmpty;
+  int? get selectedProductDetailId => _selectedProductDetailId;
+  int get orderQuantity => _orderQuantity;
+  bool get hasOrderTarget =>
+      (_selectedProductDetailId ?? 0) > 0 && _orderQuantity > 0;
 
   Future<void> loadStickerCatalog() async {
     if (isLoadingCatalog) return;
@@ -63,6 +69,8 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     required int helmetProductId,
     required String helmetName,
     required String helmetBaseImageUrl,
+    int? productDetailId,
+    int orderQuantity = 1,
   }) {
     _currentDesign = HelmetDesign(
       id: 0,
@@ -77,7 +85,25 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     shareUrl = null;
     errorMessage = null;
     _nextLayerId = 1;
+    _selectedProductDetailId = productDetailId != null && productDetailId > 0
+        ? productDetailId
+        : null;
+    _orderQuantity = orderQuantity < 1 ? 1 : orderQuantity;
     notifyListeners();
+  }
+
+  void setOrderTarget({
+    int? productDetailId,
+    int quantity = 1,
+    bool notify = true,
+  }) {
+    _selectedProductDetailId = productDetailId != null && productDetailId > 0
+        ? productDetailId
+        : null;
+    _orderQuantity = quantity < 1 ? 1 : quantity;
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void updateHelmetInfo({
@@ -305,6 +331,11 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
   Future<bool> orderCurrentDesign() async {
     if (isOrderingDesign) return false;
+    if (!hasOrderTarget) {
+      errorMessage = "Chua co bien the san pham de dat mua thiet ke nay.";
+      notifyListeners();
+      return false;
+    }
     isOrderingDesign = true;
     errorMessage = null;
     notifyListeners();
@@ -314,7 +345,11 @@ class HelmetDesignerViewModel extends ChangeNotifier {
         final saved = await saveCurrentDesign();
         if (saved == null) return false;
       }
-      await _repository.orderDesign(_currentDesign.id);
+      await _repository.orderDesign(
+        _currentDesign.id,
+        productDetailId: _selectedProductDetailId!,
+        quantity: _orderQuantity,
+      );
       return true;
     } catch (e) {
       errorMessage = e.toString();

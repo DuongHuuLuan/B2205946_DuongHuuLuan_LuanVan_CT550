@@ -19,15 +19,22 @@ class Cart {
 class CartDetail {
   final int id;
   final int productDetailId;
+  final int? designId;
+  final String? designName;
+  final String? designPreviewImageUrl;
   final int quantity;
   final ProductDetail productDetail;
 
   const CartDetail({
     required this.id,
     required this.productDetailId,
+    this.designId,
+    this.designName,
+    this.designPreviewImageUrl,
     required this.quantity,
     required this.productDetail,
   });
 
   double get lineTotal => productDetail.price * quantity;
+  bool get hasDesign => (designId ?? 0) > 0;
 }

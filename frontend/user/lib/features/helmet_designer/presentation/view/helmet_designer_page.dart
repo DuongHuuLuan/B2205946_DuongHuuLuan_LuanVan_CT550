@@ -12,6 +12,8 @@ import 'package:provider/provider.dart';
 class HelmetDesignerPage extends StatefulWidget {
   final int? designId;
   final int? initialHelmetProductId;
+  final int? initialProductDetailId;
+  final int? initialQuantity;
   final String? initialHelmetName;
   final String? initialHelmetBaseImageUrl;
 
@@ -19,6 +21,8 @@ class HelmetDesignerPage extends StatefulWidget {
     super.key,
     this.designId,
     this.initialHelmetProductId,
+    this.initialProductDetailId,
+    this.initialQuantity,
     this.initialHelmetName,
     this.initialHelmetBaseImageUrl,
   });
@@ -58,6 +62,11 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
     super.initState();
     Future.microtask(() async {
       final vm = context.read<HelmetDesignerViewModel>();
+      vm.setOrderTarget(
+        productDetailId: widget.initialProductDetailId,
+        quantity: widget.initialQuantity ?? 1,
+        notify: false,
+      );
       if (vm.stickerCatalog.isEmpty) {
         await vm.loadStickerCatalog();
       }
@@ -71,8 +80,10 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
       if ((widget.initialHelmetProductId ?? 0) > 0) {
         vm.startNewDesign(
           helmetProductId: widget.initialHelmetProductId!,
+          productDetailId: widget.initialProductDetailId,
           helmetName: widget.initialHelmetName ?? "Helmet",
           helmetBaseImageUrl: widget.initialHelmetBaseImageUrl ?? "",
+          orderQuantity: widget.initialQuantity ?? 1,
         );
         return;
       }
@@ -82,6 +93,8 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           helmetProductId: 101,
           helmetName: "Royal Street Helmet",
           helmetBaseImageUrl: "assets/images/logo.webp",
+          productDetailId: widget.initialProductDetailId,
+          orderQuantity: widget.initialQuantity ?? 1,
         );
       }
     });
@@ -155,8 +168,9 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             title: vm.currentDesign.helmetName.isEmpty
                 ? "Khoi tao mau non"
                 : vm.currentDesign.helmetName,
-            subtitle:
-                "Canvas da noi voi state quan ly sticker. Buoc tiep theo se them thao tac keo tha truc tiep va cong cu chinh sua day du.",
+            subtitle: vm.hasOrderTarget
+                ? "Dang thiet ke cho bien the #${vm.selectedProductDetailId} voi so luong ${vm.orderQuantity}. Sau khi hoan tat, ban co the luu, chia se hoac dat mua ngay."
+                : "Canvas da noi voi state quan ly sticker. Dat mua se can bien the san pham duoc chon tu trang chi tiet.",
             trailing: Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -181,6 +195,39 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                   onPressed: () => context.go("/helmet-try-on"),
                   icon: const Icon(Icons.view_in_ar_outlined),
                   label: const Text("Thu non"),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: vm.isOrderingDesign || !vm.hasOrderTarget
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final ordered = await context
+                              .read<HelmetDesignerViewModel>()
+                              .orderCurrentDesign();
+                          if (!mounted) return;
+                          if (ordered) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Da gui thiet ke vao luong dat mua.",
+                                ),
+                              ),
+                            );
+                          } else if (vm.errorMessage != null &&
+                              vm.errorMessage!.isNotEmpty) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(vm.errorMessage!)),
+                            );
+                          }
+                        },
+                  icon: vm.isOrderingDesign
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.shopping_bag_outlined),
+                  label: const Text("Dat mua"),
                 ),
               ],
             ),

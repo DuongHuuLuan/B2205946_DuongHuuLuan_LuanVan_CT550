@@ -213,20 +213,29 @@ class AppRouter {
         GoRoute(
           path: "/helmet-designer",
           builder: (context, state) {
-            final designId =
-                int.tryParse(state.uri.queryParameters["designId"] ?? "");
+            final designId = int.tryParse(
+              state.uri.queryParameters["designId"] ?? "",
+            );
             final extra = state.extra;
             final payload = extra is Map ? extra : const <Object?, Object?>{};
             final helmetProductId = payload["helmetProductId"];
+            final productDetailId = payload["productDetailId"];
+            final quantity = payload["quantity"];
 
             return HelmetDesignerPage(
               designId: designId,
               initialHelmetProductId: helmetProductId is int
                   ? helmetProductId
                   : int.tryParse("$helmetProductId"),
+              initialProductDetailId: productDetailId is int
+                  ? productDetailId
+                  : int.tryParse("$productDetailId"),
+              initialQuantity: quantity is int
+                  ? quantity
+                  : int.tryParse("$quantity"),
               initialHelmetName: payload["helmetName"]?.toString(),
-              initialHelmetBaseImageUrl:
-                  payload["helmetBaseImageUrl"]?.toString(),
+              initialHelmetBaseImageUrl: payload["helmetBaseImageUrl"]
+                  ?.toString(),
             );
           },
         ),

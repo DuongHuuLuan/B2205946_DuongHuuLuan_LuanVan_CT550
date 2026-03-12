@@ -72,10 +72,18 @@ class HelmetDesignerApi {
     }
   }
 
-  Future<Response> orderDesign(int designId) async {
+  Future<Response> orderDesign(
+    int designId, {
+    required int productDetailId,
+    int quantity = 1,
+  }) async {
     try {
       return await DioClient.instance.post(
         ApiEndpoints.helmetDesignOrder(designId),
+        data: {
+          "product_detail_id": productDetailId,
+          "quantity": quantity,
+        },
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);

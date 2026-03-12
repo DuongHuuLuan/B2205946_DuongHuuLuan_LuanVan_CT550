@@ -298,6 +298,7 @@ class OrderViewmodel extends ChangeNotifier {
           items: cartDetails
               .map(
                 (item) => OrderItemCreate(
+                  cartDetailId: item.id,
                   productDetailId: item.productDetailId,
                   quantity: item.quantity,
                 ),

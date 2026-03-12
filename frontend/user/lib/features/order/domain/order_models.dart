@@ -2,10 +2,12 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/delivery_inf
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/payment_method.dart';
 
 class OrderItemCreate {
+  final int cartDetailId;
   final int productDetailId;
   final int quantity;
 
   const OrderItemCreate({
+    required this.cartDetailId,
     required this.productDetailId,
     required this.quantity,
   });
@@ -26,6 +28,7 @@ class OrderCreate {
 }
 
 class OrderDetailOut {
+  final int? designId;
   final int productDetailId;
   final int quantity;
   final double price;
@@ -33,8 +36,11 @@ class OrderDetailOut {
   final String? colorName;
   final String? sizeName;
   final String? imageUrl;
+  final String? designName;
+  final String? designPreviewImageUrl;
 
   const OrderDetailOut({
+    this.designId,
     required this.productDetailId,
     required this.quantity,
     required this.price,
@@ -42,7 +48,11 @@ class OrderDetailOut {
     this.colorName,
     this.sizeName,
     this.imageUrl,
+    this.designName,
+    this.designPreviewImageUrl,
   });
+
+  bool get hasDesign => (designId ?? 0) > 0;
 }
 
 class OrderOut {

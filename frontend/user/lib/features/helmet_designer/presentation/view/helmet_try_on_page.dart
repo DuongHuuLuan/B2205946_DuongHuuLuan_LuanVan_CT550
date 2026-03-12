@@ -52,7 +52,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
 
   bool get _isPreviewMirrored =>
       _cameraController?.description.lensDirection == CameraLensDirection.front;
-  bool get _isRecordingVideo => _cameraController?.value.isRecordingVideo == true;
+  bool get _isRecordingVideo =>
+      _cameraController?.value.isRecordingVideo == true;
   bool get _isRecordingPaused =>
       _cameraController?.value.isRecordingPaused == true;
 
@@ -206,7 +207,10 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     final detector = _faceDetector;
     final controller = _cameraController;
 
-    if (!mounted || detector == null || controller == null || _isProcessingFrame) {
+    if (!mounted ||
+        detector == null ||
+        controller == null ||
+        _isProcessingFrame) {
       return;
     }
 
@@ -243,10 +247,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     }
   }
 
-  InputImage? _buildInputImage(
-    CameraImage image,
-    CameraController controller,
-  ) {
+  InputImage? _buildInputImage(CameraImage image, CameraController controller) {
     final format = InputImageFormatValue.fromRawValue(image.format.raw);
     final rotation = _inputImageRotation(
       controller.description,
@@ -278,7 +279,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     DeviceOrientation orientation,
   ) {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return InputImageRotationValue.fromRawValue(description.sensorOrientation);
+      return InputImageRotationValue.fromRawValue(
+        description.sensorOrientation,
+      );
     }
 
     final rotationCompensation = _orientationCompensation[orientation];
@@ -287,7 +290,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     }
 
     final sensorOrientation = description.sensorOrientation;
-    final adjustedRotation = description.lensDirection == CameraLensDirection.front
+    final adjustedRotation =
+        description.lensDirection == CameraLensDirection.front
         ? (sensorOrientation + rotationCompensation) % 360
         : (sensorOrientation - rotationCompensation + 360) % 360;
 
@@ -322,7 +326,10 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
   Rect? _faceRectOnPreview(Size previewSize) {
     final face = _trackedFace;
     final imageSize = _analysisImageSize;
-    if (face == null || imageSize == null || imageSize.width <= 0 || imageSize.height <= 0) {
+    if (face == null ||
+        imageSize == null ||
+        imageSize.width <= 0 ||
+        imageSize.height <= 0) {
       return null;
     }
 
@@ -367,7 +374,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     try {
       Uint8List? bytes;
       final boundaryContext = _previewBoundaryKey.currentContext;
-      final boundary = boundaryContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          boundaryContext?.findRenderObject() as RenderRepaintBoundary?;
 
       if (boundary != null) {
         final image = await boundary.toImage(pixelRatio: 2.2);
@@ -396,7 +404,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
         }
       }
 
-      if (!mounted || bytes == null) {
+      if (!mounted) {
         return;
       }
 
@@ -451,9 +459,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Khong the chup preview: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Khong the chup preview: $e")));
     } finally {
       if (!mounted) return;
       setState(() {
@@ -537,9 +545,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            "Da luu video vao bo nho ung dung: ${media.fileName}",
-          ),
+          content: Text("Da luu video vao bo nho ung dung: ${media.fileName}"),
         ),
       );
     } catch (e) {
@@ -549,9 +555,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
         } catch (_) {}
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Khong the dung quay video: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Khong the dung quay video: $e")));
     }
   }
 
@@ -667,9 +673,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Khong the chia se media: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Khong the chia se media: $e")));
     }
   }
 
@@ -707,7 +713,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     final face = _trackedFace;
     final controller = _cameraController;
     final lastMedia = _lastCapturedMedia;
-    final trackingLabel = face == null ? "Chua thay khuon mat" : "Dang theo doi";
+    final trackingLabel = face == null
+        ? "Chua thay khuon mat"
+        : "Dang theo doi";
     final roll = face?.headEulerAngleZ?.toStringAsFixed(1) ?? "--";
     final yaw = face?.headEulerAngleY?.toStringAsFixed(1) ?? "--";
 
@@ -769,7 +777,9 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                 ),
                 const SizedBox(width: 12),
                 FilledButton.icon(
-                  onPressed: hasDesign ? () => context.go("/helmet-designer") : null,
+                  onPressed: hasDesign
+                      ? () => context.go("/helmet-designer")
+                      : null,
                   icon: const Icon(Icons.edit_outlined),
                   label: const Text("Chinh sua"),
                 ),
@@ -807,7 +817,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
               runSpacing: 10,
               children: [
                 FilledButton.icon(
-                  onPressed: _isInitializingCamera ||
+                  onPressed:
+                      _isInitializingCamera ||
                           _isCapturingPreview ||
                           _isRecordingVideo
                       ? null
@@ -983,7 +994,8 @@ class _TryOnPreviewCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (activeController != null && activeController.value.isInitialized)
+                    if (activeController != null &&
+                        activeController.value.isInitialized)
                       Transform(
                         alignment: Alignment.center,
                         transform: isMirroredPreview
@@ -1033,7 +1045,8 @@ class _TryOnPreviewCard extends StatelessWidget {
                       bottom: 14,
                       child: _PreviewStatusBar(
                         isTracking: faceRect != null,
-                        hasCamera: activeController?.value.isInitialized == true,
+                        hasCamera:
+                            activeController?.value.isInitialized == true,
                         errorMessage: cameraError,
                       ),
                     ),
@@ -1079,13 +1092,17 @@ class _RecordingBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isRecordingPaused ? Icons.pause_circle_filled : Icons.fiber_manual_record,
+            isRecordingPaused
+                ? Icons.pause_circle_filled
+                : Icons.fiber_manual_record,
             size: 16,
             color: Colors.white,
           ),
           const SizedBox(width: 8),
           Text(
-            isRecordingPaused ? "PAUSE $minutes:$seconds" : "REC $minutes:$seconds",
+            isRecordingPaused
+                ? "PAUSE $minutes:$seconds"
+                : "REC $minutes:$seconds",
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w700,
@@ -1176,8 +1193,8 @@ class _PreviewStatusBar extends StatelessWidget {
               errorMessage ??
                   (hasCamera
                       ? (isTracking
-                          ? "Da nhan dien khuon mat va ap non ao."
-                          : "Dang tim khuon mat trong khung hinh.")
+                            ? "Da nhan dien khuon mat va ap non ao."
+                            : "Dang tim khuon mat trong khung hinh.")
                       : "Camera chua san sang."),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.white,
@@ -1273,12 +1290,11 @@ class _LatestMediaCard extends StatelessWidget {
         children: [
           Text(
             "Media vua luu",
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          if (media.type == _TryOnCaptureType.image && imagePreviewBytes != null)
+          if (media.type == _TryOnCaptureType.image &&
+              imagePreviewBytes != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.memory(
@@ -1288,7 +1304,8 @@ class _LatestMediaCard extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-          if (media.type == _TryOnCaptureType.image && imagePreviewBytes != null)
+          if (media.type == _TryOnCaptureType.image &&
+              imagePreviewBytes != null)
             const SizedBox(height: 12),
           Text("Ten file: ${media.fileName}"),
           const SizedBox(height: 6),
@@ -1296,9 +1313,7 @@ class _LatestMediaCard extends StatelessWidget {
             "Loai: ${media.type == _TryOnCaptureType.image ? "anh" : "video"}",
           ),
           const SizedBox(height: 6),
-          Text(
-            "Overlay trong file: ${media.includesOverlay ? "co" : "khong"}",
-          ),
+          Text("Overlay trong file: ${media.includesOverlay ? "co" : "khong"}"),
           const SizedBox(height: 6),
           Text("Luu luc: ${media.createdAt.toLocal()}"),
           const SizedBox(height: 6),
@@ -1347,9 +1362,9 @@ class _EmptyTryOnState extends StatelessWidget {
         children: [
           Text(
             "Chua co thiet ke de thu",
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -1387,9 +1402,9 @@ class _InfoCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           for (final line in lines)

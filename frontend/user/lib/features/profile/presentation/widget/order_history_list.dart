@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/status_chip.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,15 @@ class OrderHistoryList extends StatelessWidget {
         final isCancelling = cancellingOrderIds.contains(order.id);
         final isEvaluated = evaluatedOrderIds.contains(order.id);
         final isEvaluating = evaluatingOrderIds.contains(order.id);
+        final designedItems = order.orderDetails
+            .where((item) => item.hasDesign)
+            .toList(growable: false);
+        final primaryDesignedItem = designedItems.isEmpty
+            ? null
+            : designedItems.first;
+        final designSummary = designedItems.length <= 1
+            ? primaryDesignedItem?.designName
+            : "${designedItems.length} san pham co thiet ke";
 
         return Card(
           margin: EdgeInsets.zero,
@@ -72,6 +82,16 @@ class OrderHistoryList extends StatelessWidget {
                     "Mã giảm giá: $discountCode",
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                if (primaryDesignedItem != null) ...[
+                  const SizedBox(height: 8),
+                  DesignStickerInfo(
+                    designId: primaryDesignedItem.designId,
+                    designName: designSummary,
+                    designPreviewImageUrl:
+                        primaryDesignedItem.designPreviewImageUrl,
+                    imageSize: 26,
+                  ),
+                ],
                 if (_canConfirm(order) && onConfirmReceived != null) ...[
                   const SizedBox(height: 8),
                   FilledButton.tonal(

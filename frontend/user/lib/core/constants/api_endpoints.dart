@@ -82,11 +82,11 @@ class ApiEndpoints {
   static const pushDevices = "/push/devices";
 
   // Helmet designer
-  static const helmetDesigns = "/helmet-designs";
-  static String helmetDesignDetail(int id) => "/helmet-designs/$id";
-  static String helmetDesignShare(int id) => "/helmet-designs/$id/share";
-  static String helmetDesignOrder(int id) => "/helmet-designs/$id/order";
-  static const helmetStickerCatalog = "/helmet-stickers";
-  static const helmetStickerGenerate = "/helmet-stickers/generate";
-  static const helmetStickerRemoveBg = "/helmet-stickers/remove-background";
+  static const helmetDesigns = "/designs/";
+  static String helmetDesignDetail(int id) => "/designs/$id";
+  static String helmetDesignShare(int id) => "/designs/$id/share";
+  static String helmetDesignOrder(int id) => "/designs/$id/order";
+  static const helmetStickerCatalog = "/stickers/";
+  static const helmetStickerGenerate = "/stickers/generate";
+  static const helmetStickerRemoveBg = "/stickers/remove-background";
 }

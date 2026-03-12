@@ -11,14 +11,17 @@ class HelmetDesignMapper {
     return HelmetDesign(
       id: (json["id"] as num?)?.toInt() ?? 0,
       helmetProductId:
+          (json["product_id"] as num?)?.toInt() ??
           (json["helmet_product_id"] as num?)?.toInt() ??
           (json["helmetProductId"] as num?)?.toInt() ??
           0,
       helmetName:
+          json["name"]?.toString() ??
           json["helmet_name"]?.toString() ??
           json["helmetName"]?.toString() ??
           "",
       helmetBaseImageUrl:
+          json["base_image_url"]?.toString() ??
           json["helmet_base_image_url"]?.toString() ??
           json["helmetBaseImageUrl"]?.toString() ??
           "",
@@ -37,9 +40,9 @@ class HelmetDesignMapper {
   static Map<String, dynamic> toJson(HelmetDesign design) {
     return {
       "id": design.id,
-      "helmet_product_id": design.helmetProductId,
-      "helmet_name": design.helmetName,
-      "helmet_base_image_url": design.helmetBaseImageUrl,
+      "product_id": design.helmetProductId,
+      "name": design.helmetName,
+      "base_image_url": design.helmetBaseImageUrl,
       "stickers": design.stickers.map(StickerLayerMapper.toJson).toList(),
       "is_shared": design.isShared,
       "created_at": design.createdAt?.toIso8601String(),

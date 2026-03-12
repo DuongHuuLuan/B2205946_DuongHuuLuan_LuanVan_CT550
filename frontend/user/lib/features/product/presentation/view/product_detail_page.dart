@@ -90,11 +90,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
   }
 
-  void _openHelmetDesigner(Product product, String? baseImageUrl) {
+  void _openHelmetDesigner(
+    Product product,
+    String? baseImageUrl,
+    ProductDetail productDetail,
+    int quantity,
+  ) {
     context.push(
       "/helmet-designer",
       extra: {
         "helmetProductId": product.id,
+        "productDetailId": productDetail.id,
+        "quantity": quantity,
         "helmetName": product.name,
         "helmetBaseImageUrl": baseImageUrl ?? "",
       },
@@ -435,18 +442,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () => _openHelmetDesigner(
-                  p,
-                  mainUrl ?? (p.images.isNotEmpty ? p.images.first.url : null),
-                ),
-                icon: const Icon(Icons.design_services_outlined),
+                onPressed: productDetail == null
+                    ? null
+                    : () => _openHelmetDesigner(
+                        p,
+                        mainUrl ?? (p.images.isNotEmpty ? p.images.first.url : null),
+                        productDetail,
+                        vm.quantity,
+                      ),
+                // icon: const Icon(Icons.design_services_outlined),
                 label: const Text(
-                  "THIET KE NON",
+                  "THIẾT KẾ NÓN",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               flex: 7,
               child: ElevatedButton(
@@ -468,11 +479,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         if (selectedDetail == null) return;
 
                         if (widget.onAddToCart != null) {
-                          widget.onAddToCart!(
-                            p,
-                            selectedDetail,
-                            vm.quantity,
-                          );
+                          widget.onAddToCart!(p, selectedDetail, vm.quantity);
                         } else {
                           await context.read<CartViewmodel>().addToCart(
                             productDetailId: selectedDetail.id,

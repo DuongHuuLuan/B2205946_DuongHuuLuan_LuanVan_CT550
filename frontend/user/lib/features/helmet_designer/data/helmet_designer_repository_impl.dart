@@ -20,13 +20,9 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.getStickerCatalog();
     }
 
-    try {
-      final response = await _api.getStickerCatalog();
-      final items = _extractList(response.data);
-      return items.map(StickerTemplateMapper.fromJson).toList();
-    } catch (_) {
-      return MockHelmetDesignerData.getStickerCatalog();
-    }
+    final response = await _api.getStickerCatalog();
+    final items = _extractList(response.data);
+    return items.map(StickerTemplateMapper.fromJson).toList();
   }
 
   @override
@@ -35,14 +31,10 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.generateAiSticker(request);
     }
 
-    try {
-      final response = await _api.generateAiSticker(
-        AiStickerRequestMapper.toJson(request),
-      );
-      return StickerTemplateMapper.fromJson(_extractMap(response.data));
-    } catch (_) {
-      return MockHelmetDesignerData.generateAiSticker(request);
-    }
+    final response = await _api.generateAiSticker(
+      AiStickerRequestMapper.toJson(request),
+    );
+    return StickerTemplateMapper.fromJson(_extractMap(response.data));
   }
 
   @override
@@ -51,15 +43,9 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.removeBackground(imageUrl);
     }
 
-    try {
-      final response = await _api.removeBackground(imageUrl);
-      final data = _extractMap(response.data);
-      return data["image_url"]?.toString() ??
-          data["url"]?.toString() ??
-          imageUrl;
-    } catch (_) {
-      return MockHelmetDesignerData.removeBackground(imageUrl);
-    }
+    final response = await _api.removeBackground(imageUrl);
+    final data = _extractMap(response.data);
+    return data["image_url"]?.toString() ?? data["url"]?.toString() ?? imageUrl;
   }
 
   @override
@@ -68,12 +54,8 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.saveDesign(design);
     }
 
-    try {
-      final response = await _api.saveDesign(HelmetDesignMapper.toJson(design));
-      return HelmetDesignMapper.fromJson(_extractMap(response.data));
-    } catch (_) {
-      return MockHelmetDesignerData.saveDesign(design);
-    }
+    final response = await _api.saveDesign(HelmetDesignMapper.toJson(design));
+    return HelmetDesignMapper.fromJson(_extractMap(response.data));
   }
 
   @override
@@ -82,12 +64,8 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.getDesignDetail(designId);
     }
 
-    try {
-      final response = await _api.getDesignDetail(designId);
-      return HelmetDesignMapper.fromJson(_extractMap(response.data));
-    } catch (_) {
-      return MockHelmetDesignerData.getDesignDetail(designId);
-    }
+    final response = await _api.getDesignDetail(designId);
+    return HelmetDesignMapper.fromJson(_extractMap(response.data));
   }
 
   @override
@@ -96,29 +74,35 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
       return MockHelmetDesignerData.createShareLink(designId);
     }
 
-    try {
-      final response = await _api.createShareLink(designId);
-      final data = _extractMap(response.data);
-      return data["share_url"]?.toString() ??
-          data["url"]?.toString() ??
-          MockHelmetDesignerData.createShareLink(designId);
-    } catch (_) {
-      return MockHelmetDesignerData.createShareLink(designId);
+    final response = await _api.createShareLink(designId);
+    final data = _extractMap(response.data);
+    final shareUrl = data["share_url"]?.toString() ?? data["url"]?.toString();
+    if (shareUrl == null || shareUrl.isEmpty) {
+      throw StateError("Backend khong tra ve share_url hop le.");
     }
+    return shareUrl;
   }
 
   @override
-  Future<void> orderDesign(int designId) async {
+  Future<void> orderDesign(
+    int designId, {
+    required int productDetailId,
+    int quantity = 1,
+  }) async {
     if (useMockData) {
-      MockHelmetDesignerData.orderDesign(designId);
+      MockHelmetDesignerData.orderDesign(
+        designId,
+        productDetailId: productDetailId,
+        quantity: quantity,
+      );
       return;
     }
 
-    try {
-      await _api.orderDesign(designId);
-    } catch (_) {
-      MockHelmetDesignerData.orderDesign(designId);
-    }
+    await _api.orderDesign(
+      designId,
+      productDetailId: productDetailId,
+      quantity: quantity,
+    );
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {

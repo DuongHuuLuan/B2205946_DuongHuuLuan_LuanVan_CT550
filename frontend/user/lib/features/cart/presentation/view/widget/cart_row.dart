@@ -1,5 +1,6 @@
 ﻿import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +87,14 @@ class CartRow extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (cartDetail.hasDesign) ...[
+                        const SizedBox(height: 10),
+                        DesignStickerInfo(
+                          designId: cartDetail.designId,
+                          designName: cartDetail.designName,
+                          designPreviewImageUrl: cartDetail.designPreviewImageUrl,
+                        ),
+                      ],
                     ],
                   ),
                 ),

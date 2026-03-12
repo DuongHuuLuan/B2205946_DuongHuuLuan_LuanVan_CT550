@@ -31,6 +31,9 @@ class CartDetailMapper extends CartDetail {
   CartDetailMapper({
     required super.id,
     required super.productDetailId,
+    super.designId,
+    super.designName,
+    super.designPreviewImageUrl,
     required super.quantity,
     required super.productDetail,
   });
@@ -45,6 +48,9 @@ class CartDetailMapper extends CartDetail {
     return CartDetailMapper(
       id: toInt(json["id"]),
       productDetailId: toInt(json["product_detail_id"]),
+      designId: toInt(json["design_id"]) <= 0 ? null : toInt(json["design_id"]),
+      designName: json["design_name"]?.toString(),
+      designPreviewImageUrl: json["design_preview_image_url"]?.toString(),
       quantity: toInt(json["quantity"]),
       productDetail: ProductDetailMapper.fromJson(productDetailJson),
     );
