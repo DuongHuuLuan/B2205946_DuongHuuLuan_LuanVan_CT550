@@ -47,3 +47,25 @@ from app.schemas.statistics import (
     StatisticsTopProductItemOut,
     StatisticsTopProductsOut,
 )
+from app.schemas.sticker import (
+    StickerBase,
+    StickerOut,
+    StickerListOut,
+    StickerAdminOut,
+    AiStickerGenerateIn,
+    RemoveBackgroundIn,
+    RemoveBackgroundOut,
+)
+from app.schemas.design import (
+    StickerCrop,
+    DesignLayerBase,
+    DesignLayerIn,
+    DesignLayerOut,
+    DesignBase,
+    DesignCreate,
+    DesignUpdate,
+    DesignOut,
+    DesignShareOut,
+    DesignOrderIn,
+    DesignOrderOut,
+)

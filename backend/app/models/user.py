@@ -28,4 +28,6 @@ class User(Base):
     
     devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
     notification_jobs = relationship("NotificationOutbox", back_populates="user", cascade="all, delete-orphan")
+    stickers = relationship("Sticker", back_populates="owner")
+    designs = relationship("Design", back_populates="user", cascade="all, delete-orphan")
 

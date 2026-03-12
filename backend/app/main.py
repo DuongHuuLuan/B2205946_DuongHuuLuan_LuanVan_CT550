@@ -25,6 +25,8 @@ from app.api.endpoints import profile
 from app.api.endpoints import profile
 from app.api.endpoints import chat
 from app.api.endpoints import push_notification
+from app.api.endpoints import sticker
+from app.api.endpoints import design
 
 app = FastAPI(title="Helmet Shop", version="1.0.0")
 
@@ -53,6 +55,8 @@ app.include_router(profile.router)
 app.include_router(profile.router)
 app.include_router(chat.router)
 app.include_router(push_notification.router)
+app.include_router(sticker.router)
+app.include_router(design.router)
 
 from fastapi.middleware.cors import CORSMiddleware
 

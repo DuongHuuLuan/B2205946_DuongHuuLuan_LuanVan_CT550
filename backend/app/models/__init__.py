@@ -23,4 +23,8 @@ from app.models.conversation import Conversation
 from app.models.message import Message
 from app.models.message_media import MessageMedia
 from app.models.push_notification import UserDevice, NotificationOutbox
+from app.models.sticker import Sticker
+from app.models.design import Design
+from app.models.design_layer import DesignLayer
+from app.models.design_share import DesignShare
 

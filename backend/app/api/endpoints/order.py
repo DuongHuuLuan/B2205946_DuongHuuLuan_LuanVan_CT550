@@ -37,7 +37,7 @@ def get_admin_orders(
         page=page,
         per_page=per_page,
         keyword=q,
-        status=status,
+        status_filter=status,
     )
 
 @router.get("/admin/{order_id}", response_model=OrderOut)

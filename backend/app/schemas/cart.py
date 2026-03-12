@@ -7,6 +7,7 @@ from app.schemas.product_detail import ProductDetailOut
 # du lieu khi them san pham vao gio
 class CartDetailCreate(BaseModel):
     product_detail_id: int
+    design_id: Optional[int] = None
     quantity: int = 1
 
 #du lieu khi cap nhat so luong trong gio
@@ -17,11 +18,14 @@ class CartDetailUpdate(BaseModel):
 class CartDetailOut(BaseModel):
     id: int
     product_detail_id: int
+    design_id: Optional[int] = None
     quantity: int
     product_detail: ProductDetailOut
     product_id: int
     product_name: str
     image_url: Optional[str] = None
+    design_name: Optional[str] = None
+    design_preview_image_url: Optional[str] = None
 
     class Config: 
         from_attributes = True

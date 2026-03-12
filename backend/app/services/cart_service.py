@@ -18,6 +18,72 @@ class CartService(BaseService):
         return chosen.url if chosen else None
 
     @staticmethod
+    def _normalize_design_id(design_id: int | None) -> int | None:
+        if design_id is None or design_id <= 0:
+            return None
+        return design_id
+
+    @staticmethod
+    def _validate_design(
+        db: Session,
+        user_id: int,
+        product_detail: ProductDetail,
+        design_id: int | None,
+    ) -> Design | None:
+        normalized_design_id = CartService._normalize_design_id(design_id)
+        if normalized_design_id is None:
+            return None
+
+        design = CartService.get_or_404(db, Design, normalized_design_id, "Thiết kế không tồn tại")
+        CartService.assert_owner(user_id, design.user_id, "Bạn không có quyền dùng thiết kế này")
+        if design.product_id != product_detail.product_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Thiết kế không thuộc biến thể sản phẩm đã chọn",
+            )
+        return design
+
+    @staticmethod
+    def _find_existing_cart_detail(
+        db: Session,
+        cart_id: int,
+        product_detail_id: int,
+        design_id: int | None,
+    ):
+        query = db.query(CartDetail).filter(
+            CartDetail.cart_id == cart_id,
+            CartDetail.product_detail_id == product_detail_id,
+        )
+        if design_id is None:
+            query = query.filter(CartDetail.design_id.is_(None))
+        else:
+            query = query.filter(CartDetail.design_id == design_id)
+        return query.first()
+
+    @staticmethod
+    def _attach_cart_detail_metadata(cart_detail: CartDetail):
+        product_detail = cart_detail.product_detail
+        product = getattr(product_detail, "product", None) if product_detail else None
+        if product:
+            setattr(cart_detail, "product_id", product.id)
+            setattr(cart_detail, "product_name", product.name)
+
+            color_id = product_detail.color.id if getattr(product_detail, "color", None) else None
+            setattr(cart_detail, "image_url", CartService._pick_image_url(product, color_id))
+        else:
+            setattr(cart_detail, "product_id", 0)
+            setattr(cart_detail, "product_name", "")
+            setattr(cart_detail, "image_url", None)
+
+        design = getattr(cart_detail, "design", None)
+        setattr(cart_detail, "design_name", getattr(design, "name", None))
+        setattr(
+            cart_detail,
+            "design_preview_image_url",
+            getattr(design, "preview_image_url", None),
+        )
+
+    @staticmethod
     def get_or_create_cart(db: Session, user_id: int):
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
         if not cart:
@@ -33,16 +99,25 @@ class CartService(BaseService):
 
         # Kiểm tra sản phẩm có tồn tại không
         product_detail = CartService.get_or_404(db, ProductDetail, cart_detail_in.product_detail_id, "Sản phẩm không tồn tại")
+        design = CartService._validate_design(
+            db,
+            user_id,
+            product_detail,
+            cart_detail_in.design_id,
+        )
+        design_id = getattr(design, "id", None)
 
         # Kiểm tra tồn kho
         available_quantity = WarehouseService.get_total_stock(db, product_detail)
         if available_quantity < cart_detail_in.quantity:
             raise HTTPException(status_code=400, detail=f"Chỉ còn {available_quantity} sản phẩm trong kho")
 
-        cart_detail = db.query(CartDetail).filter(
-            CartDetail.cart_id == cart.id,
-            CartDetail.product_detail_id == cart_detail_in.product_detail_id
-        ).first()
+        cart_detail = CartService._find_existing_cart_detail(
+            db,
+            cart.id,
+            cart_detail_in.product_detail_id,
+            design_id,
+        )
 
         if cart_detail:
             new_quantity = cart_detail.quantity + cart_detail_in.quantity
@@ -53,13 +128,14 @@ class CartService(BaseService):
             cart_detail = CartDetail(
                 cart_id=cart.id,
                 product_detail_id=cart_detail_in.product_detail_id,
+                design_id=design_id,
                 quantity=cart_detail_in.quantity
             )
             db.add(cart_detail)
 
         db.commit()
         db.refresh(cart)
-        return cart
+        return CartService.get_cart(db, user_id)
 
     @staticmethod
     def get_cart2(db: Session, user_id: int):
@@ -91,6 +167,7 @@ class CartService(BaseService):
                     .joinedload(CartDetail.product_detail)
                     .joinedload(ProductDetail.product)
                     .selectinload(Product.product_images),
+                selectinload(Cart.cart_details).joinedload(CartDetail.design),
             )
             .filter(Cart.user_id == user_id)
             .first()
@@ -108,18 +185,7 @@ class CartService(BaseService):
 
             price = product_detail.price or 0
             total += price * cart_detail.quantity
-
-            product = getattr(product_detail, "product", None)
-            if product:
-                setattr(cart_detail, "product_id", product.id)
-                setattr(cart_detail, "product_name", product.name)
-
-                color_id = product_detail.color.id if getattr(product_detail, "color", None) else None
-                setattr(cart_detail, "image_url", CartService._pick_image_url(product, color_id))
-            else:
-                setattr(cart_detail, "product_id", 0)
-                setattr(cart_detail, "product_name", "")
-                setattr(cart_detail, "image_url", None)
+            CartService._attach_cart_detail_metadata(cart_detail)
 
         setattr(cart, "total_price", float(total))
         return cart

@@ -1,79 +1,163 @@
 import math
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
+from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
+from typing import List, Optional
+
 from fastapi import HTTPException, status
+from sqlalchemy import or_
+from sqlalchemy.orm import Session, joinedload
+
 from app.models import *
-from app.models.discount import DiscountStatus, OrderDiscount
+from app.models.discount import DiscountStatus
 from app.models.order import OrderStatus
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
-from typing import List, Optional
-from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
+
 
 class OrderService:
+    @staticmethod
+    def _base_order_query(db: Session):
+        return db.query(Order).options(
+            joinedload(Order.order_details)
+            .joinedload(OrderDetail.product_detail)
+            .joinedload(ProductDetail.product)
+            .joinedload(Product.product_images),
+            joinedload(Order.order_details)
+            .joinedload(OrderDetail.product_detail)
+            .joinedload(ProductDetail.color),
+            joinedload(Order.order_details)
+            .joinedload(OrderDetail.product_detail)
+            .joinedload(ProductDetail.size),
+            joinedload(Order.order_details).joinedload(OrderDetail.design),
+            joinedload(Order.delivery_info),
+            joinedload(Order.payment_method),
+            joinedload(Order.applied_discounts),
+            joinedload(Order.ghn_shipments),
+        )
+
+    @staticmethod
+    def _get_cart_for_checkout(db: Session, user_id: int) -> Cart | None:
+        return (
+            db.query(Cart)
+            .options(
+                joinedload(Cart.cart_details)
+                .joinedload(CartDetail.product_detail)
+                .joinedload(ProductDetail.product),
+                joinedload(Cart.cart_details)
+                .joinedload(CartDetail.product_detail)
+                .joinedload(ProductDetail.color),
+                joinedload(Cart.cart_details)
+                .joinedload(CartDetail.product_detail)
+                .joinedload(ProductDetail.size),
+                joinedload(Cart.cart_details).joinedload(CartDetail.design),
+            )
+            .filter(Cart.user_id == user_id)
+            .first()
+        )
+
+    @staticmethod
+    def _resolve_selected_cart_details(
+        cart: Cart,
+        order_in: OrderCreate,
+    ) -> list[tuple[CartDetail, int]]:
+        if order_in.order_items is None:
+            return [(cart_detail, cart_detail.quantity) for cart_detail in cart.cart_details]
+
+        if not order_in.order_items:
+            raise HTTPException(status_code=400, detail="Danh sách mua không được rỗng")
+
+        cart_details_by_id = {cart_detail.id: cart_detail for cart_detail in cart.cart_details}
+        cart_details_by_product_detail: dict[int, list[CartDetail]] = {}
+        for cart_detail in cart.cart_details:
+            cart_details_by_product_detail.setdefault(cart_detail.product_detail_id, []).append(
+                cart_detail
+            )
+
+        selected_cart_detail_ids: set[int] = set()
+        selections: list[tuple[CartDetail, int]] = []
+
+        for order_item in order_in.order_items:
+            if order_item.quantity <= 0:
+                raise HTTPException(status_code=400, detail="Số lượng mua phải lớn hơn 0")
+
+            cart_detail = None
+            if order_item.cart_detail_id is not None:
+                cart_detail = cart_details_by_id.get(order_item.cart_detail_id)
+                if cart_detail is None:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Mục giỏ hàng không tồn tại hoặc không thuộc người dùng hiện tại",
+                    )
+            else:
+                product_detail_id = order_item.product_detail_id or 0
+                matches = cart_details_by_product_detail.get(product_detail_id, [])
+                if not matches:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Sản phẩm không có trong giỏ hàng",
+                    )
+                if len(matches) > 1:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "Biến thể sản phẩm này có nhiều mục trong giỏ hàng. "
+                            "Vui lòng gửi cart_detail_id để chọn đúng mục cần đặt."
+                        ),
+                    )
+                cart_detail = matches[0]
+
+            if cart_detail.id in selected_cart_detail_ids:
+                raise HTTPException(status_code=400, detail="Trùng mục giỏ hàng trong danh sách mua")
+
+            if order_item.quantity > cart_detail.quantity:
+                product_name = (
+                    cart_detail.product_detail.product.name
+                    if cart_detail.product_detail and cart_detail.product_detail.product
+                    else "Sản phẩm"
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Số lượng mua vượt quá số lượng trong giỏ hàng: {product_name}",
+                )
+
+            selected_cart_detail_ids.add(cart_detail.id)
+            selections.append((cart_detail, order_item.quantity))
+
+        return selections
 
     @staticmethod
     def create_order(db: Session, user_id: int, order_in: OrderCreate):
-        cart = db.query(Cart).filter(Cart.user_id == user_id).first()
+        cart = OrderService._get_cart_for_checkout(db, user_id)
         if not cart or not cart.cart_details:
-            raise HTTPException(status_code=400, detail= "Giỏ hàng trống")
-        
-        total_price = Decimal("0") # tổng tiền đơn hàng
-        order_details_to_create = [] # danh sách chứa chi tiết đơn hàng
-        cart_details = [] # danh sách các item sẽ được xử lý
-        requested_items = None # lưu giữ ID và số lượng nếu người dùng chọn mua lẻ các sản phẩm trong giỏ hàng
-        selected_cart_details = cart.cart_details # mặc định là chọn toàn bộ giỏ hàng
+            raise HTTPException(status_code=400, detail="Giỏ hàng trống")
 
-        #logic chọn mua các sản phẩm cụ thể
-        if order_in.order_items is not None:
-            if not order_in.order_items:
-                raise HTTPException(status_code=400, detail="Danh sách mua không được rỗng")
-            requested_items = {}
-            for order_item in order_in.order_items:
-                if order_item.quantity <= 0:
-                    raise HTTPException(status_code=400, detail="Số lượng mua phải lớn hơn 0")
-                if order_item.product_detail_id in requested_items:
-                    raise HTTPException(status_code=400, detail="Trùng sản phẩm trong danh sách mua")
-                requested_items[order_item.product_detail_id] = order_item.quantity
+        selected_items = OrderService._resolve_selected_cart_details(cart, order_in)
 
-            selected_cart_details = [
-                cart_detail
-                for cart_detail in cart.cart_details
-                if cart_detail.product_detail_id in requested_items
-            ]
-            missing_items = set(requested_items.keys()) - {
-                cart_detail.product_detail_id for cart_detail in selected_cart_details
-            }
-            if missing_items:
-                raise HTTPException(status_code=400, detail="Sản phẩm không có trong giỏ hàng")
+        total_price = Decimal("0")
+        order_details_to_create = []
+        cart_details = []
 
-        for cart_detail in selected_cart_details:
-            product_detail = db.query(ProductDetail).filter(ProductDetail.id == cart_detail.product_detail_id).first()
+        for cart_detail, requested_quantity in selected_items:
+            product_detail = cart_detail.product_detail
             if not product_detail:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Sản phẩm ID{cart_detail.product_detail_id} không đủ hàng"
+                    detail=f"Sản phẩm ID {cart_detail.product_detail_id} không còn tồn tại",
                 )
 
             available_quantity = WarehouseService.get_total_stock(db, product_detail)
-            requested_quantity = cart_detail.quantity
-            if requested_items:
-                requested_quantity = requested_items[cart_detail.product_detail_id]
-                if requested_quantity > cart_detail.quantity:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Số lượng mua vượt quá số lượng trong giỏ hàng: {product_detail.product.name}"
-                    )
             if available_quantity < requested_quantity:
+                product_name = (
+                    product_detail.product.name
+                    if product_detail.product
+                    else f"ID {cart_detail.product_detail_id}"
+                )
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Sản phẩm {product_detail.product.name} không đủ hàng"
+                    detail=f"Sản phẩm {product_name} không đủ hàng",
                 )
 
             cart_details.append((cart_detail, product_detail, requested_quantity))
-
-            # tru kho
             WarehouseService.decrease_stock(db, product_detail, requested_quantity)
 
         category_ids = {
@@ -86,6 +170,7 @@ class OrderService:
 
         if order_in.discount_ids is None:
             from app.services.discount_service import DiscountService
+
             category_discounts = DiscountService.get_valid_discounts_by_category_ids(
                 db,
                 category_ids,
@@ -146,104 +231,77 @@ class OrderService:
                 )
 
             total_price += discounted_unit_price * requested_quantity
-            order_details_to_create.append({
-                "product_detail_id": product_detail.id,
-                "quantity": requested_quantity,
-                "price": discounted_unit_price,
-            })
+            order_details_to_create.append(
+                {
+                    "product_detail_id": product_detail.id,
+                    "design_id": cart_detail.design_id,
+                    "quantity": requested_quantity,
+                    "price": discounted_unit_price,
+                }
+            )
 
-        # tạo order header
         new_order = Order(
-            user_id = user_id,
-            delivery_info_id = order_in.delivery_info_id,
-            payment_method_id = order_in.payment_method_id,
-            status = OrderStatus.PENDING
+            user_id=user_id,
+            delivery_info_id=order_in.delivery_info_id,
+            payment_method_id=order_in.payment_method_id,
+            status=OrderStatus.PENDING,
         )
         db.add(new_order)
-        db.flush() # lay ID de gan vao chi tiet
+        db.flush()
         if selected_discounts:
             new_order.applied_discounts.extend(selected_discounts)
 
-        #tao cac order detail
         for order_detail in order_details_to_create:
             detail = OrderDetail(
-                order_id = new_order.id,
-                product_detail_id =order_detail["product_detail_id"],
-                quantity = order_detail["quantity"],
-                price = order_detail["price"]
+                order_id=new_order.id,
+                product_detail_id=order_detail["product_detail_id"],
+                design_id=order_detail["design_id"],
+                quantity=order_detail["quantity"],
+                price=order_detail["price"],
             )
             db.add(detail)
-        
-        #xoa gio hang sau khi dat thanh cong
-        if requested_items:
-            for cart_detail, _, requested_quantity in cart_details:
-                if requested_quantity < cart_detail.quantity:
-                    cart_detail.quantity = cart_detail.quantity - requested_quantity
-                else:
-                    db.delete(cart_detail)
-        else:
-            db.query(CartDetail).filter(CartDetail.cart_id == cart.id).delete()
+
+        for cart_detail, _, requested_quantity in cart_details:
+            if requested_quantity < cart_detail.quantity:
+                cart_detail.quantity = cart_detail.quantity - requested_quantity
+            else:
+                db.delete(cart_detail)
 
         db.commit()
         db.refresh(new_order)
         return new_order
-    
 
-    #lấy danh sách đơn hàng của user
     @staticmethod
-    def get_orders(db: Session, user_id: int, ) -> List[Order]:
-        return db.query(Order).options(
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.product)
-                .joinedload(Product.product_images),
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.color),
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.size),
-            joinedload(Order.delivery_info),
-            joinedload(Order.payment_method),
-            joinedload(Order.applied_discounts),
-            joinedload(Order.ghn_shipments),
-            ).filter(Order.user_id == user_id).order_by(Order.created_at.desc()).all()
-    
+    def get_orders(db: Session, user_id: int) -> List[Order]:
+        return (
+            OrderService._base_order_query(db)
+            .filter(Order.user_id == user_id)
+            .order_by(Order.created_at.desc())
+            .all()
+        )
 
     def get_orders2(db: Session, user_id: int) -> List[Order]:
         return db.query(Order).filter(Order.user_id == user_id).all()
 
-    #chi tiết một đơn hàng
     @staticmethod
     def get_order_byID(db: Session, order_id: int, user_id: int):
-        order = db.query(Order).options(
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.product)
-                .joinedload(Product.product_images),
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.color),
-            joinedload(Order.order_details)
-                .joinedload(OrderDetail.product_detail)
-                .joinedload(ProductDetail.size),
-            joinedload(Order.delivery_info),
-            joinedload(Order.payment_method),
-            joinedload(Order.applied_discounts),
-            joinedload(Order.ghn_shipments),
-        ).filter(Order.id == order_id, Order.user_id == user_id).first()
-        
+        order = (
+            OrderService._base_order_query(db)
+            .filter(Order.id == order_id, Order.user_id == user_id)
+            .first()
+        )
+
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
         return order
-    
+
     @staticmethod
     def get_admin_orders(
         db: Session,
         page: int = 1,
         per_page: Optional[int] = None,
         keyword: Optional[str] = None,
-        status: Optional[str] = None,
+        status_filter: Optional[str] = None,
     ):
         query = db.query(Order)
 
@@ -254,9 +312,9 @@ class OrderService:
                 conditions.append(Order.id == int(keyword))
             query = query.join(User, Order.user_id == User.id).filter(or_(*conditions))
 
-        if status:
+        if status_filter:
             try:
-                status_value = OrderStatus(status.strip().lower())
+                status_value = OrderStatus(status_filter.strip().lower())
             except ValueError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -298,6 +356,7 @@ class OrderService:
                 joinedload(Order.order_details)
                 .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.size),
+                joinedload(Order.order_details).joinedload(OrderDetail.design),
                 joinedload(Order.delivery_info),
                 joinedload(Order.payment_method),
                 joinedload(Order.user),
@@ -336,6 +395,7 @@ class OrderService:
                 joinedload(Order.order_details)
                 .joinedload(OrderDetail.product_detail)
                 .joinedload(ProductDetail.size),
+                joinedload(Order.order_details).joinedload(OrderDetail.design),
                 joinedload(Order.delivery_info),
                 joinedload(Order.payment_method),
                 joinedload(Order.user),
@@ -350,35 +410,31 @@ class OrderService:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
         return order
 
-    #cập nhật trạng thái(AMDIN)
     @staticmethod
     def update_status(db: Session, order_id: int, status: OrderStatus):
         order = db.query(Order).filter(Order.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
-        
+
         order.status = status
         db.commit()
         db.refresh(order)
         return order
-    
-    # hủy đơn hàng
+
     @staticmethod
     def delete_order(db: Session, order_id: int, user_id: int):
         order = db.query(Order).filter(Order.id == order_id, Order.user_id == user_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
-        
+
         if order.status != OrderStatus.PENDING:
             raise HTTPException(status_code=400, detail="Chỉ có thể hủy đơn hàng đang chờ xử lý")
         for order_detail in order.order_details:
             WarehouseService.increase_stock(db, order_detail.product_detail, order_detail.quantity)
 
-            
         order.status = OrderStatus.CANCELLED
         db.commit()
-        return {"massage":"Hủy đơn hàng thành công"}
-    
+        return {"message": "Hủy đơn hàng thành công"}
 
     @staticmethod
     def confirm_delivery(db: Session, order_id: int, user_id: int):
@@ -386,10 +442,11 @@ class OrderService:
 
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
-        
+
         if order.status != OrderStatus.SHIPPING:
             raise HTTPException(
-                status_code=400, detail="Chỉ có thể xác nhận khi đơn hàng đang trong quá trình giao hàng"
+                status_code=400,
+                detail="Chỉ có thể xác nhận khi đơn hàng đang trong quá trình giao hàng",
             )
         order.status = OrderStatus.COMPLETED
 

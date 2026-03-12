@@ -51,8 +51,10 @@ class OrderDetail(Base):
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"))
     product_detail_id = Column(Integer, ForeignKey("product_details.id"))
+    design_id = Column(Integer, ForeignKey("designs.id", ondelete="SET NULL"), nullable=True, index=True)
     quantity = Column(Integer, nullable=False)
     price = Column(Numeric(10,2), nullable=False)
 
     order = relationship("Order", back_populates="order_details")
-    product_detail= relationship("ProductDetail")
+    product_detail = relationship("ProductDetail")
+    design = relationship("Design", back_populates="order_details")

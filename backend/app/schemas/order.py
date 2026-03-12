@@ -58,6 +58,7 @@ class PaymentMethodPaginationOut(BaseModel):
 class OrderDetailOut(BaseModel):
     id: int
     product_detail_id: int
+    design_id: Optional[int] = None
     quantity: int
     price: Decimal 
 
@@ -65,6 +66,8 @@ class OrderDetailOut(BaseModel):
     color_name: Optional[str] = None
     size_name: Optional[str] = None
     image_url: Optional[str] = None
+    design_name: Optional[str] = None
+    design_preview_image_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -90,12 +93,28 @@ class OrderDetailOut(BaseModel):
                 result["color_name"] = product_detail.color.name
             if product_detail.size:
                 result["size_name"] = product_detail.size.size
+
+        design = getattr(data, "design", None)
+        if design:
+            result["design_name"] = getattr(design, "name", None)
+            result["design_preview_image_url"] = getattr(
+                design,
+                "preview_image_url",
+                None,
+            )
         
         return result
 
 class OrderItemCreate(BaseModel):
-    product_detail_id: int
+    cart_detail_id: Optional[int] = None
+    product_detail_id: Optional[int] = None
     quantity: int
+
+    @model_validator(mode="after")
+    def validate_target(self):
+        if self.cart_detail_id is None and self.product_detail_id is None:
+            raise ValueError("cart_detail_id hoặc product_detail_id là bắt buộc")
+        return self
 
 class OrderCreate(BaseModel):
     delivery_info_id: int
