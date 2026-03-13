@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from urllib.parse import urlencode
 
 from app.api.deps import require_user
 from app.core.config import settings
@@ -56,18 +57,26 @@ def vnpay_return(request: Request, db: Session = Depends(get_db)):
     transaction_status = params.get("vnp_TransactionStatus")
     is_success = response_code == "00" and transaction_status == "00"
 
+    ipn_result = None
     if is_valid:
-        VnpayService.handle_ipn(db, params)
+        ipn_result = VnpayService.handle_ipn(db, params)
 
     app_return_url = settings.APP_RETURN_URL or (
         f"{settings.APP_DEEP_LINK_SCHEME}://payment-result"
     )
     separator = "&" if "?" in app_return_url else "?"
-    redirect_url = (
-        f"{app_return_url}{separator}orderId={order_id}"
-        f"&status={'success' if (is_valid and is_success) else 'failed'}"
-        f"&valid={'1' if is_valid else '0'}"
+    redirect_query = urlencode(
+        {
+            "orderId": order_id,
+            "status": "success" if (is_valid and is_success) else "failed",
+            "valid": "1" if is_valid else "0",
+            "paymentStatus": "paid" if (is_valid and is_success) else "unpaid",
+            "orderStatus": "pending",
+            "reviewStatus": "pending",
+            "message": (ipn_result or {}).get("Message", ""),
+        }
     )
+    redirect_url = f"{app_return_url}{separator}{redirect_query}"
     return RedirectResponse(url=redirect_url, status_code=302)
 
 

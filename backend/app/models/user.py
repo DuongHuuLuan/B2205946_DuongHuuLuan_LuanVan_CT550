@@ -21,7 +21,16 @@ class User(Base):
     
     profile = relationship("Profile", back_populates="user", uselist=False)
     cart = relationship("Cart", back_populates="user", uselist = False)
-    orders = relationship("Order", back_populates="user")
+    orders = relationship(
+        "Order",
+        back_populates="user",
+        foreign_keys="Order.user_id",
+    )
+    reviewed_orders = relationship(
+        "Order",
+        back_populates="reviewing_admin",
+        foreign_keys="Order.reviewed_by_admin_id",
+    )
     user_conversations = relationship("Conversation", foreign_keys="Conversation.user_id", back_populates="user")
     admin_conversations = relationship("Conversation", foreign_keys="Conversation.admin_id", back_populates="admin")
     user_messages = relationship("Message", foreign_keys="Message.user_id", back_populates="user")

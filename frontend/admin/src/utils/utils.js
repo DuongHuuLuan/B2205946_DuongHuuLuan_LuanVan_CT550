@@ -1,6 +1,6 @@
 const formatMoney = (number) => {
   try {
-    return new Intl.NumberFormat("vi-VN").format(Number(number || 0)) + " ₫";
+    return `${new Intl.NumberFormat("vi-VN").format(Number(number || 0))} VND`;
   } catch {
     return String(number || 0);
   }
@@ -13,26 +13,34 @@ const getProductThumb = (product) => {
   return first || "";
 };
 
-const statusLabel = (s) => {
-  const v = String(s || "").toLowerCase();
-  if (v === "pending") return "Đang duyệt";
-  if (v === "shipping") return "Đang giao";
-  if (v === "completed") return "Hoàn thành";
-  if (v === "cancelled") return "Đã hủy";
-  return "—";
+const normalizeEnumText = (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  const dotParts = raw.split(".");
+  return dotParts[dotParts.length - 1].trim().toLowerCase();
 };
 
-const statusBadgeClass = (s) => {
-  const v = String(s || "").toLowerCase();
-  if (v === "pending") return "badge-pending";
-  if (v === "shipping") return "badge-shipping";
-  if (v === "completed") return "badge-completed";
-  if (v === "cancelled") return "badge-canceled";
+const statusLabel = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "pending") return "Đang duyệt";
+  if (value === "shipping") return "Đang giao";
+  if (value === "completed") return "Hoàn thành";
+  if (value === "cancelled") return "Đã hủy";
+  return "-";
+};
+
+const statusBadgeClass = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "pending") return "badge-pending";
+  if (value === "shipping") return "badge-shipping";
+  if (value === "completed") return "badge-completed";
+  if (value === "cancelled") return "badge-canceled";
   return "badge-secondary";
 };
 
 const statusTableBadgeClass = (status) => {
-  switch (status) {
+  switch (normalizeEnumText(status)) {
     case "pending":
       return "status-pending";
     case "shipping":
@@ -46,26 +54,61 @@ const statusTableBadgeClass = (status) => {
   }
 };
 
+const paymentStatusLabel = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "paid") return "Đã thanh toán";
+  if (value === "unpaid") return "Chưa thanh toán";
+  return "Không rõ";
+};
+
+const paymentStatusBadgeClass = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "paid") return "payment-paid";
+  if (value === "unpaid") return "payment-unpaid";
+  return "bg-secondary-subtle text-secondary";
+};
+
+const refundSupportLabel = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "contact_required") return "Liên hệ chat để hoàn tiền";
+  if (value === "resolved") return "Đã xử lý hoàn tiền";
+  if (value === "none") return "Không yêu cầu";
+  return "Không rõ";
+};
+
+const refundSupportBadgeClass = (status) => {
+  const value = normalizeEnumText(status);
+  if (value === "contact_required") return "refund-contact-required";
+  if (value === "resolved") return "refund-resolved";
+  if (value === "none") return "refund-none";
+  return "bg-secondary-subtle text-secondary";
+};
+
 const formatDateTimeVN = (input) => {
-  if (!input) return "—";
+  if (!input) return "-";
 
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "—";
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return "-";
 
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const MM = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
 
-  return `${hh}:${mm} ${dd}/${MM}/${yyyy}`;
+  return `${hh}:${mm} ${dd}/${month}/${yyyy}`;
 };
 
 export {
   formatMoney,
   getProductThumb,
+  normalizeEnumText,
   statusLabel,
   statusBadgeClass,
   formatDateTimeVN,
   statusTableBadgeClass,
+  paymentStatusLabel,
+  paymentStatusBadgeClass,
+  refundSupportLabel,
+  refundSupportBadgeClass,
 };

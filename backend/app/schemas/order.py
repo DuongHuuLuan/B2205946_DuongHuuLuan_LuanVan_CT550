@@ -2,9 +2,13 @@ from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing import List, Optional
-from app.models.order import OrderStatus
+from app.models.order import OrderStatus, PaymentStatus, RefundSupportStatus
 from app.schemas import *
 from app.schemas.discount import DiscountOut
+
+
+def _enum_value(value):
+    return getattr(value, "value", value)
 
 #schema cho delivery info
 class DeliveryInfoBase(BaseModel):
@@ -61,6 +65,7 @@ class OrderDetailOut(BaseModel):
     design_id: Optional[int] = None
     quantity: int
     price: Decimal 
+    design_snapshot_json: Optional[dict] = None
 
     product_name: Optional[str] = None
     color_name: Optional[str] = None
@@ -102,6 +107,11 @@ class OrderDetailOut(BaseModel):
                 "preview_image_url",
                 None,
             )
+        else:
+            snapshot = result.get("design_snapshot_json") or {}
+            if isinstance(snapshot, dict):
+                result["design_name"] = snapshot.get("name")
+                result["design_preview_image_url"] = snapshot.get("preview_image_url")
         
         return result
 
@@ -127,10 +137,19 @@ class OrderStatusUpdate(BaseModel):
     status: OrderStatus
 
 
+class OrderRejectIn(BaseModel):
+    reason: str
+
+
 #schema cho Order
 class OrderOut(BaseModel):
     id: int
     status: str
+    payment_status: str = PaymentStatus.UNPAID.value
+    refund_support_status: str = RefundSupportStatus.NONE.value
+    rejection_reason: Optional[str] = None
+    reviewed_by_admin_id: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
     created_at: datetime
     shipping_fee: Decimal = Decimal("0")
 
@@ -150,9 +169,26 @@ class OrderOut(BaseModel):
         result = data
         if not isinstance(data, dict):
             result = {col.name: getattr(data, col.name) for col in data.__table__.columns}
-            for attr in ("delivery_info", "payment_method", "user", "order_details", "applied_discounts"):
+            for attr in (
+                "delivery_info",
+                "payment_method",
+                "user",
+                "order_details",
+                "applied_discounts",
+                "reviewed_by_admin_id",
+                "reviewed_at",
+            ):
                 if hasattr(data, attr):
                     result[attr] = getattr(data, attr)
+
+        result["status"] = _enum_value(result.get("status")) or OrderStatus.PENDING.value
+        result["payment_status"] = (
+            _enum_value(result.get("payment_status")) or PaymentStatus.UNPAID.value
+        )
+        result["refund_support_status"] = (
+            _enum_value(result.get("refund_support_status"))
+            or RefundSupportStatus.NONE.value
+        )
 
         shipping_fee = result.get("shipping_fee")
         if shipping_fee is None:

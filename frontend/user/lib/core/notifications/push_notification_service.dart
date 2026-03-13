@@ -40,7 +40,7 @@ class PushNotificationService {
   bool _isBootstrapped = false;
   bool _isAvailable = false;
   bool _navigationReady = false;
-  bool _pendingChatNavigation = false;
+  String? _pendingNavigationPath;
   bool _isSyncing = false;
 
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
@@ -158,7 +158,7 @@ class PushNotificationService {
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
         if (payload == null || payload.isEmpty) {
-          _openChatOrDefer();
+          _openRouteOrDefer("/chat");
           return;
         }
 
@@ -172,7 +172,7 @@ class PushNotificationService {
           // Fall back to generic chat route.
         }
 
-        _openChatOrDefer();
+        _openRouteOrDefer("/chat");
       },
     );
 
@@ -237,24 +237,42 @@ class PushNotificationService {
   void _handleNotificationNavigation(Map<String, dynamic> data) {
     final event = data["event"]?.toString();
     if (event == "chat.message.created") {
-      _openChatOrDefer();
-    }
-  }
-
-  void _openChatOrDefer() {
-    if (_router == null || !_navigationReady) {
-      _pendingChatNavigation = true;
+      _openRouteOrDefer("/chat");
       return;
     }
 
-    _pendingChatNavigation = false;
-    _router!.go("/chat");
+    if (event == "order.review.rejected") {
+      final orderId = int.tryParse(data["order_id"]?.toString() ?? "");
+      if (orderId != null && orderId > 0) {
+        _openRouteOrDefer("/orders/$orderId");
+        return;
+      }
+
+      final refundSupportStatus =
+          data["refund_support_status"]?.toString().trim().toLowerCase() ?? "";
+      if (refundSupportStatus == "contact_required") {
+        _openRouteOrDefer("/chat");
+      }
+    }
+  }
+
+  void _openRouteOrDefer(String path) {
+    if (_router == null || !_navigationReady) {
+      _pendingNavigationPath = path;
+      return;
+    }
+
+    _pendingNavigationPath = null;
+    _router!.go(path);
   }
 
   void _flushPendingNavigation() {
-    if (_pendingChatNavigation && _router != null && _navigationReady) {
-      _pendingChatNavigation = false;
-      _router!.go("/chat");
+    if (_pendingNavigationPath != null &&
+        _router != null &&
+        _navigationReady) {
+      final path = _pendingNavigationPath!;
+      _pendingNavigationPath = null;
+      _router!.go(path);
     }
   }
 

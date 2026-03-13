@@ -446,7 +446,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ? null
                     : () => _openHelmetDesigner(
                         p,
-                        mainUrl ?? (p.images.isNotEmpty ? p.images.first.url : null),
+                        mainUrl ??
+                            (p.images.isNotEmpty ? p.images.first.url : null),
                         productDetail,
                         vm.quantity,
                       ),
@@ -476,7 +477,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 onPressed: canAddToCart
                     ? () async {
                         final selectedDetail = productDetail;
-                        if (selectedDetail == null) return;
 
                         if (widget.onAddToCart != null) {
                           widget.onAddToCart!(p, selectedDetail, vm.quantity);

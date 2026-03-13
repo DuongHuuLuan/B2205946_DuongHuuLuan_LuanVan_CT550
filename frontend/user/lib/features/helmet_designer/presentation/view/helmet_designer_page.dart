@@ -33,11 +33,11 @@ class HelmetDesignerPage extends StatefulWidget {
 
 class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
   static const List<String> _aiStyles = [
-    "Street",
-    "Sport",
-    "Cute",
-    "Minimal",
-    "Flame",
+    "Đường phố",
+    "Thể thao",
+    "Dễ thương",
+    "Tối giản",
+    "Ngọn lửa",
   ];
 
   static const List<Color> _pickerColors = [
@@ -81,7 +81,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
         vm.startNewDesign(
           helmetProductId: widget.initialHelmetProductId!,
           productDetailId: widget.initialProductDetailId,
-          helmetName: widget.initialHelmetName ?? "Helmet",
+          helmetName: widget.initialHelmetName ?? "Mũ bảo hiểm",
           helmetBaseImageUrl: widget.initialHelmetBaseImageUrl ?? "",
           orderQuantity: widget.initialQuantity ?? 1,
         );
@@ -91,8 +91,8 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
       if (vm.currentDesign.helmetProductId == 0) {
         vm.startNewDesign(
           helmetProductId: 101,
-          helmetName: "Royal Street Helmet",
-          helmetBaseImageUrl: "assets/images/logo.webp",
+          helmetName: "Mũ bảo hiểm Royal Street",
+          helmetBaseImageUrl: "assets/images/logo_royalStore2.png",
           productDetailId: widget.initialProductDetailId,
           orderQuantity: widget.initialQuantity ?? 1,
         );
@@ -119,7 +119,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
       appBar: AppBar(
         backgroundColor: colorScheme.primary,
         title: Text(
-          "Helmet Designer",
+          "Thiết kế nón",
           style: textTheme.titleLarge?.copyWith(
             color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
@@ -147,7 +147,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                     if (!mounted) return;
                     if (saved != null) {
                       messenger.showSnackBar(
-                        SnackBar(content: Text("Da luu thiet ke #${saved.id}")),
+                        SnackBar(content: Text("Đã lưu thiết kế #${saved.id}")),
                       );
                     }
                   },
@@ -166,11 +166,11 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
         children: [
           _HeroCard(
             title: vm.currentDesign.helmetName.isEmpty
-                ? "Khoi tao mau non"
+                ? "Khởi tạo mẫu nón"
                 : vm.currentDesign.helmetName,
             subtitle: vm.hasOrderTarget
-                ? "Dang thiet ke cho bien the #${vm.selectedProductDetailId} voi so luong ${vm.orderQuantity}. Sau khi hoan tat, ban co the luu, chia se hoac dat mua ngay."
-                : "Canvas da noi voi state quan ly sticker. Dat mua se can bien the san pham duoc chon tu trang chi tiet.",
+                ? "Đang thiết kế cho biến thể #${vm.selectedProductDetailId} với số lượng ${vm.orderQuantity}. Sau khi hoàn tất, bạn có thể lưu, chia sẻ hoặc đặt mua ngay."
+                : "Canvas đã kết nối với quản lý sticker. Đặt mua sẽ cần chọn biến thể sản phẩm từ trang chi tiết.",
             trailing: Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -185,16 +185,16 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                               .shareCurrentDesign();
                           if (!mounted || url == null) return;
                           messenger.showSnackBar(
-                            SnackBar(content: Text("Link chia se: $url")),
+                            SnackBar(content: Text("Link chia sẻ: $url")),
                           );
                         },
                   icon: const Icon(Icons.ios_share_outlined),
-                  label: Text(vm.shareUrl == null ? "Chia se" : "Da tao link"),
+                  label: Text(vm.shareUrl == null ? "Chia sẻ" : "Đã tạo link"),
                 ),
                 FilledButton.icon(
                   onPressed: () => context.go("/helmet-try-on"),
                   icon: const Icon(Icons.view_in_ar_outlined),
-                  label: const Text("Thu non"),
+                  label: const Text("Thử nón"),
                 ),
                 FilledButton.tonalIcon(
                   onPressed: vm.isOrderingDesign || !vm.hasOrderTarget
@@ -209,7 +209,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                             messenger.showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  "Da gui thiet ke vao luong dat mua.",
+                                  "Đã lưu thiết kế và sản phẩm vào giỏ hàng.",
                                 ),
                               ),
                             );
@@ -227,14 +227,14 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.shopping_bag_outlined),
-                  label: const Text("Dat mua"),
+                  label: Text("Đặt mua"),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            "Preview canvas",
+            "Xem trước thiết kế",
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -244,6 +244,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           HelmetPreviewCanvas(
             layers: vm.stickerLayers,
             selectedLayerId: vm.selectedLayerId,
+            helmetBaseImageUrl: vm.currentDesign.helmetBaseImageUrl,
             onLayerTap: vm.selectLayer,
             onBackgroundTap: () => vm.selectLayer(null),
             onLayerTransform: (layerId, x, y, scale, rotation) {
@@ -260,21 +261,18 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            "Keo sticker de di chuyen. Dung pinch de phong to hoac thu nho, va xoay hai ngon tay de doi huong truc tiep tren canvas.",
+            "Kéo sticker để di chuyển. Dùng hai ngón tay để thu phóng và xoay trực tiếp trên bản xem trước.",
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.light.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
           if (selectedLayer != null)
-            _LayerToolbar(
-              layer: selectedLayer,
-              palette: _pickerColors,
-            )
+            _LayerToolbar(layer: selectedLayer, palette: _pickerColors)
           else
             const _HintCard(
               text:
-                  "Chon mot sticker trong danh sach layer hoac them sticker tu catalog de bat dau chinh sua.",
+                  "Chọn một sticker từ danh sách hoặc thêm sticker từ thư viện để bắt đầu chỉnh sửa.",
             ),
           const SizedBox(height: 20),
           _AiStickerSection(
@@ -307,7 +305,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             children: [
               Expanded(
                 child: Text(
-                  "Sticker catalog",
+                  "sticker",
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -337,30 +335,30 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
               },
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  "Layer stack",
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text(
-                "${vm.stickerLayers.length} sticker",
-                style: textTheme.bodyMedium?.copyWith(
-                  color: AppColors.light.textSecondary,
-                ),
-              ),
-            ],
-          ),
+          // const SizedBox(height: 20),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: Text(
+          //         "Danh sách lớp (Layers)",
+          //         style: textTheme.titleMedium?.copyWith(
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //     ),
+          //     Text(
+          //       "${vm.stickerLayers.length} sticker",
+          //       style: textTheme.bodyMedium?.copyWith(
+          //         color: AppColors.light.textSecondary,
+          //       ),
+          //     ),
+          //   ],
+          // ),
           const SizedBox(height: 10),
           if (!vm.hasLayers)
             const _HintCard(
               text:
-                  "Chua co sticker nao trong thiet ke. Tap vao mot sticker ben tren de dua vao non.",
+                  "Chưa có sticker nào trong thiết kế. Hãy nhấn vào sticker ở trên để thêm vào nón.",
             )
           else
             ...vm.stickerLayers.reversed.map(_LayerTile.new),
@@ -377,7 +375,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
     final prompt = _aiPromptController.text.trim();
     if (prompt.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nhap prompt de tao sticker AI.")),
+        const SnackBar(content: Text("Vui lòng nhập mô tả để tạo sticker AI.")),
       );
       return;
     }
@@ -397,7 +395,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
 
     _aiPromptController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Da tao sticker AI: ${sticker.name}")),
+      SnackBar(content: Text("Đã tạo thành công sticker: ${sticker.name}")),
     );
   }
 
@@ -503,9 +501,9 @@ class _StickerCatalogCard extends StatelessWidget {
               template.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             Text(
               template.category,
@@ -526,10 +524,7 @@ class _LayerToolbar extends StatelessWidget {
   final StickerLayer layer;
   final List<Color> palette;
 
-  const _LayerToolbar({
-    required this.layer,
-    required this.palette,
-  });
+  const _LayerToolbar({required this.layer, required this.palette});
 
   @override
   Widget build(BuildContext context) {
@@ -547,7 +542,7 @@ class _LayerToolbar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Layer dang chon #${layer.id}",
+            "Layer đang chọn #${layer.id}",
             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -558,38 +553,38 @@ class _LayerToolbar extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () => vm.rotateSelectedLayerBy(-0.15),
                 icon: const Icon(Icons.rotate_left),
-                label: const Text("Xoay trai"),
+                label: const Text("Xoay trái"),
               ),
               OutlinedButton.icon(
                 onPressed: () => vm.rotateSelectedLayerBy(0.15),
                 icon: const Icon(Icons.rotate_right),
-                label: const Text("Xoay phai"),
+                label: const Text("Xoay phải"),
               ),
               OutlinedButton.icon(
                 onPressed: () => vm.resizeSelectedLayerBy(0.9),
                 icon: const Icon(Icons.remove),
-                label: const Text("Thu nho"),
+                label: const Text("Thu nhỏ"),
               ),
               OutlinedButton.icon(
                 onPressed: () => vm.resizeSelectedLayerBy(1.1),
                 icon: const Icon(Icons.add),
-                label: const Text("Phong to"),
+                label: const Text("Phóng to"),
               ),
               OutlinedButton.icon(
                 onPressed: vm.bringSelectedLayerForward,
                 icon: const Icon(Icons.flip_to_front),
-                label: const Text("Len tren"),
+                label: const Text("Lên trên"),
               ),
               OutlinedButton.icon(
                 onPressed: vm.removeSelectedLayer,
                 icon: const Icon(Icons.delete_outline),
-                label: const Text("Xoa"),
+                label: const Text("Xóa"),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            "Mau sticker",
+            "Màu sticker",
             style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
@@ -598,7 +593,7 @@ class _LayerToolbar extends StatelessWidget {
             runSpacing: 10,
             children: [
               _ColorChipButton(
-                label: "Goc",
+                label: "Gốc",
                 isSelected: layer.tintColorValue == null,
                 color: null,
                 onTap: () => vm.updateSelectedLayerTint(null),
@@ -614,7 +609,7 @@ class _LayerToolbar extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            "Crop ngang",
+            "Cắt ngang (Crop)",
             style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           RangeSlider(
@@ -634,7 +629,7 @@ class _LayerToolbar extends StatelessWidget {
             },
           ),
           Text(
-            "Crop doc",
+            "Cắt dọc (Crop)",
             style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           RangeSlider(
@@ -658,7 +653,7 @@ class _LayerToolbar extends StatelessWidget {
             child: TextButton.icon(
               onPressed: () => vm.updateSelectedLayerCrop(StickerCrop()),
               icon: const Icon(Icons.crop_free),
-              label: const Text("Reset crop"),
+              label: const Text("Đặt lại Crop"),
             ),
           ),
         ],
@@ -709,14 +704,12 @@ class _AiStickerSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Tao sticker bang AI",
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            "Tạo sticker bằng AI",
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            "Nhap mo ta ngan, chon style va gam mau. Sticker AI sau khi tao se duoc them vao canvas ngay.",
+            "Nhập mô tả ngắn, chọn phong cách và màu chủ đạo. Sticker AI sẽ được thêm vào thiết kế ngay lập tức.",
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.light.textSecondary,
             ),
@@ -727,7 +720,8 @@ class _AiStickerSection extends StatelessWidget {
             minLines: 2,
             maxLines: 3,
             decoration: const InputDecoration(
-              hintText: "Vi du: dragon flame decal, racing fox, cute cloud...",
+              hintText:
+                  "Ví dụ: rồng lửa decal, cáo đua xe, đám mây dễ thương...",
             ),
           ),
           const SizedBox(height: 14),
@@ -748,7 +742,7 @@ class _AiStickerSection extends StatelessWidget {
             runSpacing: 10,
             children: [
               _ColorChipButton(
-                label: "Mac dinh",
+                label: "Mặc định",
                 isSelected: selectedColor == null,
                 color: null,
                 onTap: () => onColorChanged(null),
@@ -767,7 +761,7 @@ class _AiStickerSection extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             value: removeBackground,
             onChanged: onBackgroundChanged,
-            title: const Text("Tu dong tach nen"),
+            title: const Text("Tự động tách nền"),
           ),
           const SizedBox(height: 6),
           FilledButton.icon(
@@ -779,7 +773,7 @@ class _AiStickerSection extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.auto_awesome),
-            label: const Text("Tao sticker AI"),
+            label: const Text("Tạo Sticker ngay"),
           ),
         ],
       ),
@@ -802,7 +796,9 @@ class _ColorChipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = isSelected ? AppColors.secondary : AppColors.light.border;
+    final borderColor = isSelected
+        ? AppColors.secondary
+        : AppColors.light.border;
     final fillColor = color ?? Colors.white;
     final showCheck = isSelected && color != null;
 
@@ -876,7 +872,7 @@ class _LayerTile extends StatelessWidget {
         ),
         title: Text("Sticker #${layer.stickerId}"),
         subtitle: Text(
-          "x ${layer.x.toStringAsFixed(2)}  y ${layer.y.toStringAsFixed(2)}  scale ${layer.scale.toStringAsFixed(2)}",
+          "Vị trí: (${layer.x.toStringAsFixed(1)}, ${layer.y.toStringAsFixed(1)}) - Tỉ lệ: ${layer.scale.toStringAsFixed(2)}",
         ),
         trailing: isSelected
             ? const Icon(Icons.check_circle, color: AppColors.secondary)

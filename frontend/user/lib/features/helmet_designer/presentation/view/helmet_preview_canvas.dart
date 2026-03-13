@@ -4,7 +4,13 @@ import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/st
 import 'package:flutter/material.dart';
 
 typedef LayerTransformCallback =
-    void Function(int layerId, double x, double y, double scale, double rotation);
+    void Function(
+      int layerId,
+      double x,
+      double y,
+      double scale,
+      double rotation,
+    );
 
 class HelmetPreviewCanvas extends StatelessWidget {
   final List<StickerLayer> layers;
@@ -12,6 +18,7 @@ class HelmetPreviewCanvas extends StatelessWidget {
   final ValueChanged<int>? onLayerTap;
   final LayerTransformCallback? onLayerTransform;
   final VoidCallback? onBackgroundTap;
+  final String helmetBaseImageUrl;
   final bool showGuides;
   final String emptyMessage;
 
@@ -22,8 +29,9 @@ class HelmetPreviewCanvas extends StatelessWidget {
     this.onLayerTap,
     this.onLayerTransform,
     this.onBackgroundTap,
+    this.helmetBaseImageUrl = "",
     this.showGuides = true,
-    this.emptyMessage = "Chon sticker de bat dau thiet ke.",
+    this.emptyMessage = "Chọn sticker để bắt đầu thiết kế.",
   });
 
   @override
@@ -57,8 +65,9 @@ class HelmetPreviewCanvas extends StatelessWidget {
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: onBackgroundTap,
-                    child: CustomPaint(
-                      painter: _HelmetCanvasPainter(showGuides: showGuides),
+                    child: _HelmetCanvasBackground(
+                      imageUrl: helmetBaseImageUrl,
+                      showGuides: showGuides,
                     ),
                   ),
                 ),
@@ -118,7 +127,8 @@ class _InteractiveStickerLayer extends StatefulWidget {
   });
 
   @override
-  State<_InteractiveStickerLayer> createState() => _InteractiveStickerLayerState();
+  State<_InteractiveStickerLayer> createState() =>
+      _InteractiveStickerLayerState();
 }
 
 class _InteractiveStickerLayerState extends State<_InteractiveStickerLayer> {
@@ -148,7 +158,9 @@ class _InteractiveStickerLayerState extends State<_InteractiveStickerLayer> {
       top: top.toDouble(),
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onTap: widget.onLayerTap == null ? null : () => widget.onLayerTap!(layer.id),
+        onTap: widget.onLayerTap == null
+            ? null
+            : () => widget.onLayerTap!(layer.id),
         onScaleStart: !isInteractive ? null : _onScaleStart,
         onScaleUpdate: !isInteractive ? null : _onScaleUpdate,
         child: Transform.rotate(
@@ -224,7 +236,8 @@ class _InteractiveStickerLayerState extends State<_InteractiveStickerLayer> {
   void _onScaleUpdate(ScaleUpdateDetails details) {
     if (_gestureStartPoint == null || widget.onLayerTransform == null) return;
 
-    final deltaX = (details.focalPoint.dx - _gestureStartPoint!.dx) / widget.width;
+    final deltaX =
+        (details.focalPoint.dx - _gestureStartPoint!.dx) / widget.width;
     final deltaY =
         (details.focalPoint.dy - _gestureStartPoint!.dy) / widget.height;
     final nextScale = (_startScale * details.scale).clamp(0.1, 4.0).toDouble();
@@ -248,7 +261,8 @@ class _InteractiveStickerLayerState extends State<_InteractiveStickerLayer> {
   }
 
   double _visualSize(double scale) {
-    return (widget.width * 0.24 * scale).clamp(34.0, widget.width * 0.52)
+    return (widget.width * 0.24 * scale)
+        .clamp(34.0, widget.width * 0.52)
         .toDouble();
   }
 }
@@ -301,9 +315,48 @@ class _StickerImage extends StatelessWidget {
       ),
     );
 
-    return Padding(
-      padding: const EdgeInsets.all(6),
-      child: child,
+    return Padding(padding: const EdgeInsets.all(6), child: child);
+  }
+}
+
+class _HelmetCanvasBackground extends StatelessWidget {
+  final String imageUrl;
+  final bool showGuides;
+
+  const _HelmetCanvasBackground({
+    required this.imageUrl,
+    required this.showGuides,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl.trim().isEmpty) {
+      return CustomPaint(painter: _HelmetCanvasPainter(showGuides: showGuides));
+    }
+
+    Widget child;
+    if (imageUrl.startsWith("assets/")) {
+      child = Image.asset(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
+      );
+    } else {
+      child = Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Opacity(opacity: 0.98, child: child),
+        if (showGuides) const CustomPaint(painter: _HelmetGuidePainter()),
+      ],
     );
   }
 }
@@ -406,4 +459,25 @@ class _HelmetCanvasPainter extends CustomPainter {
   bool shouldRepaint(covariant _HelmetCanvasPainter oldDelegate) {
     return oldDelegate.showGuides != showGuides;
   }
+}
+
+class _HelmetGuidePainter extends CustomPainter {
+  const _HelmetGuidePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final guidePaint = Paint()
+      ..color = AppColors.secondary.withOpacity(0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    final guideRect = Rect.fromCenter(
+      center: Offset(size.width * 0.49, size.height * 0.50),
+      width: size.width * 0.54,
+      height: size.height * 0.50,
+    );
+    canvas.drawOval(guideRect, guidePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HelmetGuidePainter oldDelegate) => false;
 }

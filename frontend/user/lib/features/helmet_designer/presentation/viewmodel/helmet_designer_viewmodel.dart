@@ -36,7 +36,8 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   int? _selectedProductDetailId;
   int _orderQuantity = 1;
 
-  List<StickerTemplate> get stickerCatalog => List.unmodifiable(_stickerCatalog);
+  List<StickerTemplate> get stickerCatalog =>
+      List.unmodifiable(_stickerCatalog);
   List<StickerLayer> get stickerLayers => List.unmodifiable(_sortedLayers());
   HelmetDesign get currentDesign => _currentDesign;
   StickerLayer? get selectedLayer => _findLayerById(selectedLayerId);
@@ -133,7 +134,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(design.stickers);
       _normalizeLayerOrder(notify: false);
-      selectedLayerId = _stickerLayers.isNotEmpty ? _sortedLayers().last.id : null;
+      selectedLayerId = _stickerLayers.isNotEmpty
+          ? _sortedLayers().last.id
+          : null;
       shareUrl = null;
       _reseedNextLayerId();
     } catch (e) {
@@ -209,10 +212,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateSelectedLayerPosition({
-    required double x,
-    required double y,
-  }) {
+  void updateSelectedLayerPosition({required double x, required double y}) {
     _updateSelectedLayer(x: x, y: y);
   }
 
@@ -276,7 +276,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
     _stickerLayers.removeWhere((layer) => layer.id == layerId);
     _normalizeLayerOrder(notify: false);
-    selectedLayerId = _stickerLayers.isNotEmpty ? _sortedLayers().last.id : null;
+    selectedLayerId = _stickerLayers.isNotEmpty
+        ? _sortedLayers().last.id
+        : null;
     _syncCurrentDesign();
     notifyListeners();
   }
@@ -332,7 +334,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   Future<bool> orderCurrentDesign() async {
     if (isOrderingDesign) return false;
     if (!hasOrderTarget) {
-      errorMessage = "Chua co bien the san pham de dat mua thiet ke nay.";
+      errorMessage = "Chưa có biến thể sản phẩm để đặt mua thiết kế này.";
       notifyListeners();
       return false;
     }

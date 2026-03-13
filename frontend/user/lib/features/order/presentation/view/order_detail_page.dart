@@ -36,6 +36,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       _isLoading = true;
       _error = null;
     });
+
     try {
       final order = await context.read<OrderRepository>().getOrderDetail(
         widget.orderId,
@@ -63,11 +64,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _confirmReceived() async {
     final order = _order;
-    if (order == null ||
-        _normalizeStatus(order.status) != "shipping" ||
-        _isActing) {
+    if (order == null || order.normalizedStatus != "shipping" || _isActing) {
       return;
     }
+
     final shouldConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -93,7 +93,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       await _loadOrder();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Xác nhận nhận hàng thành công.")),
+        const SnackBar(content: Text("Đã xác nhận nhận hàng thành công.")),
       );
     } catch (_) {
       if (!mounted) return;
@@ -108,11 +108,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _cancelOrder() async {
     final order = _order;
-    if (order == null ||
-        _normalizeStatus(order.status) != "pending" ||
-        _isActing) {
+    if (order == null || order.normalizedStatus != "pending" || _isActing) {
       return;
     }
+
     final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -140,9 +139,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       await context.read<ProfileViewmodel>().cancelOrder(order.id);
       await _loadOrder();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Hủy đơn hàng thành công.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Đã hủy đơn hàng thành công.")),
+      );
     } catch (_) {
       if (!mounted) return;
       final msg =
@@ -156,17 +155,28 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _createEvaluate() async {
     final order = _order;
-    if (order == null ||
-        _normalizeStatus(order.status) != "completed" ||
-        _isActing) {
+    if (order == null || order.normalizedStatus != "completed" || _isActing) {
       return;
     }
+
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => EvaluateCreatePage(orderId: order.id)),
     );
     if (result == true && mounted) {
       await _syncEvaluateStatus(order.id);
     }
+  }
+
+  Future<void> _openSupportChat() async {
+    if (!mounted) return;
+    await context.push("/chat");
+    if (!mounted) return;
+    await _loadOrder();
+  }
+
+  String _safeText(String? value) {
+    final text = value?.trim() ?? "";
+    return text.isEmpty ? "Chưa có" : text;
   }
 
   @override
@@ -201,6 +211,32 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _OrderHeaderCard(order: order),
+                    if (order.hasRejectionReason) ...[
+                      const SizedBox(height: 12),
+                      _NoticeCard(
+                        icon: Icons.cancel_outlined,
+                        backgroundColor: Colors.red.shade50,
+                        iconColor: Colors.red.shade700,
+                        title: "Lý do từ chối đơn",
+                        message: order.rejectionReason!.trim(),
+                      ),
+                    ],
+                    if (order.needsRefundChat) ...[
+                      const SizedBox(height: 12),
+                      _NoticeCard(
+                        icon: Icons.support_agent,
+                        backgroundColor: Colors.orange.shade50,
+                        iconColor: Colors.orange.shade800,
+                        title: "Cần liên hệ shop để hoàn tiền",
+                        message:
+                            "Đơn hàng này đã thanh toán và cần trao đổi với quản trị viên qua chat để xử lý hoàn tiền.",
+                        action: TextButton.icon(
+                          onPressed: _openSupportChat,
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          label: const Text("Mở cuộc hội thoại hỗ trợ"),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     _SectionCard(
                       title: "Thông tin người đặt",
@@ -223,12 +259,22 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: "Thanh toán & vận chuyển",
+                      title: "Thanh toán và vận chuyển",
                       child: _InfoList(
                         rows: [
                           _InfoRowData(
                             label: "Phương thức thanh toán",
                             value: _safeText(order.paymentMethod?.name),
+                          ),
+                          _InfoRowData(
+                            label: "Trạng thái thanh toán",
+                            value: _paymentStatusLabel(order.paymentStatus),
+                          ),
+                          _InfoRowData(
+                            label: "Hỗ trợ hoàn tiền",
+                            value: _refundSupportLabel(
+                              order.refundSupportStatus,
+                            ),
                           ),
                           _InfoRowData(
                             label: "Mã giảm giá",
@@ -237,7 +283,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                 : order.discountCode!.trim(),
                           ),
                           _InfoRowData(
-                            label: "Phí ship",
+                            label: "Phí vận chuyển",
                             value: order.shippingFee.toVnd(),
                           ),
                         ],
@@ -268,12 +314,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ),
                     const SizedBox(height: 16),
                     _ActionSection(
-                      status: order.status,
+                      order: order,
                       isBusy: _isActing,
                       isReviewed: isReviewed,
                       onCancel: _cancelOrder,
                       onConfirmReceived: _confirmReceived,
                       onEvaluate: _createEvaluate,
+                      onOpenChat: _openSupportChat,
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton(
@@ -286,12 +333,29 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             ),
     );
   }
+}
 
-  String _normalizeStatus(String value) => value.trim().toLowerCase();
+String _paymentStatusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case "paid":
+      return "Đã thanh toán";
+    case "unpaid":
+      return "Chưa thanh toán";
+    default:
+      return "Không rõ";
+  }
+}
 
-  String _safeText(String? value) {
-    final text = value?.trim() ?? "";
-    return text.isEmpty ? "Chưa có" : text;
+String _refundSupportLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case "contact_required":
+      return "Liên hệ shop để hoàn tiền";
+    case "resolved":
+      return "Đã xử lý";
+    case "none":
+      return "Không yêu cầu";
+    default:
+      return "Không rõ";
   }
 }
 
@@ -306,6 +370,7 @@ class _OrderHeaderCard extends StatelessWidget {
     final dateText = date == null
         ? "--/--/----"
         : "${date.day.toString().padLeft(2, "0")}/${date.month.toString().padLeft(2, "0")}/${date.year} ${date.hour.toString().padLeft(2, "0")}:${date.minute.toString().padLeft(2, "0")}";
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -325,11 +390,117 @@ class _OrderHeaderCard extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 StatusChip(status: order.status),
+                _MetaChip(
+                  label: _paymentStatusLabel(order.paymentStatus),
+                  icon: order.isPaid ? Icons.payments : Icons.money_off_csred,
+                  foregroundColor: order.isPaid
+                      ? Colors.green.shade800
+                      : Colors.orange.shade900,
+                  backgroundColor: order.isPaid
+                      ? Colors.green.shade50
+                      : Colors.orange.shade50,
+                ),
+                if (order.needsRefundChat)
+                  _MetaChip(
+                    label: _refundSupportLabel(order.refundSupportStatus),
+                    icon: Icons.support_agent,
+                    foregroundColor: Colors.red.shade800,
+                    backgroundColor: Colors.red.shade50,
+                  ),
                 Text("Ngày đặt: $dateText"),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NoticeCard extends StatelessWidget {
+  final IconData icon;
+  final Color backgroundColor;
+  final Color iconColor;
+  final String title;
+  final String message;
+  final Widget? action;
+
+  const _NoticeCard({
+    required this.icon,
+    required this.backgroundColor,
+    required this.iconColor,
+    required this.title,
+    required this.message,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: backgroundColor,
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: iconColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(message),
+                  if (action != null) ...[const SizedBox(height: 8), action!],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color foregroundColor;
+  final Color backgroundColor;
+
+  const _MetaChip({
+    required this.label,
+    required this.icon,
+    required this.foregroundColor,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: foregroundColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: foregroundColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -504,7 +675,7 @@ class _TotalBox extends StatelessWidget {
       children: [
         _totalRow("Tiền hàng", order.subtotal.toVnd()),
         const SizedBox(height: 6),
-        _totalRow("Phí ship", order.shippingFee.toVnd()),
+        _totalRow("Phí vận chuyển", order.shippingFee.toVnd()),
         const Divider(height: 18),
         _totalRow("Tổng thanh toán", order.total.toVnd(), isTotal: true),
       ],
@@ -536,28 +707,29 @@ class _TotalBox extends StatelessWidget {
 }
 
 class _ActionSection extends StatelessWidget {
-  final String status;
+  final OrderOut order;
   final bool isBusy;
   final bool isReviewed;
   final VoidCallback onCancel;
   final VoidCallback onConfirmReceived;
   final VoidCallback onEvaluate;
+  final VoidCallback onOpenChat;
 
   const _ActionSection({
-    required this.status,
+    required this.order,
     required this.isBusy,
     required this.isReviewed,
     required this.onCancel,
     required this.onConfirmReceived,
     required this.onEvaluate,
+    required this.onOpenChat,
   });
 
   @override
   Widget build(BuildContext context) {
-    final normalized = status.trim().toLowerCase();
     final children = <Widget>[];
 
-    if (normalized == "pending") {
+    if (order.normalizedStatus == "pending") {
       children.add(
         FilledButton.tonal(
           onPressed: isBusy ? null : onCancel,
@@ -566,19 +738,19 @@ class _ActionSection extends StatelessWidget {
       );
     }
 
-    if (normalized == "shipping") {
+    if (order.normalizedStatus == "shipping") {
       children.add(
         FilledButton(
           onPressed: isBusy ? null : onConfirmReceived,
-          child: Text(isBusy ? "Đang xử lý..." : "Đã nhận được hàng"),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
+          child: Text(isBusy ? "Đang xử lý..." : "Đã nhận được hàng"),
         ),
       );
     }
 
-    if (normalized == "completed") {
+    if (order.normalizedStatus == "completed") {
       children.add(
         OutlinedButton.icon(
           onPressed: isBusy || isReviewed ? null : onEvaluate,
@@ -586,6 +758,16 @@ class _ActionSection extends StatelessWidget {
             isReviewed ? Icons.check_circle_outline : Icons.star_outline,
           ),
           label: Text(isReviewed ? "Đã đánh giá" : "Đánh giá"),
+        ),
+      );
+    }
+
+    if (order.needsRefundChat) {
+      children.add(
+        OutlinedButton.icon(
+          onPressed: onOpenChat,
+          icon: const Icon(Icons.chat_bubble_outline),
+          label: const Text("Liên hệ shop để hoàn tiền"),
         ),
       );
     }
@@ -605,7 +787,8 @@ class _ActionSection extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         ...children.map(
-          (w) => Padding(padding: const EdgeInsets.only(bottom: 8), child: w),
+          (widget) =>
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: widget),
         ),
       ],
     );

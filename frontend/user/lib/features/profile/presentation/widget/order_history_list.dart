@@ -45,7 +45,7 @@ class OrderHistoryList extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
@@ -62,7 +62,7 @@ class OrderHistoryList extends StatelessWidget {
             : designedItems.first;
         final designSummary = designedItems.length <= 1
             ? primaryDesignedItem?.designName
-            : "${designedItems.length} san pham co thiet ke";
+            : "${designedItems.length} sản phẩm có thiết kế";
 
         return Card(
           margin: EdgeInsets.zero,
@@ -77,11 +77,45 @@ class OrderHistoryList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text("Ngày đặt: ${_formatDate(order.createdAt)}"),
-                if (discountCode.isNotEmpty)
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _MetaTag(
+                      label: _paymentStatusLabel(order.paymentStatus),
+                      foregroundColor: order.isPaid
+                          ? Colors.green.shade800
+                          : Colors.orange.shade900,
+                      backgroundColor: order.isPaid
+                          ? Colors.green.shade50
+                          : Colors.orange.shade50,
+                    ),
+                    if (order.needsRefundChat)
+                      _MetaTag(
+                        label: "Liên hệ shop để hoàn tiền",
+                        foregroundColor: Colors.red.shade800,
+                        backgroundColor: Colors.red.shade50,
+                      ),
+                  ],
+                ),
+                if (discountCode.isNotEmpty) ...[
+                  const SizedBox(height: 4),
                   Text(
                     "Mã giảm giá: $discountCode",
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                ],
+                if (order.hasRejectionReason) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    "Lý do từ chối: ${order.rejectionReason!.trim()}",
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
                 if (primaryDesignedItem != null) ...[
                   const SizedBox(height: 8),
                   DesignStickerInfo(
@@ -140,6 +174,14 @@ class OrderHistoryList extends StatelessWidget {
                           ? "Đang xử lý..."
                           : (isEvaluated ? "Xem đánh giá" : "Đánh giá"),
                     ),
+                  ),
+                ],
+                if (order.needsRefundChat) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push("/chat"),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text("Liên hệ shop hỗ trợ"),
                   ),
                 ],
               ],
@@ -245,15 +287,15 @@ class OrderHistoryList extends StatelessWidget {
   }
 
   bool _canConfirm(OrderOut order) {
-    return _normalizeStatus(order.status) == "shipping";
+    return order.normalizedStatus == "shipping";
   }
 
   bool _canCancel(OrderOut order) {
-    return _normalizeStatus(order.status) == "pending";
+    return order.normalizedStatus == "pending";
   }
 
   bool _canEvaluate(OrderOut order) {
-    return _normalizeStatus(order.status) == "completed";
+    return order.normalizedStatus == "completed";
   }
 
   Future<void> _handleEvaluateAction(
@@ -266,45 +308,50 @@ class OrderHistoryList extends StatelessWidget {
     await callback(order);
   }
 
-  String _normalizeStatus(String value) => value.trim().toLowerCase();
-
   String _formatDate(DateTime? date) {
     if (date == null) return "--/--/----";
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
 }
 
-// class _OrderLine extends StatelessWidget {
-//   final OrderDetailOut detail;
+String _paymentStatusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case "paid":
+      return "Đã thanh toán";
+    case "unpaid":
+      return "Chưa thanh toán";
+    default:
+      return "Không rõ";
+  }
+}
 
-//   const _OrderLine({required this.detail});
+class _MetaTag extends StatelessWidget {
+  final String label;
+  final Color foregroundColor;
+  final Color backgroundColor;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final variant = _variantText(detail);
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(
-//           detail.productName,
-//           style: const TextStyle(fontWeight: FontWeight.w600),
-//         ),
-//         if (variant.isNotEmpty)
-//           Text(variant, style: Theme.of(context).textTheme.bodySmall),
-//         Text(
-//           "${detail.quantity} x ${detail.price.toVnd()}",
-//           style: Theme.of(context).textTheme.bodySmall,
-//         ),
-//       ],
-//     );
-//   }
+  const _MetaTag({
+    required this.label,
+    required this.foregroundColor,
+    required this.backgroundColor,
+  });
 
-//   String _variantText(OrderDetailOut item) {
-//     final parts = <String>[];
-//     final color = item.colorName?.trim() ?? "";
-//     final size = item.sizeName?.trim() ?? "";
-//     if (color.isNotEmpty) parts.add("Màu: $color");
-//     if (size.isNotEmpty) parts.add("Kích thước: $size");
-//     return parts.join(" | ");
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: foregroundColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}

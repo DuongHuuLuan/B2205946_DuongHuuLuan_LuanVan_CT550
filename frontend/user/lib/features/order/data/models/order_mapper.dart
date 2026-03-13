@@ -7,6 +7,12 @@ class OrderMapper {
   static OrderOut fromJson(Map<String, dynamic> json) {
     final id = _toInt(json["id"]);
     final status = json["status"]?.toString() ?? "";
+    final paymentStatus = json["payment_status"]?.toString() ?? "unpaid";
+    final refundSupportStatus =
+        json["refund_support_status"]?.toString() ?? "none";
+    final rejectionReason = _toNullableString(
+      json["rejection_reason"] ?? json["rejectionReason"],
+    );
     final createdAt = _toDate(json["created_at"] ?? json["createdAt"]);
     final discountCode = _pickDiscountCode(json);
     final deliveryInfo = _parseDeliveryInfo(json["delivery_info"]);
@@ -23,6 +29,9 @@ class OrderMapper {
     return OrderOut(
       id: id,
       status: status,
+      paymentStatus: paymentStatus,
+      refundSupportStatus: refundSupportStatus,
+      rejectionReason: rejectionReason,
       createdAt: createdAt,
       subtotal: subtotal,
       shippingFee: shippingFee,

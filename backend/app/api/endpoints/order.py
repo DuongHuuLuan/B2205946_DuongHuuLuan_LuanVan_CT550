@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.orm import Session
+from io import BytesIO
 from typing import List, Optional
+
+from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models import *
 from app.schemas import *
-from app.schemas.order import OrderStatusUpdate
+from app.schemas.order import OrderRejectIn, OrderStatusUpdate
 from app.services.order_service import OrderService
+from app.services.production_export_service import ProductionExportService
 from app.api.deps import require_user, require_admin
 
 
@@ -49,8 +53,39 @@ def get_admin_order_detail(
     """API lấy đơn hàng cụ thể theo ID"""
     return OrderService.get_admin_order_by_id(db=db, order_id=order_id)
 
+@router.get("/admin/{order_id}/production", response_model=OrderProductionOut)
+def get_order_production(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return ProductionExportService.get_order_production(db=db, order_id=order_id)
+
+
+@router.get("/admin/{order_id}/production/export")
+def export_order_production(
+    order_id: int,
+    format: str = Query(default="pdf", pattern="^(pdf|svg)$"),
+    dpi: int = Query(default=300, ge=72, le=600),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    file_bytes, media_type, filename = ProductionExportService.export_order(
+        db=db,
+        order_id=order_id,
+        export_format=format,
+        dpi=dpi,
+    )
+    return StreamingResponse(
+        BytesIO(file_bytes),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
 @router.get("/history", response_model=List[OrderOut])
-def get_orders(
+def get_order_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
@@ -58,7 +93,7 @@ def get_orders(
     orders = OrderService.get_orders(db=db, user_id=current_user.id)
     return orders
 @router.get("/history2", response_model=List[OrderOut])
-def get_orders(
+def get_order_history_legacy(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user)
 ):
@@ -102,6 +137,34 @@ def update_status(
     """
     return OrderService.update_status(
         db=db, order_id=order_id, status=status_data.status
+    )
+
+
+@router.post("/{order_id}/approve", response_model=OrderOut)
+def approve_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return OrderService.approve_order(
+        db=db,
+        order_id=order_id,
+        admin_id=current_admin.id,
+    )
+
+
+@router.post("/{order_id}/reject", response_model=OrderOut)
+def reject_order(
+    order_id: int,
+    payload: OrderRejectIn,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return OrderService.reject_order(
+        db=db,
+        order_id=order_id,
+        admin_id=current_admin.id,
+        reason=payload.reason,
     )
 
 @router.post("/{order_id}/confirm-delivery", response_model=OrderOut)

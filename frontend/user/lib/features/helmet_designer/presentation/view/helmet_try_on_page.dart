@@ -94,7 +94,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       setState(() {
         _isInitializingCamera = false;
         _cameraError =
-            "Che do thu non bang camera hien chi ho tro Android va iOS.";
+            "Chế độ thử nón bằng camera hiện chỉ hỗ trợ cho Android và iOS.";
       });
       return;
     }
@@ -123,7 +123,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       if (cameras.isEmpty) {
         throw CameraException(
           "NoCamera",
-          "Khong tim thay camera tren thiet bi nay.",
+          "Không tìm thấy camera trên thiết bị này.",
         );
       }
 
@@ -163,7 +163,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _cameraError = "Khong the khoi dong camera: $e";
+        _cameraError = "Không thể khởi động camera: $e";
       });
     } finally {
       if (!mounted) return;
@@ -426,7 +426,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text("Preview da chup"),
+            title: const Text("Preview đã chụp"),
             contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             content: ClipRRect(
               borderRadius: BorderRadius.circular(18),
@@ -438,11 +438,11 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                   Navigator.of(dialogContext).pop();
                   await _shareCapturedMedia(media);
                 },
-                child: const Text("Chia se"),
+                child: const Text("Chia sẻ"),
               ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text("Dong"),
+                child: const Text("Đóng"),
               ),
             ],
           );
@@ -453,7 +453,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Da luu anh preview vao bo nho ung dung: ${media.fileName}",
+            "Đã lưu ảnh preview vào bộ nhớ ứng dụng: ${media.fileName}",
           ),
         ),
       );
@@ -461,7 +461,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Khong the chup preview: $e")));
+      ).showSnackBar(SnackBar(content: Text("Không thể chụp preview: $e")));
     } finally {
       if (!mounted) return;
       setState(() {
@@ -507,7 +507,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Khong the bat dau quay video: $e")),
+        SnackBar(content: Text("Không thể bắt đầu quay video: $e")),
       );
     }
   }
@@ -545,7 +545,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Da luu video vao bo nho ung dung: ${media.fileName}"),
+          content: Text("Đã lưu video vào bộ nhớ ứng dụng: ${media.fileName}"),
         ),
       );
     } catch (e) {
@@ -557,7 +557,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Khong the dung quay video: $e")));
+      ).showSnackBar(SnackBar(content: Text("Không thể dừng quay video: $e")));
     }
   }
 
@@ -580,7 +580,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Khong the cap nhat trang thai quay video: $e")),
+        SnackBar(content: Text("Không thể cập nhật trạng thái quay video: $e")),
       );
     }
   }
@@ -663,8 +663,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
               ? "Helmet Try-On Photo"
               : "Helmet Try-On Video",
           text: media.includesOverlay
-              ? "Anh preview thu non tu ung dung Royal Store."
-              : "Video camera tu man hinh thu non. Ban v1 chua bake overlay non vao file video.",
+              ? "Ảnh preview thử nón từ ứng dụng Royal Store."
+              : "Video camera từ màn hình thử nón. Bản v1 chưa bake overlay nón vào file video.",
           files: [media.file],
           sharePositionOrigin: box == null
               ? null
@@ -675,7 +675,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Khong the chia se media: $e")));
+      ).showSnackBar(SnackBar(content: Text("Không thể chia sẻ media: $e")));
     }
   }
 
@@ -689,16 +689,16 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
   String _cameraMessageFromException(CameraException exception) {
     switch (exception.code) {
       case "CameraAccessDenied":
-        return "Ban da tu choi quyen camera. Hay cap quyen trong cai dat.";
+        return "Bạn đã từ chối quyền camera. Hãy truy cập quyền trong cài đặt.";
       case "CameraAccessDeniedWithoutPrompt":
-        return "Camera dang bi khoa va khong the hien hop thoai xin quyen.";
+        return "Camera đang bị khóa và Không thể hiện hộp thoại xin quyền.";
       case "CameraAccessRestricted":
-        return "Camera dang bi gioi han tren thiet bi nay.";
+        return "Camera đang bị giới hạn trên thiết bị này.";
       case "AudioAccessDenied":
-        return "Khong co quyen microphone de quay video.";
+        return "Không có quyền microphone để quay video.";
       default:
         return exception.description ??
-            "Khong the khoi dong camera (${exception.code}).";
+            "Không thể khởi động camera (${exception.code}).";
     }
   }
 
@@ -714,8 +714,8 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
     final controller = _cameraController;
     final lastMedia = _lastCapturedMedia;
     final trackingLabel = face == null
-        ? "Chua thay khuon mat"
-        : "Dang theo doi";
+        ? "Chưa thấy khuôn mặt"
+        : "Đang theo dõi";
     final roll = face?.headEulerAngleZ?.toStringAsFixed(1) ?? "--";
     final yaw = face?.headEulerAngleY?.toStringAsFixed(1) ?? "--";
 
@@ -724,7 +724,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
       appBar: AppBar(
         backgroundColor: colorScheme.primary,
         title: Text(
-          "Helmet Try-On",
+          "Thử nón bảo hiểm",
           style: textTheme.titleLarge?.copyWith(
             color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
@@ -761,7 +761,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "2D face tracking preview",
+                        "Thử nón 2D",
                         style: textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
@@ -781,7 +781,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                       ? () => context.go("/helmet-designer")
                       : null,
                   icon: const Icon(Icons.edit_outlined),
-                  label: const Text("Chinh sua"),
+                  label: const Text("Chỉnh sửa"),
                 ),
               ],
             ),
@@ -791,7 +791,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
             const _EmptyTryOnState()
           else ...[
             Text(
-              "Preview thu non",
+              "Preview thử nón",
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -831,7 +831,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                         )
                       : const Icon(Icons.camera_alt_outlined),
                   label: Text(
-                    _isCapturingPreview ? "Dang chup..." : "Chup anh",
+                    _isCapturingPreview ? "Đang chụp..." : "Chụp ảnh",
                   ),
                 ),
                 FilledButton.tonalIcon(
@@ -845,7 +845,7 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                   ),
                   label: Text(
                     _isRecordingVideo
-                        ? "Dung ${_formatDuration(_recordingDuration)}"
+                        ? "Dừng ${_formatDuration(_recordingDuration)}"
                         : "Quay video",
                   ),
                 ),
@@ -855,20 +855,20 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
                     icon: Icon(
                       _isRecordingPaused ? Icons.play_arrow : Icons.pause,
                     ),
-                    label: Text(_isRecordingPaused ? "Tiep tuc" : "Tam dung"),
+                    label: Text(_isRecordingPaused ? "Tiếp tục" : "Tạm dừng"),
                   ),
                 OutlinedButton.icon(
                   onPressed: _isInitializingCamera || _isRecordingVideo
                       ? null
                       : _initializeTryOn,
                   icon: const Icon(Icons.refresh),
-                  label: const Text("Lam moi camera"),
+                  label: const Text("làm mới camera"),
                 ),
                 if (lastMedia != null)
                   OutlinedButton.icon(
                     onPressed: () => _shareCapturedMedia(lastMedia),
                     icon: const Icon(Icons.share_outlined),
-                    label: const Text("Chia se media"),
+                    label: const Text("Chia sẻ media"),
                   ),
               ],
             ),
@@ -882,37 +882,37 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
             ],
             const SizedBox(height: 16),
             _InfoCard(
-              title: "Trang thai tracking",
+              title: "Trạng thái tracking",
               lines: [
-                "Camera: ${controller?.description.lensDirection.name ?? "chua khoi dong"}",
+                "Camera: ${controller?.description.lensDirection.name ?? "chưa khởi động"}",
                 "Tracking: $trackingLabel",
                 "Roll Z: $roll deg",
                 "Yaw Y: $yaw deg",
                 if (_isRecordingVideo)
-                  "Dang quay: ${_formatDuration(_recordingDuration)}${_isRecordingPaused ? " (tam dung)" : ""}",
+                  "Đang quay: ${_formatDuration(_recordingDuration)}${_isRecordingPaused ? " (tạm dừng)" : ""}",
               ],
             ),
             const SizedBox(height: 16),
             _InfoCard(
-              title: "Thiet ke hien tai",
+              title: "Thiết kế hiện tại",
               lines: [
-                "Design ID: ${design.id > 0 ? design.id : "chua luu"}",
-                "Mau non: ${design.helmetName}",
-                "So sticker: ${vm.stickerLayers.length}",
-                "Trang thai chia se: ${design.isShared ? "da chia se" : "chua chia se"}",
+                "Design ID: ${design.id > 0 ? design.id : "chưa lưu"}",
+                "Mẫu nón: ${design.helmetName}",
+                "Số sticker: ${vm.stickerLayers.length}",
+                "Trạng thái chia sẻ: ${design.isShared ? "đã chia sẻ" : "chưa chia sẻ"}",
               ],
             ),
             const SizedBox(height: 16),
-            const _InfoCard(
-              title: "Gioi han ban v1",
-              lines: [
-                "Overlay hien dang la 2D tracking tren bounding box khuon mat.",
-                "Anh chup preview co kem overlay non va sticker.",
-                "Video dang luu tu camera goc, chua bake overlay non vao file.",
-                "Chua co ARKit/ARCore 3D.",
-                "Do khop se phu thuoc vao anh non goc va goc quay khuon mat.",
-              ],
-            ),
+            // const _InfoCard(
+            //   title: "Giới hạn bản v1",
+            //   lines: [
+            //     "Overlay hiện đang là 2D tracking trên bounding box khuôn mặt.",
+            //     "Ảnh chụp preview có kèm overlay nón và sticker.",
+            //     "Video đang lưu từ camera gốc, chưa bake overlay nón vào file.",
+            //     "Chưa có ARKit/ARCore 3D.",
+            //     "Độ khớp sẽ phụ thuộc vào ảnh nón gốc và góc quay khuôn mặt.",
+            //   ],
+            // ),
           ],
         ],
       ),
@@ -921,15 +921,15 @@ class _HelmetTryOnPageState extends State<HelmetTryOnPage>
 
   String _statusDescription(bool isTracking) {
     if (_isInitializingCamera) {
-      return "Dang khoi dong camera va model nhan dien khuon mat.";
+      return "Đang khởi động camera và mô hình nhận diện khuôn mặt.";
     }
     if (_isRecordingVideo) {
-      return "Dang quay video camera. Overlay non van hien trong live preview, nhung file video ban v1 chua nhung overlay.";
+      return "Đang quay video từ camera. Lớp phủ nón vẫn hiển thị khi xem trực tiếp, nhưng tệp video phiên bản v1 chưa nhúng lớp phủ.";
     }
     if (isTracking) {
-      return "Da nhan dien khuon mat. Non ao dang duoc dat len dau theo bounding box hien tai.";
+      return "Đã nhận diện khuôn mặt. Nón ảo đang được đặt lên đầu.";
     }
-    return "Huong mat vao camera truoc, giu du anh sang de bat dau thu non.";
+    return "Hãy hướng mặt vào camera trước, giữ đủ ánh sáng để bắt đầu thử nón.";
   }
 }
 
@@ -1129,10 +1129,13 @@ class _HelmetFaceOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final helmetWidth = faceRect.width * 1.9;
-    final helmetHeight = helmetWidth * 0.96;
+    // final helmetWidth = faceRect.width * 1.9;
+    final helmetWidth = faceRect.width * 1.7;
+    // final helmetHeight = helmetWidth * 0.96;
+    final helmetHeight = helmetWidth * 0.8;
     final left = faceRect.center.dx - helmetWidth / 2;
-    final top = faceRect.top - helmetHeight * 0.60;
+    // final top = faceRect.top - helmetHeight * 0.60;
+    final top = faceRect.top - helmetHeight * 0.40;
     final angle = rollAngleDeg * math.pi / 180;
 
     return Positioned(
@@ -1193,9 +1196,9 @@ class _PreviewStatusBar extends StatelessWidget {
               errorMessage ??
                   (hasCamera
                       ? (isTracking
-                            ? "Da nhan dien khuon mat va ap non ao."
-                            : "Dang tim khuon mat trong khung hinh.")
-                      : "Camera chua san sang."),
+                            ? "Đã nhận diện khuôn mặt."
+                            : "Đang tìm khuôn mặt trong khung hình.")
+                      : "Camera chưa sẳn sàng."),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.white,
                 height: 1.3,
@@ -1243,8 +1246,8 @@ class _CameraPlaceholder extends StatelessWidget {
             Text(
               errorMessage ??
                   (isInitializing
-                      ? "Dang khoi dong camera..."
-                      : "Camera chua san sang."),
+                      ? "Đang khởi động camera..."
+                      : "Camera chưa sẳn sàng."),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: Colors.white,
@@ -1289,7 +1292,7 @@ class _LatestMediaCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Media vua luu",
+            "Media vừa lưu",
             style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -1307,18 +1310,18 @@ class _LatestMediaCard extends StatelessWidget {
           if (media.type == _TryOnCaptureType.image &&
               imagePreviewBytes != null)
             const SizedBox(height: 12),
-          Text("Ten file: ${media.fileName}"),
+          Text("Tên file: ${media.fileName}"),
           const SizedBox(height: 6),
           Text(
-            "Loai: ${media.type == _TryOnCaptureType.image ? "anh" : "video"}",
+            "Loại: ${media.type == _TryOnCaptureType.image ? "ảnh" : "video"}",
           ),
           const SizedBox(height: 6),
-          Text("Overlay trong file: ${media.includesOverlay ? "co" : "khong"}"),
+          Text("Overlay trong file: ${media.includesOverlay ? "có" : "không"}"),
           const SizedBox(height: 6),
-          Text("Luu luc: ${media.createdAt.toLocal()}"),
+          Text("Lưu lúc: ${media.createdAt.toLocal()}"),
           const SizedBox(height: 6),
           Text(
-            "Duong dan: $shortPath",
+            "Đường dẫn: $shortPath",
             style: textTheme.bodySmall?.copyWith(height: 1.35),
           ),
           const SizedBox(height: 12),
@@ -1327,13 +1330,13 @@ class _LatestMediaCard extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onShare,
                 icon: const Icon(Icons.share_outlined),
-                label: const Text("Chia se"),
+                label: const Text("Chia sẻ"),
               ),
               const SizedBox(width: 10),
               if (media.type == _TryOnCaptureType.video)
                 Expanded(
                   child: Text(
-                    "Video hien dang la file camera goc.",
+                    "Video hiện đang là file camera gốc.",
                     style: textTheme.bodySmall?.copyWith(height: 1.35),
                   ),
                 ),
@@ -1361,20 +1364,20 @@ class _EmptyTryOnState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Chua co thiet ke de thu",
+            "Chưa có thiết kế để thử",
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
-            "Hay vao man hinh Helmet Designer, chon mau non va them sticker truoc khi sang che do thu non.",
+            "Hãy vào màn hình Thiết kế nón, chọn mẫu nón và thêm sticker trước khi sang chế độ thử nón.",
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => context.go("/helmet-designer"),
             icon: const Icon(Icons.brush_outlined),
-            label: const Text("Mo Helmet Designer"),
+            label: const Text("Mở thiết kế nón"),
           ),
         ],
       ),

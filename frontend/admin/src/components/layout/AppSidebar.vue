@@ -81,6 +81,11 @@
         <span v-if="!collapsed">Đơn hàng</span>
       </RouterLink>
 
+      <RouterLink class="nav-link" :class="{ active: route.name?.toString().startsWith('stickers.') }" to="/stickers">
+        <i class="fa-regular fa-note-sticky me-2"></i>
+        <span v-if="!collapsed">Sticker hệ thống</span>
+      </RouterLink>
+
       <RouterLink class="nav-link nav-link-chat" :class="{
         active: route.name?.toString().startsWith('chat'),
         'has-chat-dot': collapsed && chatUnreadCount > 0,

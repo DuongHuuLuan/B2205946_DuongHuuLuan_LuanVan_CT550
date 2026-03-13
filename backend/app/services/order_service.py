@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models import *
 from app.models.discount import DiscountStatus
-from app.models.order import OrderStatus
+from app.models.order import OrderStatus, PaymentStatus, RefundSupportStatus
 from app.schemas import *
+from app.services.production_snapshot_service import ProductionSnapshotService
 from app.services.warehouse_service import WarehouseService
 
 
@@ -33,7 +34,43 @@ class OrderService:
             joinedload(Order.payment_method),
             joinedload(Order.applied_discounts),
             joinedload(Order.ghn_shipments),
+            joinedload(Order.vnpay_transactions),
         )
+
+    @staticmethod
+    def _sync_payment_statuses(db: Session, orders: List[Order] | None):
+        if not orders:
+            return orders
+
+        has_changes = False
+        for order in orders:
+            transactions = getattr(order, "vnpay_transactions", None) or []
+            has_success = any((txn.status or "").strip().lower() == "success" for txn in transactions)
+            next_status = (
+                PaymentStatus.PAID
+                if has_success or OrderService._is_completed_cod_order(order)
+                else PaymentStatus.UNPAID
+            )
+
+            if order.payment_status != next_status:
+                order.payment_status = next_status
+                has_changes = True
+
+        if has_changes:
+            db.commit()
+            for order in orders:
+                db.refresh(order)
+
+        return orders
+
+    @staticmethod
+    def _is_completed_cod_order(order: Order) -> bool:
+        if getattr(order, "status", None) != OrderStatus.COMPLETED:
+            return False
+
+        payment_method = getattr(order, "payment_method", None)
+        payment_method_name = str(getattr(payment_method, "name", "") or "").strip().lower()
+        return "cod" in payment_method_name
 
     @staticmethod
     def _get_cart_for_checkout(db: Session, user_id: int) -> Cart | None:
@@ -49,7 +86,10 @@ class OrderService:
                 joinedload(Cart.cart_details)
                 .joinedload(CartDetail.product_detail)
                 .joinedload(ProductDetail.size),
-                joinedload(Cart.cart_details).joinedload(CartDetail.design),
+                joinedload(Cart.cart_details)
+                .joinedload(CartDetail.design)
+                .joinedload(Design.layers)
+                .joinedload(DesignLayer.sticker),
             )
             .filter(Cart.user_id == user_id)
             .first()
@@ -235,6 +275,9 @@ class OrderService:
                 {
                     "product_detail_id": product_detail.id,
                     "design_id": cart_detail.design_id,
+                    "design_snapshot_json": ProductionSnapshotService.build_design_snapshot(
+                        getattr(cart_detail, "design", None)
+                    ),
                     "quantity": requested_quantity,
                     "price": discounted_unit_price,
                 }
@@ -245,6 +288,8 @@ class OrderService:
             delivery_info_id=order_in.delivery_info_id,
             payment_method_id=order_in.payment_method_id,
             status=OrderStatus.PENDING,
+            payment_status=PaymentStatus.UNPAID,
+            refund_support_status=RefundSupportStatus.NONE,
         )
         db.add(new_order)
         db.flush()
@@ -256,6 +301,7 @@ class OrderService:
                 order_id=new_order.id,
                 product_detail_id=order_detail["product_detail_id"],
                 design_id=order_detail["design_id"],
+                design_snapshot_json=order_detail["design_snapshot_json"],
                 quantity=order_detail["quantity"],
                 price=order_detail["price"],
             )
@@ -273,13 +319,15 @@ class OrderService:
 
     @staticmethod
     def get_orders(db: Session, user_id: int) -> List[Order]:
-        return (
+        orders = (
             OrderService._base_order_query(db)
             .filter(Order.user_id == user_id)
             .order_by(Order.created_at.desc())
             .all()
         )
+        return OrderService._sync_payment_statuses(db, orders)
 
+    @staticmethod
     def get_orders2(db: Session, user_id: int) -> List[Order]:
         return db.query(Order).filter(Order.user_id == user_id).all()
 
@@ -293,6 +341,7 @@ class OrderService:
 
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
+        OrderService._sync_payment_statuses(db, [order])
         return order
 
     @staticmethod
@@ -362,12 +411,15 @@ class OrderService:
                 joinedload(Order.user),
                 joinedload(Order.applied_discounts),
                 joinedload(Order.ghn_shipments),
+                joinedload(Order.vnpay_transactions),
             )
             .order_by(Order.created_at.desc())
             .offset(skip)
             .limit(per_page)
             .all()
         )
+
+        OrderService._sync_payment_statuses(db, items)
 
         last_page = math.ceil(total_count / per_page)
         return {
@@ -401,6 +453,7 @@ class OrderService:
                 joinedload(Order.user),
                 joinedload(Order.applied_discounts),
                 joinedload(Order.ghn_shipments),
+                joinedload(Order.vnpay_transactions),
             )
             .filter(Order.id == order_id)
             .first()
@@ -408,6 +461,7 @@ class OrderService:
 
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
+        OrderService._sync_payment_statuses(db, [order])
         return order
 
     @staticmethod
@@ -416,7 +470,73 @@ class OrderService:
         if not order:
             raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
 
-        order.status = status
+        if order.status == status:
+            db.refresh(order)
+            return order
+
+        if order.status == OrderStatus.PENDING and status == OrderStatus.SHIPPING:
+            raise HTTPException(
+                status_code=400,
+                detail="Hãy dùng endpoint approve để duyệt đơn hàng chờ xử lý",
+            )
+
+        if order.status == OrderStatus.PENDING and status == OrderStatus.CANCELLED:
+            raise HTTPException(
+                status_code=400,
+                detail="Hãy dùng endpoint reject kèm lý do để từ chối đơn hàng cần xử lý",
+            )
+
+        if order.status == OrderStatus.SHIPPING and status == OrderStatus.COMPLETED:
+            order.status = status
+            if OrderService._is_completed_cod_order(order):
+                order.payment_status = PaymentStatus.PAID
+            db.commit()
+            db.refresh(order)
+            return order
+
+    @staticmethod
+    def approve_order(db: Session, order_id: int, admin_id: int):
+        order = db.query(Order).filter(Order.id == order_id).first()
+        if not order:
+            raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
+
+        order.status = OrderStatus.SHIPPING
+        order.rejection_reason = None
+        order.refund_support_status = RefundSupportStatus.NONE
+        order.reviewed_by_admin_id = admin_id
+        order.reviewed_at = datetime.utcnow()
+        db.commit()
+        db.refresh(order)
+        return order
+
+    @staticmethod
+    def reject_order(db: Session, order_id: int, admin_id: int, reason: str):
+        normalized_reason = (reason or "").strip()
+        if not normalized_reason:
+            raise HTTPException(status_code=400, detail="Vui lòng nhập lý do từ chối đơn")
+
+        order = (
+            db.query(Order)
+            .options(joinedload(Order.order_details).joinedload(OrderDetail.product_detail))
+            .filter(Order.id == order_id)
+            .first()
+        )
+        if not order:
+            raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
+
+        for order_detail in order.order_details:
+            if order_detail.product_detail:
+                WarehouseService.increase_stock(db, order_detail.product_detail, order_detail.quantity)
+
+        order.status = OrderStatus.CANCELLED
+        order.rejection_reason = normalized_reason
+        order.refund_support_status = (
+            RefundSupportStatus.CONTACT_REQUIRED
+            if order.payment_status == PaymentStatus.PAID
+            else RefundSupportStatus.NONE
+        )
+        order.reviewed_by_admin_id = admin_id
+        order.reviewed_at = datetime.utcnow()
         db.commit()
         db.refresh(order)
         return order
@@ -433,6 +553,8 @@ class OrderService:
             WarehouseService.increase_stock(db, order_detail.product_detail, order_detail.quantity)
 
         order.status = OrderStatus.CANCELLED
+        if order.payment_status == PaymentStatus.PAID:
+            order.refund_support_status = RefundSupportStatus.CONTACT_REQUIRED
         db.commit()
         return {"message": "Hủy đơn hàng thành công"}
 
@@ -449,6 +571,8 @@ class OrderService:
                 detail="Chỉ có thể xác nhận khi đơn hàng đang trong quá trình giao hàng",
             )
         order.status = OrderStatus.COMPLETED
+        if OrderService._is_completed_cod_order(order):
+            order.payment_status = PaymentStatus.PAID
 
         db.commit()
         db.refresh(order)

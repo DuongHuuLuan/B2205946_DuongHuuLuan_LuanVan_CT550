@@ -58,6 +58,9 @@ class OrderDetailOut {
 class OrderOut {
   final int id;
   final String status;
+  final String paymentStatus;
+  final String refundSupportStatus;
+  final String? rejectionReason;
   final DateTime? createdAt;
   final double subtotal;
   final double shippingFee;
@@ -70,6 +73,9 @@ class OrderOut {
   const OrderOut({
     required this.id,
     required this.status,
+    this.paymentStatus = "unpaid",
+    this.refundSupportStatus = "none",
+    this.rejectionReason,
     this.createdAt,
     this.subtotal = 0,
     this.shippingFee = 0,
@@ -79,4 +85,16 @@ class OrderOut {
     this.deliveryInfo,
     this.paymentMethod,
   });
+
+  String get normalizedStatus => status.trim().toLowerCase();
+  String get normalizedPaymentStatus => paymentStatus.trim().toLowerCase();
+  String get normalizedRefundSupportStatus =>
+      refundSupportStatus.trim().toLowerCase();
+
+  bool get isPaid => normalizedPaymentStatus == "paid";
+  bool get isCancelled => normalizedStatus == "cancelled";
+  bool get isPendingReview => normalizedStatus == "pending" && isPaid;
+  bool get needsRefundChat =>
+      normalizedRefundSupportStatus == "contact_required";
+  bool get hasRejectionReason => (rejectionReason ?? "").trim().isNotEmpty;
 }

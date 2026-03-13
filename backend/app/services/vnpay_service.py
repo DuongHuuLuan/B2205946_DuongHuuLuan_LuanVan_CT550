@@ -2,18 +2,53 @@ import hashlib
 import hmac
 from datetime import datetime
 from decimal import Decimal
-from urllib.parse import urlencode
 from typing import Optional
+from urllib.parse import urlencode
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import settings
-from app.models.order import Order, OrderStatus
+from app.models.order import Order, OrderStatus, PaymentStatus
 from app.models.vnpay import VnPayTransaction
 
 
 class VnpayService:
+    @staticmethod
+    def has_successful_transaction(db: Session, order_id: int) -> bool:
+        return (
+            db.query(VnPayTransaction.id)
+            .filter(
+                VnPayTransaction.order_id == order_id,
+                VnPayTransaction.status == "success",
+            )
+            .first()
+            is not None
+        )
+
+    @staticmethod
+    def sync_order_payment_status(
+        db: Session,
+        order: Order,
+        *,
+        commit: bool = False,
+    ) -> PaymentStatus:
+        target_status = (
+            PaymentStatus.PAID
+            if VnpayService.has_successful_transaction(db, order.id)
+            else PaymentStatus.UNPAID
+        )
+
+        if order.payment_status != target_status:
+            order.payment_status = target_status
+            if commit:
+                db.commit()
+                db.refresh(order)
+            else:
+                db.flush()
+
+        return target_status
+
     @staticmethod
     def _hash_data(data: str) -> str:
         secret = settings.VNPAY_HASH_SECRET or ""
@@ -47,6 +82,14 @@ class VnpayService:
         )
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
+
+        VnpayService.sync_order_payment_status(db, order, commit=True)
+
+        if order.status != OrderStatus.PENDING:
+            raise HTTPException(status_code=400, detail="Chỉ có thể thanh toán cho đơn hàng chờ duyệt")
+
+        if order.payment_status == PaymentStatus.PAID:
+            raise HTTPException(status_code=400, detail="Đơn hàng này đã được thanh toán")
 
         if not settings.VNPAY_TMN_CODE or not settings.VNPAY_HASH_SECRET:
             raise HTTPException(status_code=400, detail="Cấu hình VNPAY bị thiếu")
@@ -161,22 +204,46 @@ class VnpayService:
             if amount != expected_amount:
                 return {"RspCode": "04", "Message": "Số tiền không hợp lệ"}
 
-            if order.status != OrderStatus.PENDING:
-                return {"RspCode": "02", "Message": "Đơn hàng đã được xác nhận trước đó"}
-
-            VnpayService.record_transaction(db, params)
-
             response_code = params.get("vnp_ResponseCode")
             transaction_status = params.get("vnp_TransactionStatus")
-            
-            if response_code == "00" and transaction_status == "00":
-                order.status = OrderStatus.SHIPPING
-                db.commit()
-                return {"RspCode": "00", "Message": "Xác nhận thành công"}
-            else:
-                order.status = OrderStatus.CANCELLED # Hoặc trạng thái lỗi bạn quy định
-                db.commit()
-                return {"RspCode": "00", "Message": "Ghi nhận trạng thái thanh toán thất bại"}
+            is_success = response_code == "00" and transaction_status == "00"
 
-        except Exception as e:
-            return {"RspCode": "99", "Message": f"Lỗi hệ thống: {str(e)}"}
+            if is_success and order.payment_status == PaymentStatus.PAID:
+                return {
+                    "RspCode": "00",
+                    "Message": "Đơn hàng đã ghi nhận thanh toán trước đó",
+                }
+
+            VnpayService.record_transaction(db, params)
+            current_payment_status = VnpayService.sync_order_payment_status(
+                db,
+                order,
+                commit=True,
+            )
+
+            if is_success:
+                return {
+                    "RspCode": "00",
+                    "Message": (
+                        "Đã ghi nhận thanh toán, đơn tiếp tục chờ duyệt"
+                        if order.status == OrderStatus.PENDING
+                        else "Đã ghi nhận thanh toán cho đơn hàng"
+                    ),
+                }
+
+            if order.status != OrderStatus.PENDING:
+                return {
+                    "RspCode": "02",
+                    "Message": "Đơn hàng không còn ở trạng thái chờ duyệt",
+                }
+
+            return {
+                "RspCode": "00",
+                "Message": (
+                    "Ghi nhận trạng thái thanh toán thất bại"
+                    if current_payment_status == PaymentStatus.UNPAID
+                    else "Đơn hàng đã có giao dịch thanh toán thành công trước đó"
+                ),
+            }
+        except Exception as exc:
+            return {"RspCode": "99", "Message": f"Lỗi hệ thống: {str(exc)}"}

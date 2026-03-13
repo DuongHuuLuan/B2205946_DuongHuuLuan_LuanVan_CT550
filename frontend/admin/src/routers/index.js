@@ -49,6 +49,13 @@ import ReceiptDetailView from "../views/receipts/ReceiptDetailView.vue";
 // Order pages
 import OrderListView from "../views/orders/OrderListView.vue";
 import OrderDetailView from "../views/orders/OrderDetailView.vue";
+import OrderProductionView from "../views/orders/OrderProductionView.vue";
+
+// Sticker pages
+import SystemStickerListView from "../views/stickers/SystemStickerListView.vue";
+import SystemStickerCreateView from "../views/stickers/SystemStickerCreateView.vue";
+import SystemStickerEditView from "../views/stickers/SystemStickerEditView.vue";
+import SystemStickerDetailView from "../views/stickers/SystemStickerDetailView.vue";
 
 // Payment pages
 import PaymentListView from "../views/payments/PaymentListView.vue";
@@ -386,6 +393,39 @@ const routes = [
         name: "orders.detail",
         component: OrderDetailView,
         meta: { title: "Chi tiết đơn hàng" },
+        props: true,
+      },
+      {
+        path: "/orders/:id/production",
+        name: "orders.production",
+        component: OrderProductionView,
+        meta: { title: "Chế độ xem sản xuất" },
+        props: true,
+      },
+      {
+        path: "/stickers",
+        name: "stickers.list",
+        component: SystemStickerListView,
+        meta: { title: "Sticker hệ thống" },
+      },
+      {
+        path: "/stickers/create",
+        name: "stickers.create",
+        component: SystemStickerCreateView,
+        meta: { title: "Thêm sticker hệ thống" },
+      },
+      {
+        path: "/stickers/:id",
+        name: "stickers.detail",
+        component: SystemStickerDetailView,
+        meta: { title: "Chi tiết sticker hệ thống" },
+        props: true,
+      },
+      {
+        path: "/stickers/:id/edit",
+        name: "stickers.edit",
+        component: SystemStickerEditView,
+        meta: { title: "Chỉnh sửa sticker hệ thống" },
         props: true,
       },
 
