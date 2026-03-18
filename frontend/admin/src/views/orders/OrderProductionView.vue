@@ -71,7 +71,7 @@
                     <div class="item-meta">
                       <div><span class="label">Số lượng:</span> {{ item.quantity }}</div>
                       <div>
-                        <span class="label">Vùng in (Print area):</span>
+                        <span class="label">Vùng in:</span>
                         {{ formatMeasure(item.printable_width_mm) }} x
                         {{ formatMeasure(item.printable_height_mm) }} mm
                       </div>
@@ -154,12 +154,6 @@
                         <div class="spec-card">
                           <div class="spec-label">Số lớp sticker</div>
                           <div class="spec-value">{{ item.layers?.length || 0 }}</div>
-                        </div>
-                        <div class="spec-card">
-                          <div class="spec-label">Đường dẫn ảnh xem trước</div>
-                          <div class="spec-value text-break">
-                            {{ item.preview_image_url || item.base_image_url || "-" }}
-                          </div>
                         </div>
                       </div>
                     </div>

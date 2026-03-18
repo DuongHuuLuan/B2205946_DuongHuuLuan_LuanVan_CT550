@@ -1,26 +1,14 @@
 <template>
   <Teleport to="body">
     <div v-if="toasts.length" class="chat-toast-stack" role="region" aria-label="Thông báo tin nhắn">
-      <article
-        v-for="toast in toasts"
-        :key="toast.id"
-        class="chat-toast"
-        role="button"
-        tabindex="0"
-        @click="openToast(toast)"
-        @keydown.enter.prevent="openToast(toast)"
-        @keydown.space.prevent="openToast(toast)"
-      >
+      <article v-for="toast in toasts" :key="toast.id" class="chat-toast" role="button" tabindex="0"
+        @click="openToast(toast)" @keydown.enter.prevent="openToast(toast)" @keydown.space.prevent="openToast(toast)">
         <div class="chat-toast__accent"></div>
         <div class="chat-toast__content">
           <div class="chat-toast__top">
             <div class="chat-toast__title">{{ toast.title }}</div>
-            <button
-              type="button"
-              class="chat-toast__close"
-              aria-label="Đóng thông báo"
-              @click.stop="dismissChatToast(toast.id)"
-            >
+            <button type="button" class="chat-toast__close" aria-label="Đóng thông báo"
+              @click.stop="dismissChatToast(toast.id)">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -56,7 +44,7 @@ function formatTime(value) {
 function openToast(toast) {
   dismissChatToast(toast.id);
   if (!toast?.userId) return;
-  router.push({ name: "chat", query: { userId: toast.userId } }).catch(() => {});
+  router.push({ name: "chat", query: { userId: toast.userId } }).catch(() => { });
 }
 </script>
 

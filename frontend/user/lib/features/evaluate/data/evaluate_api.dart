@@ -52,23 +52,23 @@ class EvaluateApi {
     List<String> imagePaths = const [],
   }) async {
     try {
-      final files = <MultipartFile>[];
+      final formData = FormData();
+      formData.fields.add(MapEntry("rate", rate.toString()));
+
+      final trimmedContent = content?.trim();
+      if ((trimmedContent ?? "").isNotEmpty) {
+        formData.fields.add(MapEntry("content", trimmedContent!));
+      }
+
       for (final path in imagePaths) {
         final filename = path.split(Platform.pathSeparator).last;
-        files.add(await MultipartFile.fromFile(path, filename: filename));
+        formData.files.add(
+          MapEntry(
+            "images",
+            await MultipartFile.fromFile(path, filename: filename),
+          ),
+        );
       }
-
-      final payload = <String, dynamic>{"rate": rate};
-
-      if ((content ?? "").trim().isNotEmpty) {
-        payload["content"] = content!.trim();
-      }
-
-      if (files.isNotEmpty) {
-        payload["images"] = files;
-      }
-
-      final formData = FormData.fromMap(payload);
 
       return await DioClient.instance.post(
         ApiEndpoints.createEvaluate(orderId),

@@ -41,7 +41,7 @@
                   <th class="ps-3" style="width: 120px">Mã</th>
                   <th style="min-width: 320px">Sticker</th>
                   <th style="min-width: 160px">Danh mục</th>
-                  <th class="text-center" style="width: 120px">Trong suốt</th>
+                  <!-- <th class="text-center" style="width: 120px">Trong suốt</th> -->
                   <th class="text-center" style="width: 120px">Đã dùng</th>
                   <th class="text-center" style="width: 160px">Thao tác</th>
                 </tr>
@@ -70,11 +70,11 @@
                   <td>
                     <span class="badge category-badge">{{ sticker.category || "-" }}</span>
                   </td>
-                  <td class="text-center">
+                  <!-- <td class="text-center">
                     <span class="badge" :class="sticker.has_transparent_background ? 'flag-yes' : 'flag-no'">
                       {{ sticker.has_transparent_background ? "Có" : "Không" }}
                     </span>
-                  </td>
+                  </td> -->
                   <td class="text-center">
                     <span class="badge usage-badge">{{ sticker.usage_count ?? 0 }}</span>
                   </td>

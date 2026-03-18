@@ -16,6 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isObscured = true;
 
   @override
   void dispose() {
@@ -152,9 +153,21 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Icons.lock,
                                 color: colorScheme.primary,
                               ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isObscured = !_isObscured;
+                                  });
+                                },
+                                icon: Icon(
+                                  _isObscured
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                              ),
                               border: const OutlineInputBorder(),
                             ),
-                            obscureText: true,
+                            obscureText: _isObscured,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return "Vui lòng nhập mật khẩu";
@@ -177,9 +190,21 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Icons.lock_reset,
                                 color: colorScheme.primary,
                               ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isObscured = !_isObscured;
+                                  });
+                                },
+                                icon: Icon(
+                                  _isObscured
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                              ),
                               border: const OutlineInputBorder(),
                             ),
-                            obscureText: true,
+                            obscureText: _isObscured,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return "Vui lòng nhập lại mật khẩu";

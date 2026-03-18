@@ -15,6 +15,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isObscured = true;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -120,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 30),
                           TextFormField(
                             controller: _passwordController,
-                            obscureText: true,
+                            obscureText: _isObscured,
                             decoration: InputDecoration(
                               labelText: "Mật khẩu",
                               floatingLabelStyle: TextStyle(
@@ -129,6 +130,19 @@ class _LoginPageState extends State<LoginPage> {
                               prefixIcon: Icon(
                                 Icons.lock,
                                 color: colorScheme.primary,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isObscured = !_isObscured;
+                                  });
+                                },
+                                icon: Icon(
+                                  _isObscured
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: colorScheme.primary,
+                                ),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(35),

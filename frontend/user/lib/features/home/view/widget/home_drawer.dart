@@ -35,7 +35,7 @@ class HomeDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _DrawerItem(
-              title: "Ho so",
+              title: "Hồ sơ",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/profile");
@@ -43,14 +43,14 @@ class HomeDrawer extends StatelessWidget {
               trailing: const Icon(Icons.person_outline, color: Colors.black),
             ),
             _DrawerItem(
-              title: "Ve chung toi",
+              title: "Về chúng tôi",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/about");
               },
             ),
             _DrawerItem(
-              title: "San pham",
+              title: "Sản phẩm",
               onTap: () {
                 Navigator.pop(context);
                 context.go("/products/categories");
@@ -58,19 +58,11 @@ class HomeDrawer extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right, color: Colors.black),
             ),
             _DrawerItem(
-              title: "Helmet Designer",
-              onTap: () {
-                Navigator.pop(context);
-                context.go("/helmet-designer");
-              },
-              trailing: const Icon(Icons.brush_outlined, color: Colors.black),
-            ),
-            _DrawerItem(
-              title: "Tin tuc",
+              title: "Tin tức",
               onTap: () {},
               trailing: const Icon(Icons.chevron_right, color: Colors.black),
             ),
-            _DrawerItem(title: "Lien he", onTap: () {}),
+            _DrawerItem(title: "Liên hệ", onTap: () {}),
           ],
         ),
       ),
@@ -83,11 +75,7 @@ class _DrawerItem extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
 
-  const _DrawerItem({
-    required this.title,
-    required this.onTap,
-    this.trailing,
-  });
+  const _DrawerItem({required this.title, required this.onTap, this.trailing});
 
   @override
   Widget build(BuildContext context) {

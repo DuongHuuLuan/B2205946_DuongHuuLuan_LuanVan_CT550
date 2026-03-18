@@ -93,15 +93,16 @@ def delete_system_sticker(
     return StickerService.delete_system_sticker(db=db, sticker_id=sticker_id)
 
 
-@router.post("/generate", response_model=StickerOut, status_code=status.HTTP_501_NOT_IMPLEMENTED)
+@router.post("/generate", response_model=StickerOut, status_code=status.HTTP_201_CREATED)
 def generate_ai_sticker(
     sticker_in: AiStickerGenerateIn,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user),
 ):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Chuc nang tao sticker AI se duoc trien khai o buoc service AI",
+    return StickerService.generate_ai_sticker(
+        db=db,
+        user_id=current_user.id,
+        sticker_in=sticker_in,
     )
 
 

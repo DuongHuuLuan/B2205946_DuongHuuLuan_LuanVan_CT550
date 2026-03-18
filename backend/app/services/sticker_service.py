@@ -1,18 +1,155 @@
+import io
 import math
 import re
 import uuid
+from datetime import datetime
 from typing import Dict, List, Optional
 
+import cloudinary.uploader
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models import DesignLayer, Sticker
-from app.schemas.sticker import StickerCreate, StickerUpdate
+from app.schemas.sticker import AiStickerGenerateIn, StickerCreate, StickerUpdate
 from app.services.base import BaseService
+from app.services.openai_image_service import OpenAIImageService
 
 
 class StickerService(BaseService):
+    @staticmethod
+    def _normalize_generated_name(name: Optional[str], prompt: str) -> str:
+        normalized_name = (name or "").strip()
+        if normalized_name:
+            return normalized_name[:255]
+
+        compact_prompt = re.sub(r"\s+", " ", (prompt or "")).strip()
+        if not compact_prompt:
+            return f"AI Sticker {uuid.uuid4().hex[:8]}"
+        if len(compact_prompt) > 80:
+            compact_prompt = f"{compact_prompt[:77].rstrip()}..."
+        return compact_prompt
+
+    @staticmethod
+    def _build_ai_prompt(sticker_in: AiStickerGenerateIn) -> str:
+        parts = [
+            "Create one clean sticker illustration with a single centered subject.",
+            "Use a bold outline, simple readable shapes, and strong contrast.",
+            "Do not include any text, watermark, logo, frame, or extra objects.",
+        ]
+
+        if sticker_in.remove_background:
+            parts.append("Use a transparent background.")
+        else:
+            parts.append("Keep the background minimal and unobtrusive.")
+
+        if sticker_in.style and sticker_in.style.strip():
+            parts.append(f"Visual style: {sticker_in.style.strip()}.")
+
+        if sticker_in.dominant_color and sticker_in.dominant_color.strip():
+            parts.append(f"Dominant color palette: {sticker_in.dominant_color.strip()}.")
+
+        parts.append(f"Subject: {sticker_in.prompt.strip()}.")
+        return " ".join(parts)
+
+    @staticmethod
+    def _enforce_ai_generation_limit(db: Session, user_id: int) -> None:
+        if settings.AI_STICKER_MAX_PER_DAY <= 0:
+            return
+
+        day_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        generated_count = (
+            db.query(func.count(Sticker.id))
+            .filter(
+                Sticker.owner_user_id == user_id,
+                Sticker.is_ai_generated.is_(True),
+                Sticker.created_at >= day_start,
+            )
+            .scalar()
+            or 0
+        )
+        if generated_count >= settings.AI_STICKER_MAX_PER_DAY:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Ban da dat gioi han tao sticker AI trong ngay",
+            )
+
+    @staticmethod
+    def _upload_generated_image(image_bytes: bytes, name: str) -> dict:
+        upload_stream = io.BytesIO(image_bytes)
+        upload_stream.name = f"{StickerService._normalize_public_id(name)}.png"
+        try:
+            return cloudinary.uploader.upload(
+                upload_stream,
+                folder=settings.AI_STICKER_CLOUDINARY_FOLDER,
+                resource_type="image",
+                format="png",
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Khong the tai anh sticker len Cloudinary: {exc}",
+            ) from exc
+
+    @staticmethod
+    def generate_ai_sticker(
+        db: Session,
+        user_id: int,
+        sticker_in: AiStickerGenerateIn,
+    ) -> Sticker:
+        prompt = (sticker_in.prompt or "").strip()
+        if not prompt:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Prompt khong duoc de trong",
+            )
+
+        StickerService._enforce_ai_generation_limit(db, user_id)
+
+        sticker_name = StickerService._normalize_generated_name(sticker_in.name, prompt)
+        ai_prompt = StickerService._build_ai_prompt(sticker_in)
+        generated = OpenAIImageService.generate_sticker(
+            prompt=ai_prompt,
+            remove_background=sticker_in.remove_background,
+        )
+        upload_result = StickerService._upload_generated_image(
+            image_bytes=generated.image_bytes,
+            name=sticker_name,
+        )
+        image_url = upload_result.get("secure_url")
+        public_id = upload_result.get("public_id")
+        if not image_url or not public_id:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Cloudinary khong tra ve thong tin anh hop le",
+            )
+
+        sticker = Sticker(
+            owner_user_id=user_id,
+            name=sticker_name,
+            image_url=image_url,
+            public_id=public_id,
+            category="AI Generated",
+            is_ai_generated=True,
+            has_transparent_background=generated.has_transparent_background,
+        )
+        db.add(sticker)
+
+        try:
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            if public_id:
+                cloudinary.uploader.destroy(public_id)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Khong the luu sticker AI vao he thong",
+            ) from exc
+
+        db.refresh(sticker)
+        return sticker
+
     @staticmethod
     def get_catalog(db: Session, user_id: Optional[int] = None) -> List[Sticker]:
         query = db.query(Sticker)

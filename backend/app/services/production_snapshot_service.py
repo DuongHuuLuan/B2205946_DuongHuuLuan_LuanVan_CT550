@@ -150,14 +150,14 @@ class ProductionSnapshotService:
     @staticmethod
     def _position_label(x: float, y: float) -> str:
         if y <= 0.24:
-            return "Phia tren"
+            return "Phía trên"
         if x < 0.33:
-            return "Ben trai"
+            return "Bên trái"
         if x > 0.67:
-            return "Ben phai"
+            return "Bên phải"
         if y >= 0.72:
-            return "Phia sau"
-        return "Mat truoc"
+            return "Phía sau"
+        return "Mặt trước"
 
     @staticmethod
     def build_layer_spec(

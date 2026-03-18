@@ -60,6 +60,7 @@ class StickerAdminPaginationOut(BaseModel):
 
 class AiStickerGenerateIn(BaseModel):
     prompt: str
+    name: Optional[str] = None
     style: Optional[str] = None
     dominant_color: Optional[str] = None
     remove_background: bool = True

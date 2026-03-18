@@ -12,7 +12,7 @@ def upload_image(
     current_admin: User = Depends(require_admin)
 ):
     """
-    Upload ảnh lên Cloudinary (test trên Swagger)
+    Upload ảnh lên Cloudinary 
     """
     result = cloudinary.uploader.upload(
         file.file,

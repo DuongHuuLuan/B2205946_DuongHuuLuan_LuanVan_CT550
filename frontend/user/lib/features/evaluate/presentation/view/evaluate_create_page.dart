@@ -15,6 +15,7 @@ class EvaluateCreatePage extends StatefulWidget {
 }
 
 class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
+  static const _maxImages = 5;
   final _contentController = TextEditingController();
   final _picker = ImagePicker();
   final List<XFile> _images = [];
@@ -90,6 +91,10 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
                     ),
                   ],
                 ),
+                if (_images.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text("Đã chọn ${_images.length}/$_maxImages ảnh"),
+                ],
                 if (_images.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Wrap(
@@ -183,16 +188,27 @@ class _EvaluateCreatePageState extends State<EvaluateCreatePage> {
 
   Future<void> _pickImages() async {
     try {
+      final remainingSlots = _maxImages - _images.length;
+      if (remainingSlots <= 0) {
+        return;
+      }
+
       final selected = await _picker.pickMultiImage(
         imageQuality: 85,
         maxWidth: 1400,
+        limit: remainingSlots,
       );
       if (!mounted || selected.isEmpty) return;
 
+      final existingPaths = _images.map((e) => e.path).toSet();
+      final newImages = selected
+          .where((file) => !existingPaths.contains(file.path))
+          .take(remainingSlots)
+          .toList();
+      if (newImages.isEmpty) return;
+
       setState(() {
-        _images
-          ..clear()
-          ..addAll(selected.take(5));
+        _images.addAll(newImages);
       });
     } catch (_) {
       if (!mounted) return;

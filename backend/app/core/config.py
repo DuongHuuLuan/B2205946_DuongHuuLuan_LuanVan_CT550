@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET")
+    AI_STICKER_CLOUDINARY_FOLDER: str = os.getenv("AI_STICKER_CLOUDINARY_FOLDER", "helmet_shop/stickers")
+
+    # OpenAI image generation
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    OPENAI_IMAGE_MODEL: str = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1.5")
+    OPENAI_IMAGE_SIZE: str = os.getenv("OPENAI_IMAGE_SIZE", "1024x1024")
+    OPENAI_IMAGE_QUALITY: str = os.getenv("OPENAI_IMAGE_QUALITY", "medium")
+    OPENAI_IMAGE_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_IMAGE_TIMEOUT_SECONDS", 45))
+    AI_STICKER_MAX_PER_DAY: int = int(os.getenv("AI_STICKER_MAX_PER_DAY", 0))
 
     # VNPAY
     VNPAY_TMN_CODE: str = os.getenv("VNPAY_TMN_CODE", "")

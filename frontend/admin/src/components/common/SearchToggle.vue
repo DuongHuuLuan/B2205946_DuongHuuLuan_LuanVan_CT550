@@ -91,28 +91,21 @@ function onFocusOut(event) {
   min-width: 220px;
   max-width: 360px;
   overflow: hidden;
-  /* Quan trọng để hiệu ứng mượt hơn */
 }
 
-/* CSS CHO HIỆU ỨNG HIỆN RA TỪ TỪ */
 
-/* 1. Trạng thái khi đang thực hiện animation */
 .expand-enter-active,
 .expand-leave-active {
   transition: all 0.3s ease-out;
 }
 
-/* 2. Trạng thái bắt đầu vào / kết thúc ra (ẩn đi) */
 .expand-enter-from,
 .expand-leave-to {
   opacity: 0;
   transform: translateX(-10px);
-  /* Dịch nhẹ sang trái */
   max-width: 0;
-  /* Thu nhỏ chiều rộng về 0 */
 }
 
-/* 3. Trạng thái khi đã hiện ra hoàn toàn */
 .expand-enter-to,
 .expand-leave-from {
   opacity: 1;

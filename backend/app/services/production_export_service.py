@@ -1,5 +1,6 @@
 import base64
 import html
+import os
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -12,6 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from sqlalchemy.orm import Session, joinedload
 
@@ -24,6 +27,131 @@ class ProductionExportService:
     PAGE_WIDTH_MM = PAGE_WIDTH_PT / mm
     PAGE_HEIGHT_MM = PAGE_HEIGHT_PT / mm
     REPO_ROOT = Path(__file__).resolve().parents[3]
+    PDF_FONT_REGULAR = "Helvetica"
+    PDF_FONT_BOLD = "Helvetica-Bold"
+    PDF_FONT_ITALIC = "Helvetica-Oblique"
+    _PDF_FONTS_READY = False
+
+    @staticmethod
+    def _normalize_enum_text(value: Any) -> str:
+        raw = str(value or "").strip()
+        if not raw:
+            return ""
+        return raw.split(".")[-1].strip().lower()
+
+    @staticmethod
+    def _order_status_label(value: Any) -> str:
+        normalized = ProductionExportService._normalize_enum_text(value)
+        return {
+            "pending": "Đang duyệt",
+            "shipping": "Đang giao",
+            "completed": "Hoàn thành",
+            "cancelled": "Đã hủy",
+        }.get(normalized, str(value or "-"))
+
+    @staticmethod
+    def _payment_status_label(value: Any) -> str:
+        normalized = ProductionExportService._normalize_enum_text(value)
+        return {
+            "paid": "Đã thanh toán",
+            "unpaid": "Chưa thanh toán",
+        }.get(normalized, str(value or "-"))
+
+    @staticmethod
+    def _refund_support_label(value: Any) -> str:
+        normalized = ProductionExportService._normalize_enum_text(value)
+        return {
+            "none": "Không yêu cầu",
+            "contact_required": "Liên hệ chat để hoàn tiền",
+            "resolved": "Đã xử lý hoàn tiền",
+        }.get(normalized, str(value or "-"))
+
+    @staticmethod
+    def _position_label(value: Any) -> str:
+        raw = str(value or "").strip()
+        return {
+            "Phia tren": "Phía trên",
+            "Ben trai": "Bên trái",
+            "Ben phai": "Bên phải",
+            "Phia sau": "Phía sau",
+            "Mat truoc": "Mặt trước",
+        }.get(raw, raw or "-")
+
+    @staticmethod
+    def _register_ttf_font(font_name: str, candidates: list[Path]) -> Optional[str]:
+        for candidate in candidates:
+            if not candidate.exists():
+                continue
+            if font_name not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(font_name, str(candidate)))
+            return font_name
+        return None
+
+    @staticmethod
+    def _ensure_pdf_fonts() -> None:
+        if ProductionExportService._PDF_FONTS_READY:
+            return
+
+        windows_font_dir = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+        regular_font = ProductionExportService._register_ttf_font(
+            "ProductionExportRegular",
+            [
+                ProductionExportService.REPO_ROOT / "backend" / "assets" / "fonts" / "DejaVuSans.ttf",
+                windows_font_dir / "arial.ttf",
+                windows_font_dir / "tahoma.ttf",
+                Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+                Path("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf"),
+            ],
+        )
+        bold_font = ProductionExportService._register_ttf_font(
+            "ProductionExportBold",
+            [
+                ProductionExportService.REPO_ROOT / "backend" / "assets" / "fonts" / "DejaVuSans-Bold.ttf",
+                windows_font_dir / "arialbd.ttf",
+                windows_font_dir / "tahomabd.ttf",
+                Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+                Path("/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"),
+            ],
+        )
+        italic_font = ProductionExportService._register_ttf_font(
+            "ProductionExportItalic",
+            [
+                ProductionExportService.REPO_ROOT / "backend" / "assets" / "fonts" / "DejaVuSans-Oblique.ttf",
+                windows_font_dir / "ariali.ttf",
+                windows_font_dir / "tahoma.ttf",
+                Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf"),
+                Path("/usr/share/fonts/truetype/liberation2/LiberationSans-Italic.ttf"),
+            ],
+        )
+
+        if regular_font:
+            ProductionExportService.PDF_FONT_REGULAR = regular_font
+        if bold_font:
+            ProductionExportService.PDF_FONT_BOLD = bold_font
+        elif regular_font:
+            ProductionExportService.PDF_FONT_BOLD = regular_font
+        if italic_font:
+            ProductionExportService.PDF_FONT_ITALIC = italic_font
+        elif regular_font:
+            ProductionExportService.PDF_FONT_ITALIC = regular_font
+
+        ProductionExportService._PDF_FONTS_READY = True
+
+    @staticmethod
+    def _set_pdf_font(
+        pdf: canvas.Canvas,
+        size: float,
+        *,
+        bold: bool = False,
+        italic: bool = False,
+    ) -> None:
+        ProductionExportService._ensure_pdf_fonts()
+        font_name = ProductionExportService.PDF_FONT_REGULAR
+        if bold:
+            font_name = ProductionExportService.PDF_FONT_BOLD
+        elif italic:
+            font_name = ProductionExportService.PDF_FONT_ITALIC
+        pdf.setFont(font_name, size)
 
     @staticmethod
     def get_order_production(db: Session, order_id: int) -> dict[str, Any]:
@@ -165,8 +293,8 @@ class ProductionExportService:
             pdf.setFillColor(colors.HexColor("#F9FAFB"))
             pdf.rect(x_pt, y_pt, width_pt, height_pt, stroke=1, fill=1)
             pdf.setFillColor(colors.HexColor("#6B7280"))
-            pdf.setFont("Helvetica", 9)
-            pdf.drawString(x_pt + 8, y_pt + height_pt - 14, "Image unavailable")
+            ProductionExportService._set_pdf_font(pdf, 9)
+            pdf.drawString(x_pt + 8, y_pt + height_pt - 14, "Không tải được ảnh")
             pdf.restoreState()
             return
 
@@ -238,6 +366,7 @@ class ProductionExportService:
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=A4)
         image_cache: dict[str, dict[str, Any]] = {}
+        ProductionExportService._ensure_pdf_fonts()
 
         items = payload.get("items") or []
         for item_index, item in enumerate(items):
@@ -275,22 +404,22 @@ class ProductionExportService:
         margin_x = 14 * mm
         top_y = ProductionExportService.PAGE_HEIGHT_PT - (18 * mm)
 
-        pdf.setTitle(f"Order {payload.get('order_id')} Production")
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(margin_x, top_y, f"Order #{payload.get('order_id')} - Production View")
+        pdf.setTitle(f"Đơn hàng {payload.get('order_id')} - Chế độ xem sản xuất")
+        ProductionExportService._set_pdf_font(pdf, 16, bold=True)
+        pdf.drawString(margin_x, top_y, f"Đơn hàng #{payload.get('order_id')} - Chế độ xem sản xuất")
 
-        pdf.setFont("Helvetica", 10)
+        ProductionExportService._set_pdf_font(pdf, 10)
         pdf.setFillColor(colors.HexColor("#374151"))
         meta_lines = [
-            f"Item {item_index + 1}: {item.get('product_name') or 'Helmet design'}",
-            f"Order status: {payload.get('status')}",
-            f"Payment: {payload.get('payment_status')}",
-            f"Refund support: {payload.get('refund_support_status')}",
-            f"Quantity: {item.get('quantity')}",
-            f"Target export DPI: {dpi}",
+            f"Mục {item_index + 1}: {item.get('product_name') or 'Thiết kế nón bảo hiểm'}",
+            f"Trạng thái đơn: {ProductionExportService._order_status_label(payload.get('status'))}",
+            f"Trạng thái thanh toán: {ProductionExportService._payment_status_label(payload.get('payment_status'))}",
+            f"Hỗ trợ hoàn tiền: {ProductionExportService._refund_support_label(payload.get('refund_support_status'))}",
+            f"Số lượng: {item.get('quantity')}",
+            f"DPI mục tiêu: {dpi}",
         ]
         if payload.get("rejection_reason"):
-            meta_lines.append(f"Rejection reason: {payload.get('rejection_reason')}")
+            meta_lines.append(f"Lý do từ chối: {payload.get('rejection_reason')}")
 
         current_y = top_y - (8 * mm)
         for line in meta_lines:
@@ -335,17 +464,17 @@ class ProductionExportService:
         info_x = preview_x_pt + preview_width_pt + (10 * mm)
         info_y = preview_y_pt + preview_height_pt
         pdf.setFillColor(colors.HexColor("#111827"))
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(info_x, info_y, "Layer specs")
+        ProductionExportService._set_pdf_font(pdf, 11, bold=True)
+        pdf.drawString(info_x, info_y, "Thông số lớp sticker")
         info_y -= 6 * mm
 
-        pdf.setFont("Helvetica", 9)
+        ProductionExportService._set_pdf_font(pdf, 9)
         for layer in item.get("layers") or []:
             lines = [
                 f"- {layer.get('sticker_name') or 'Sticker'}",
-                f"  Size: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
-                f"  Position: {layer.get('position_label')} | x={layer.get('x'):.3f}, y={layer.get('y'):.3f}",
-                f"  Rotation: {layer.get('rotation_degrees')} deg | z={layer.get('z_index')}",
+                f"  Kích thước: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
+                f"  Vị trí: {ProductionExportService._position_label(layer.get('position_label'))} | x={layer.get('x'):.3f}, y={layer.get('y'):.3f}",
+                f"  Góc xoay: {layer.get('rotation_degrees')}° | z={layer.get('z_index')}",
             ]
             for line in lines:
                 pdf.drawString(info_x, info_y, line)
@@ -354,12 +483,12 @@ class ProductionExportService:
             if info_y <= 18 * mm:
                 break
 
-        pdf.setFont("Helvetica-Oblique", 8)
+        ProductionExportService._set_pdf_font(pdf, 8, italic=True)
         pdf.setFillColor(colors.HexColor("#6B7280"))
         pdf.drawString(
             margin_x,
             12 * mm,
-            "Preview uses the same normalized x/y/scale/rotation snapshot captured at checkout.",
+            "Bản xem trước dùng đúng snapshot x/y/scale/rotation được lưu tại thời điểm đặt hàng.",
         )
 
     @staticmethod
@@ -375,23 +504,23 @@ class ProductionExportService:
         current_y = margin_top
 
         def start_page_header() -> float:
-            pdf.setFont("Helvetica-Bold", 15)
+            ProductionExportService._set_pdf_font(pdf, 15, bold=True)
             pdf.setFillColor(colors.HexColor("#111827"))
-            pdf.drawString(margin_x, ProductionExportService.PAGE_HEIGHT_PT - (18 * mm), "Sticker Print Sheet")
-            pdf.setFont("Helvetica", 10)
+            pdf.drawString(margin_x, ProductionExportService.PAGE_HEIGHT_PT - (18 * mm), "Phiếu in sticker")
+            ProductionExportService._set_pdf_font(pdf, 10)
             pdf.setFillColor(colors.HexColor("#374151"))
             pdf.drawString(
                 margin_x,
                 ProductionExportService.PAGE_HEIGHT_PT - (24 * mm),
-                f"Order #{payload.get('order_id')} | Item: {item.get('product_name') or 'Helmet design'} | DPI target: {dpi}",
+                f"Đơn #{payload.get('order_id')} | Sản phẩm: {item.get('product_name') or 'Thiết kế nón bảo hiểm'} | DPI mục tiêu: {dpi}",
             )
             return ProductionExportService.PAGE_HEIGHT_PT - (32 * mm)
 
         current_y = start_page_header()
         for copy_index in range(int(item.get("quantity", 0) or 0)):
-            pdf.setFont("Helvetica-Bold", 10)
+            ProductionExportService._set_pdf_font(pdf, 10, bold=True)
             pdf.setFillColor(colors.HexColor("#111827"))
-            pdf.drawString(margin_x, current_y, f"Copy set {copy_index + 1}/{item.get('quantity')}")
+            pdf.drawString(margin_x, current_y, f"Bộ bản in {copy_index + 1}/{item.get('quantity')}")
             current_y -= 6 * mm
 
             for layer in item.get("layers") or []:
@@ -419,16 +548,16 @@ class ProductionExportService:
 
                 info_x = image_x + max(draw_width_pt, 32 * mm) + (10 * mm)
                 info_y = current_y - (1 * mm)
-                pdf.setFont("Helvetica-Bold", 9)
+                ProductionExportService._set_pdf_font(pdf, 9, bold=True)
                 pdf.setFillColor(colors.HexColor("#111827"))
                 pdf.drawString(info_x, info_y, layer.get("sticker_name") or "Sticker")
-                pdf.setFont("Helvetica", 8.5)
+                ProductionExportService._set_pdf_font(pdf, 8.5)
                 info_y -= 4.5 * mm
                 for line in [
-                    f"Sticker ID: {layer.get('sticker_id') or '-'}",
-                    f"Actual size: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
-                    f"Placement: {layer.get('position_label')}",
-                    f"Rotation on helmet: {layer.get('rotation_degrees')} deg",
+                    f"Mã sticker: {layer.get('sticker_id') or '-'}",
+                    f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
+                    f"Vị trí dán: {ProductionExportService._position_label(layer.get('position_label'))}",
+                    f"Góc xoay trên nón: {layer.get('rotation_degrees')}°",
                 ]:
                     pdf.drawString(info_x, info_y, line)
                     info_y -= 4.2 * mm
@@ -457,9 +586,9 @@ class ProductionExportService:
 
         asset = ProductionExportService._load_image_asset(layer.get("image_url"), image_cache)
         if not asset:
-            pdf.setFont("Helvetica", 8)
+            ProductionExportService._set_pdf_font(pdf, 8)
             pdf.setFillColor(colors.HexColor("#6B7280"))
-            pdf.drawString(x_pt + 4, y_pt + draw_height_pt - 10, "Image unavailable")
+            pdf.drawString(x_pt + 4, y_pt + draw_height_pt - 10, "Không tải được ảnh")
             return
 
         crop = layer.get("crop") or {}
@@ -497,16 +626,16 @@ class ProductionExportService:
 
         body.append(
             f'<text x="{margin_mm}" y="{current_y_mm}" font-size="6" font-weight="700" fill="#111827">'
-            f'Order #{payload.get("order_id")} Sticker Print Sheet'
+            f'Đơn hàng #{payload.get("order_id")} - Phiếu in sticker'
             "</text>"
         )
         current_y_mm += 8.0
 
         for item in payload.get("items") or []:
-            item_title = html.escape(item.get("product_name") or "Helmet design")
+            item_title = html.escape(item.get("product_name") or "Thiết kế nón bảo hiểm")
             body.append(
                 f'<text x="{margin_mm}" y="{current_y_mm}" font-size="4.5" font-weight="700" fill="#111827">'
-                f"{item_title} - quantity {item.get('quantity')}"
+                f"{item_title} - số lượng {item.get('quantity')}"
                 "</text>"
             )
             current_y_mm += 6.0
@@ -514,7 +643,7 @@ class ProductionExportService:
             for copy_index in range(int(item.get("quantity", 0) or 0)):
                 body.append(
                     f'<text x="{margin_mm}" y="{current_y_mm}" font-size="4" fill="#374151">'
-                    f"Copy set {copy_index + 1}/{item.get('quantity')}"
+                    f"Bộ bản in {copy_index + 1}/{item.get('quantity')}"
                     "</text>"
                 )
                 current_y_mm += 5.0
@@ -550,9 +679,9 @@ class ProductionExportService:
                     name = html.escape(layer.get("sticker_name") or "Sticker")
                     lines = [
                         name,
-                        f"Sticker ID: {layer.get('sticker_id') or '-'}",
-                        f"Actual size: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
-                        f"Placement: {html.escape(layer.get('position_label') or '-')} | rotation {layer.get('rotation_degrees')} deg",
+                        f"Mã sticker: {layer.get('sticker_id') or '-'}",
+                        f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
+                        f"Vị trí dán: {html.escape(ProductionExportService._position_label(layer.get('position_label')))} | góc xoay {layer.get('rotation_degrees')}°",
                     ]
                     for idx, line in enumerate(lines):
                         weight = "700" if idx == 0 else "400"
@@ -568,11 +697,16 @@ class ProductionExportService:
             current_y_mm += 3.0
 
         total_height_mm = max(current_y_mm + 12.0, ProductionExportService.PAGE_HEIGHT_MM)
-        defs_markup = f"<defs>{''.join(defs)}</defs>" if defs else ""
+        base_defs = (
+            "<style><![CDATA["
+            "text { font-family: 'Arial', 'DejaVu Sans', sans-serif; }"
+            "]]></style>"
+        )
+        defs_markup = f"<defs>{base_defs}{''.join(defs)}</defs>"
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{width_mm}mm" height="{total_height_mm}mm" '
-            f'viewBox="0 0 {width_mm} {total_height_mm}">'
+            f'viewBox="0 0 {width_mm} {total_height_mm}" xml:lang="vi">'
             f"{defs_markup}"
             '<rect x="0" y="0" width="100%" height="100%" fill="#FFFFFF" />'
             f"{''.join(body)}"
