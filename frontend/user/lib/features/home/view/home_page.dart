@@ -9,6 +9,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/circle_icon_button.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/hero_carousel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_drawer.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 
@@ -66,8 +67,9 @@ class _HomePageState extends State<HomePage> {
 
     final Map<int, String> categoryThumbs = {};
     for (final p in productVm.products) {
-      if (p.images.isEmpty) continue;
-      categoryThumbs.putIfAbsent(p.categoryId, () => p.images.first.url);
+      final primaryUrl = p.pickPrimaryImageUrl();
+      if (primaryUrl == null || primaryUrl.isEmpty) continue;
+      categoryThumbs.putIfAbsent(p.categoryId, () => primaryUrl);
     }
 
     return Scaffold(

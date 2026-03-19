@@ -22,6 +22,7 @@ class DesignLayer(Base):
     scale = Column(Float, default=1.0, nullable=False)
     rotation = Column(Float, default=0.0, nullable=False)
     z_index = Column(Integer, default=0, nullable=False)
+    view_image_key = Column(String(50), nullable=True)
     tint_color_value = Column(Integer, nullable=True)
     crop_left = Column(Float, default=0.0, nullable=False)
     crop_top = Column(Float, default=0.0, nullable=False)

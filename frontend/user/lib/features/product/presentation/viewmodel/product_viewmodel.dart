@@ -52,8 +52,11 @@ class ProductViewmodel extends ChangeNotifier {
       product?.getUniqueSizesByColor(_selectedColorId) ?? [];
   ProductDetail? get selectedProductDetail =>
       product?.findProductDetail(_selectedColorId, _selectedSizeId);
-  List<ProductImage> get displayProductImages =>
-      product?.filterProductImages(_selectedColorId) ?? [];
+  List<ProductImage> get displayProductImages {
+    final image = product?.pickPrimaryImage(_selectedColorId);
+    if (image == null) return const [];
+    return [image];
+  }
 
   // góm nhóm sản phẩm theo Category (cho ProductPage)
   Map<int, List<Product>> get productsByCategory {

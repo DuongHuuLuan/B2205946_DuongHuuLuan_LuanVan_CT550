@@ -9,7 +9,6 @@ import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_reponsitory.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/warehouse/domain/warehouse_repository.dart';
 
@@ -43,7 +42,6 @@ class _ProductCardState extends State<ProductCard>
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
 
-  int _imgIndex = 0;
   int? _selectedColorId;
   int? _selectedSizeId;
   int? _availableQuantity;
@@ -51,16 +49,6 @@ class _ProductCardState extends State<ProductCard>
   bool _isStockLoading = false;
 
   Product get _p => widget.product;
-
-  // ====== Helpers images ======
-  List<ProductImage> _imagesByColor(int colorId) =>
-      _p.images.where((img) => img.colorId == colorId).toList();
-
-  List<ProductImage> get _commonImages =>
-      _p.images.where((img) => img.colorId == null).toList();
-
-  List<ProductImage> get _displayImages =>
-      _p.filterProductImages(_selectedColorId);
 
   // ====== UI data ======
   List<ProductDetail> get _colors => _p.uniqueColors;
@@ -72,15 +60,13 @@ class _ProductCardState extends State<ProductCard>
     if (_colors.isEmpty) return [];
     final result = <_ColorThumb>[];
     for (final c in _colors) {
-      final byColor = _imagesByColor(c.colorId);
-      final fallback = _commonImages.isNotEmpty ? _commonImages : _p.images;
-      final list = byColor.isNotEmpty ? byColor : fallback;
-      if (list.isEmpty) continue;
+      final primaryUrl = _p.pickPrimaryImageUrl(c.colorId);
+      if (primaryUrl == null || primaryUrl.isEmpty) continue;
       result.add(
         _ColorThumb(
           colorId: c.colorId,
           label: c.colorName,
-          url: list.first.url,
+          url: primaryUrl,
         ),
       );
     }
@@ -127,7 +113,6 @@ class _ProductCardState extends State<ProductCard>
   void _selectColor(int colorId) {
     setState(() {
       _selectedColorId = colorId;
-      _imgIndex = 0;
       final sizes = _p.getUniqueSizesByColor(colorId);
       final stillOk = sizes.any((s) => s.sizeId == _selectedSizeId);
       if (!stillOk) {
@@ -145,7 +130,6 @@ class _ProductCardState extends State<ProductCard>
   }
 
   void _syncProductState() {
-    _imgIndex = 0;
     _availableQuantity = null;
     _selectedColorId = null;
     _selectedSizeId = null;
@@ -220,13 +204,10 @@ class _ProductCardState extends State<ProductCard>
   @override
   Widget build(BuildContext context) {
     final productDetail = _selectedProductDetail;
-    final images = _displayImages;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final mainUrl = images.isNotEmpty
-        ? images[_imgIndex.clamp(0, images.length - 1)].url
-        : null;
+    final mainUrl = _p.pickPrimaryImageUrl(_selectedColorId);
 
     final inStock = _availableQuantity != null && _availableQuantity! > 0;
     final priceText = productDetail != null
@@ -358,42 +339,6 @@ class _ProductCardState extends State<ProductCard>
                           clipBehavior: Clip.antiAlias,
                           child: CachedNetworkImage(
                             imageUrl: t.url,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-            // Detail Images
-            if (images.length > 1)
-              _buildSectionPadding(
-                child: SizedBox(
-                  height: 44,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: min(images.length, 4),
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, i) {
-                      final active = i == _imgIndex;
-                      return InkWell(
-                        onTap: () => setState(() => _imgIndex = i),
-                        child: Container(
-                          width: 44,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: active
-                                  ? colorScheme.secondary
-                                  : colorScheme.outlineVariant,
-                              width: active ? 2 : 1,
-                            ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: CachedNetworkImage(
-                            imageUrl: images[i].url,
                             fit: BoxFit.cover,
                           ),
                         ),

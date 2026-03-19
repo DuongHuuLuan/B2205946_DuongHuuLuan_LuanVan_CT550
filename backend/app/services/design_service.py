@@ -1,5 +1,5 @@
 import secrets
-from typing import Iterable
+from typing import Iterable, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
@@ -14,12 +14,26 @@ from app.services.sticker_service import StickerService
 
 
 class DesignService(BaseService):
+    _ALLOWED_VIEW_IMAGE_KEYS = {
+        "front",
+        "front_right",
+        "right",
+        "back",
+        "left",
+        "front_left",
+    }
+
     @staticmethod
     def _query_with_relations(db: Session):
         return db.query(Design).options(
             selectinload(Design.layers),
             selectinload(Design.shares),
         )
+
+    @staticmethod
+    def _normalize_view_image_key(value: Optional[str]) -> Optional[str]:
+        normalized = (value or "").strip().lower().replace(" ", "_")
+        return normalized if normalized in DesignService._ALLOWED_VIEW_IMAGE_KEYS else None
 
     @staticmethod
     def _get_design_or_404(db: Session, design_id: int) -> Design:
@@ -76,6 +90,9 @@ class DesignService(BaseService):
                     scale=layer_in.scale,
                     rotation=layer_in.rotation,
                     z_index=normalized_z_index,
+                    view_image_key=DesignService._normalize_view_image_key(
+                        layer_in.view_image_key
+                    ),
                     tint_color_value=layer_in.tint_color_value,
                     crop_left=crop.left,
                     crop_top=crop.top,

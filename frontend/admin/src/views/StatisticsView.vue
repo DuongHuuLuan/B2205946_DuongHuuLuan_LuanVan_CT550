@@ -911,6 +911,16 @@ const activeScopeLabel = computed(
   () => scopeOptions.find((item) => item.value === filters.value.scope)?.label || "Tổng quan",
 );
 
+const scopeDescription = computed(() => {
+  if (filters.value.scope === "sales") {
+    return "Tập trung vào doanh thu, đơn hàng, phương thức thanh toán và nhóm sản phẩm bán chạy trong kỳ.";
+  }
+  if (filters.value.scope === "reviews") {
+    return "Tập trung vào điểm đánh giá, phân bố số sao và các phản hồi còn chờ xử lý.";
+  }
+  return "Kết hợp số liệu bán hàng và đánh giá để theo dõi nhanh tình hình vận hành trong kỳ đã chọn.";
+});
+
 function buildExportSections() {
   const sections = [
     {

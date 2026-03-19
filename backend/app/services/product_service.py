@@ -13,6 +13,37 @@ from app.schemas.product import ProductCreate
 
 
 class ProductService:
+    _VIEW_IMAGE_ORDER = {
+        "front": 0,
+        "front_right": 1,
+        "right": 2,
+        "back": 3,
+        "left": 4,
+        "front_left": 5,
+    }
+
+    @staticmethod
+    def _attach_design_views(products: List[Product]) -> None:
+        for product in products:
+            images = list(getattr(product, "product_images", []) or [])
+            design_views = [
+                image
+                for image in images
+                if str(getattr(image, "view_image_key", "") or "").strip()
+            ]
+            design_views.sort(
+                key=lambda image: (
+                    getattr(image, "color_id", None) is None,
+                    getattr(image, "color_id", 0) or 0,
+                    ProductService._VIEW_IMAGE_ORDER.get(
+                        str(getattr(image, "view_image_key", "") or "").strip(),
+                        999,
+                    ),
+                    getattr(image, "id", 0) or 0,
+                )
+            )
+            setattr(product, "design_views", design_views)
+
     @staticmethod
     def _get_delete_block_reasons(db: Session, product_ids: List[int]) -> Dict[int, str]:
         if not product_ids:
@@ -76,6 +107,7 @@ class ProductService:
         if not product:
             raise HTTPException(status_code=404, detail="Sản phẩm không tồn tại")
 
+        ProductService._attach_design_views([product])
         ProductService._attach_delete_permissions(db, [product])
         return product
 
@@ -89,6 +121,7 @@ class ProductService:
         )
         if not products:
             raise HTTPException(status_code=404, detail="Không tìm thấy danh mục sản phẩm")
+        ProductService._attach_design_views(products)
         return products
 
     @staticmethod
@@ -174,6 +207,7 @@ class ProductService:
 
         skip = (page - 1) * per_page
         items = query.order_by(Product.id.desc()).offset(skip).limit(per_page).all()
+        ProductService._attach_design_views(items)
         ProductService._attach_delete_permissions(db, items)
 
         last_page = math.ceil(total_count / per_page)

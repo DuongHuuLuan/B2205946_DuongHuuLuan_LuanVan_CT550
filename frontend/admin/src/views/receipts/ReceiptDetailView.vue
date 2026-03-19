@@ -85,7 +85,7 @@
                       <td>
                         <div class="d-flex align-items-center gap-2">
                           <div class="thumb">
-                            <img v-if="getProductThumb(it.product)" :src="getProductThumb(it.product)" alt="thumb" />
+                            <img v-if="getProductThumbForRow(it)" :src="getProductThumbForRow(it)" alt="thumb" />
                             <div v-else class="thumb-placeholder">
                               <i class="fa-regular fa-image"></i>
                             </div>
@@ -214,7 +214,7 @@ import {
   formatMoney,
   statusLabel,
   statusBadgeClass,
-  getProductThumb,
+  getProductThumb as resolveProductThumb,
   formatDateTimeVN,
 } from "@/utils/utils";
 import ReceiptService from "@/services/receipt.service";
@@ -229,6 +229,10 @@ const receipt = ref(null);
 const receiptItems = computed(() => {
   return receipt.value?.details || receipt.value?.receipt_details || [];
 });
+
+function getProductThumbForRow(item) {
+  return resolveProductThumb(item?.product, item?.color?.id || item?.color_id);
+}
 
 function calcLineTotal(it) {
   const q = Number(it?.quantity || 0);

@@ -1,10 +1,12 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/ai_sticker_request.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_3d_surface.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_crop.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_template.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_preview_canvas.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/viewmodel/helmet_designer_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +18,8 @@ class HelmetDesignerPage extends StatefulWidget {
   final int? initialQuantity;
   final String? initialHelmetName;
   final String? initialHelmetBaseImageUrl;
+  final String? initialHelmetModel3dUrl;
+  final List<ProductImage> initialHelmetDesignViews;
 
   const HelmetDesignerPage({
     super.key,
@@ -25,6 +29,8 @@ class HelmetDesignerPage extends StatefulWidget {
     this.initialQuantity,
     this.initialHelmetName,
     this.initialHelmetBaseImageUrl,
+    this.initialHelmetModel3dUrl,
+    this.initialHelmetDesignViews = const [],
   });
 
   @override
@@ -83,6 +89,8 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           productDetailId: widget.initialProductDetailId,
           helmetName: widget.initialHelmetName ?? "Mũ bảo hiểm",
           helmetBaseImageUrl: widget.initialHelmetBaseImageUrl ?? "",
+          designViews: widget.initialHelmetDesignViews,
+          helmetModel3dUrl: widget.initialHelmetModel3dUrl,
           orderQuantity: widget.initialQuantity ?? 1,
         );
         return;
@@ -93,6 +101,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           helmetProductId: 101,
           helmetName: "Mũ bảo hiểm Royal Street",
           helmetBaseImageUrl: "assets/images/logo_royalStore2.png",
+          helmetModel3dUrl: widget.initialHelmetModel3dUrl,
           productDetailId: widget.initialProductDetailId,
           orderQuantity: widget.initialQuantity ?? 1,
         );
@@ -119,7 +128,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
       appBar: AppBar(
         backgroundColor: colorScheme.primary,
         title: Text(
-          "Thiết kế nón",
+          "Thêm sticker",
           style: textTheme.titleLarge?.copyWith(
             color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
@@ -196,6 +205,12 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                   icon: const Icon(Icons.view_in_ar_outlined),
                   label: const Text("Thử nón"),
                 ),
+                if (vm.has3dModel)
+                  FilledButton.tonalIcon(
+                    onPressed: () => context.push("/helmet-3d"),
+                    icon: const Icon(Icons.threed_rotation),
+                    label: const Text("Xem 3D"),
+                  ),
                 FilledButton.tonalIcon(
                   onPressed: vm.isOrderingDesign || !vm.hasOrderTarget
                       ? null
@@ -241,10 +256,21 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             ),
           ),
           const SizedBox(height: 10),
+          if (vm.hasMultipleDesignViews) ...[
+            _DesignViewSelector(
+              views: vm.designViews,
+              activeViewImageKey: vm.activeViewImageKey,
+              onSelected: vm.selectDesignView,
+            ),
+            const SizedBox(height: 10),
+          ],
           HelmetPreviewCanvas(
-            layers: vm.stickerLayers,
+            layers: vm.visibleStickerLayers,
             selectedLayerId: vm.selectedLayerId,
-            helmetBaseImageUrl: vm.currentDesign.helmetBaseImageUrl,
+            helmetBaseImageUrl: vm.currentPreviewImageUrl,
+            emptyMessage: vm.hasLayers && vm.hasMultipleDesignViews
+                ? "Goc nay chua co sticker. Hay them moi hoac chuyen sang goc khac."
+                : "Chon sticker de bat dau thiet ke.",
             onLayerTap: vm.selectLayer,
             onBackgroundTap: () => vm.selectLayer(null),
             onLayerTransform: (layerId, x, y, scale, rotation) {
@@ -260,6 +286,14 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             },
           ),
           const SizedBox(height: 12),
+          if (vm.hasMultipleDesignViews)
+            Text(
+              "Chon goc anh de gan sticker dung mat. Sticker moi se duoc them vao goc dang xem.",
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.light.textSecondary,
+              ),
+            )
+          else
           Text(
             "Kéo sticker để di chuyển. Dùng hai ngón tay để thu phóng và xoay trực tiếp trên bản xem trước.",
             style: textTheme.bodyMedium?.copyWith(
@@ -456,6 +490,38 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           trailing,
+        ],
+      ),
+    );
+  }
+}
+
+class _DesignViewSelector extends StatelessWidget {
+  final List<ProductImage> views;
+  final String? activeViewImageKey;
+  final ValueChanged<String?> onSelected;
+
+  const _DesignViewSelector({
+    required this.views,
+    required this.activeViewImageKey,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final item in views) ...[
+            ChoiceChip(
+              label: Text(viewImageKeyLabel(item.viewImageKey)),
+              selected: (item.viewImageKey ?? '').trim() ==
+                  (activeViewImageKey ?? '').trim(),
+              onSelected: (_) => onSelected(item.viewImageKey),
+            ),
+            const SizedBox(width: 8),
+          ],
         ],
       ),
     );
@@ -863,20 +929,126 @@ class _LayerTile extends StatelessWidget {
       child: ListTile(
         onTap: () =>
             context.read<HelmetDesignerViewModel>().selectLayer(layer.id),
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFFF0F4FA),
-          child: Text(
-            "${layer.zIndex + 1}",
-            style: const TextStyle(fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 10,
+        ),
+        leading: SizedBox(
+          width: 72,
+          height: 72,
+          child: Stack(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F8FC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.light.border),
+                ),
+                child: _LayerStickerPreview(layer: layer),
+              ),
+              Positioned(
+                left: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.72),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    "${layer.zIndex + 1}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        title: Text("Sticker #${layer.stickerId}"),
-        subtitle: Text(
-          "Vị trí: (${layer.x.toStringAsFixed(1)}, ${layer.y.toStringAsFixed(1)}) - Tỉ lệ: ${layer.scale.toStringAsFixed(2)}",
+        title: Text(
+          viewImageKeyLabel(layer.viewImageKey),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              isSelected ? "Đang chọn sticker này" : "Nhấn để xem rõ sticker",
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Vị trí: (${layer.x.toStringAsFixed(2)}, ${layer.y.toStringAsFixed(2)}) · Tỷ lệ: ${layer.scale.toStringAsFixed(2)}",
+            ),
+          ],
         ),
         trailing: isSelected
             ? const Icon(Icons.check_circle, color: AppColors.secondary)
-            : const Icon(Icons.layers_outlined),
+            : const Icon(Icons.touch_app_outlined),
+      ),
+    );
+  }
+}
+
+class _LayerStickerPreview extends StatelessWidget {
+  final StickerLayer layer;
+
+  const _LayerStickerPreview({required this.layer});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child;
+    if (layer.imageUrl.startsWith("assets/")) {
+      child = Image.asset(layer.imageUrl, fit: BoxFit.contain);
+    } else {
+      child = Image.network(
+        layer.imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+      );
+    }
+
+    if (layer.tintColorValue != null) {
+      child = ColorFiltered(
+        colorFilter: ColorFilter.mode(
+          Color(layer.tintColorValue!),
+          BlendMode.modulate,
+        ),
+        child: child,
+      );
+    }
+
+    final widthFactor = (layer.crop.right - layer.crop.left)
+        .clamp(0.12, 1.0)
+        .toDouble();
+    final heightFactor = (layer.crop.bottom - layer.crop.top)
+        .clamp(0.12, 1.0)
+        .toDouble();
+    final alignX = (((layer.crop.left + layer.crop.right) / 2) * 2 - 1)
+        .clamp(-1.0, 1.0)
+        .toDouble();
+    final alignY = (((layer.crop.top + layer.crop.bottom) / 2) * 2 - 1)
+        .clamp(-1.0, 1.0)
+        .toDouble();
+
+    return ClipRect(
+      child: Align(
+        alignment: Alignment(alignX, alignY),
+        widthFactor: widthFactor,
+        heightFactor: heightFactor,
+        child: child,
       ),
     );
   }

@@ -2,6 +2,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -95,13 +96,6 @@ class ProductRow extends StatelessWidget {
 
   String? _resolveImageUrl() {
     if (product == null || product!.images.isEmpty) return null;
-    final colorId = detail.productDetail.colorId;
-    final match = product!.images.firstWhere(
-      (img) => img.colorId == colorId,
-      orElse: () {
-        return product!.images.first;
-      },
-    );
-    return match.url;
+    return product!.pickPrimaryImageUrl(detail.productDetail.colorId);
   }
 }

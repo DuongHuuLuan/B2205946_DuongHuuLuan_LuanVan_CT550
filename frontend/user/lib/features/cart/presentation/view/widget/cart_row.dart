@@ -28,10 +28,7 @@ class CartRow extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final detailProduct = cartDetail.productDetail;
-    final imageUrl = product
-        ?.filterProductImages(detailProduct.colorId)
-        .map((e) => e.url)
-        .firstWhere((url) => url.isNotEmpty, orElse: () => "");
+    final imageUrl = product?.pickPrimaryImageUrl(detailProduct.colorId) ?? "";
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),

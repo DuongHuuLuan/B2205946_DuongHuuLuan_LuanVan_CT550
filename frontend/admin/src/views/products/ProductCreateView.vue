@@ -79,6 +79,43 @@
                 <ErrorMessage name="description" class="invalid-feedback d-block" />
               </div>
 
+              <div class="col-12">
+                <label class="form-label">URL model 3D (.glb)</label>
+                <Field name="model_3d_url" v-slot="{ field, meta, errors }">
+                  <input
+                    v-bind="field"
+                    type="url"
+                    class="form-control bg-transparent"
+                    :class="{
+                      'is-invalid':
+                        (meta.touched && !meta.valid) || errors.length,
+                    }"
+                    placeholder="https://your-api-host/static/models/helmet.glb"
+                  />
+                </Field>
+                <div class="form-text">
+                  Để trống nếu sản phẩm chưa có model 3D. Khi upload file, backend sẽ lưu vào `static/models` và tự sinh URL cho sản phẩm.
+                </div>
+                <ErrorMessage name="model_3d_url" class="invalid-feedback d-block" />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Upload model 3D (.glb)</label>
+                <input
+                  ref="model3dFileInput"
+                  type="file"
+                  accept=".glb,model/gltf-binary,application/octet-stream"
+                  class="form-control bg-transparent"
+                  @change="onModel3dFileChange"
+                />
+                <div class="form-text">
+                  Nếu chọn file `.glb`, hệ thống sẽ lưu trực tiếp trên server trong `static/models`. File được ưu tiên hơn URL nhập tay.
+                </div>
+                <div v-if="model3dFileName" class="small mt-2 opacity-75">
+                  Đã chọn: {{ model3dFileName }}
+                </div>
+              </div>
+
 
 
               <!-- product_details -->
@@ -192,6 +229,9 @@ import SizeService from "@/services/size.service";
 import ProductDetailService from "@/services/product-detail.service";
 
 const router = useRouter();
+const model3dFile = ref(null);
+const model3dFileName = ref("");
+const model3dFileInput = ref(null);
 
 const categories = ref([]);
 const getCategories = async () => {
@@ -253,6 +293,20 @@ function resetProduct_details() {
   product_detailsError.value = "";
 }
 
+function clearModel3dFile() {
+  model3dFile.value = null;
+  model3dFileName.value = "";
+  if (model3dFileInput.value) {
+    model3dFileInput.value.value = "";
+  }
+}
+
+function onModel3dFileChange(event) {
+  const file = (event?.target?.files || [])[0] || null;
+  model3dFile.value = file;
+  model3dFileName.value = file?.name || "";
+}
+
 
 const schema = yup.object({
   name: yup
@@ -266,6 +320,16 @@ const schema = yup.object({
     .nullable()
     .max(2000, "Mô tả tối đa 2000 ký tự")
     .required("Vui lòng nhập mô tả"),
+  model_3d_url: yup
+    .string()
+    .trim()
+    .nullable()
+    .transform((value, originalValue) => {
+      const normalized = String(originalValue ?? "").trim();
+      return normalized === "" ? null : value;
+    })
+    .url("URL model 3D không hợp lệ")
+    .max(2000, "URL model 3D tối đa 2000 ký tự"),
   unit: yup
     .string()
     .trim()
@@ -393,12 +457,14 @@ function onReset(resetFormFn) {
     values: {
       name: "",
       description: "",
+      model_3d_url: "",
       unit: "",
       category_id: "",
       color_ids: [],
       files: [],
     },
   });
+  clearModel3dFile();
   resetProduct_details();
 }
 
@@ -434,6 +500,13 @@ async function onSubmit(values, { resetForm, setErrors }) {
     const fd = new FormData();
     fd.append("name", values.name);
     fd.append("description", values.description || "");
+    const rawModel3dUrl = values.model_3d_url?.trim() || "";
+    if (rawModel3dUrl) {
+      fd.append("model_3d_url", rawModel3dUrl);
+    }
+    if (model3dFile.value) {
+      fd.append("model_3d_file", model3dFile.value);
+    }
     fd.append("unit", values.unit);
     fd.append("category_id", values.category_id);
     const colorIds = values.color_ids ? [...values.color_ids] : [];
@@ -452,6 +525,23 @@ async function onSubmit(values, { resetForm, setErrors }) {
     }
     const created = await ProductService.create(fd);
     const productId = created?.data?.id ?? created?.id;
+    let persistedProduct = created;
+    if (productId) {
+      try {
+        persistedProduct = await ProductService.get(productId);
+      } catch (verifyError) {
+        console.log("Verify product after create failed:", verifyError);
+      }
+    }
+    const persistedModel3dUrl =
+      persistedProduct?.model_3d_url ||
+      persistedProduct?.model3dUrl ||
+      created?.model_3d_url ||
+      created?.model3dUrl ||
+      "";
+    if (model3dFile.value && !persistedModel3dUrl) {
+      throw new Error("MODEL_3D_UPLOAD_FAILED");
+    }
 
     if (productId) {
       await Promise.all(
@@ -466,7 +556,16 @@ async function onSubmit(values, { resetForm, setErrors }) {
     }
 
     await Swal.fire("Thành công!", "Tạo sản phẩm thành công!", "success");
-    resetForm({ values: { name: "", description: "", unit: "", category_id: "" } });
+    resetForm({
+      values: {
+        name: "",
+        description: "",
+        model_3d_url: "",
+        unit: "",
+        category_id: "",
+      },
+    });
+    clearModel3dFile();
     resetProduct_details();
   } catch (e) {
     console.log("Error response data:", e);
@@ -485,6 +584,9 @@ async function onSubmit(values, { resetForm, setErrors }) {
     }
 
     const msg =
+      e?.message === "MODEL_3D_UPLOAD_FAILED"
+        ? "Lưu sản phẩm thành công nhưng model 3D chưa được ghi nhận. Hãy kiểm tra lại backend."
+        :
       data?.message ||
       data?.error ||
       "Tạo sản phẩm thất bại. Vui lòng thử lại.";

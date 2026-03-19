@@ -5,7 +5,8 @@
         <div>
           <h4 class="mb-1">Chế độ xem sản xuất</h4>
           <div class="small opacity-75">
-            Xem trước thiết kế, thông số kỹ thuật sticker và xuất file PDF/SVG cho xưởng in.
+            Xem trước thiết kế, thông số kỹ thuật sticker và xuất file PDF/SVG cho
+            xưởng in.
           </div>
         </div>
 
@@ -31,7 +32,8 @@
       <div class="card card-soft">
         <div class="card-body">
           <div v-if="loading" class="py-4 text-center opacity-75">
-            <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu sản xuất...
+            <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu sản
+            xuất...
           </div>
 
           <div v-else-if="!production" class="py-4 text-center opacity-75">
@@ -63,9 +65,12 @@
                 <div class="production-item">
                   <div class="production-item__head">
                     <div>
-                      <h5 class="mb-1">{{ item.product_name || "Thiết kế nón bảo hiểm" }}</h5>
+                      <h5 class="mb-1">
+                        {{ item.product_name || "Thiết kế nón bảo hiểm" }}
+                      </h5>
                       <div class="small opacity-75">
-                        Chi tiết đơn: OD{{ item.order_detail_id }} | Chi tiết sản phẩm: PD{{ item.product_detail_id }}
+                        Chi tiết đơn: OD{{ item.order_detail_id }} | Chi tiết sản phẩm:
+                        PD{{ item.product_detail_id }}
                       </div>
                     </div>
                     <div class="item-meta">
@@ -78,82 +83,107 @@
                     </div>
                   </div>
 
-                  <div class="row g-3 mt-1">
-                    <div class="col-12 col-xl-5">
-                      <div class="preview-shell">
-                        <div class="preview-stage" :style="{
-                          aspectRatio: `${item.canvas_width_px} / ${item.canvas_height_px}`,
-                        }">
-                          <img v-if="item.base_image_url || item.preview_image_url" class="preview-base"
-                            :src="item.base_image_url || item.preview_image_url" alt="Helmet base" />
-                          <div v-else class="preview-base preview-base--empty">
-                            Không có ảnh nền nón
-                          </div>
-
-                          <div v-for="layer in sortedLayers(item.layers)"
-                            :key="`${item.order_detail_id}-${layer.z_index}-${layer.sticker_id}`" class="preview-layer"
-                            :style="layerBoxStyle(item, layer)">
-                            <div class="preview-layer__clip" :style="layerClipStyle(layer)">
-                              <img v-if="layer.image_url" class="preview-layer__image" :src="layer.image_url"
-                                alt="Sticker preview" :style="layerImageStyle(layer)" />
-                              <div v-else class="preview-layer__missing">Thiếu ảnh</div>
-                            </div>
-                          </div>
-                        </div>
+                  <div class="spec-grid mt-3 mb-3">
+                    <div class="spec-card">
+                      <div class="spec-label">Khung vẽ (Canvas)</div>
+                      <div class="spec-value">
+                        {{ formatNumber(item.canvas_width_px, 0) }} x
+                        {{ formatNumber(item.canvas_height_px, 0) }} px
                       </div>
                     </div>
+                    <div class="spec-card">
+                      <div class="spec-label">Tổng lớp sticker</div>
+                      <div class="spec-value">{{ item.layers?.length || 0 }}</div>
+                    </div>
+                    <div class="spec-card">
+                      <div class="spec-label">Số góc hiển thị</div>
+                      <div class="spec-value">{{ sortedViews(item.views).length }}</div>
+                    </div>
+                  </div>
 
-                    <div class="col-12 col-xl-7">
-                      <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                          <thead>
-                            <tr class="small opacity-75">
-                              <th>Sticker</th>
-                              <th>Vị trí</th>
-                              <th>Kích thước in</th>
-                              <th>Tọa độ X / Y</th>
-                              <th>Góc xoay</th>
-                              <th>Lớp (Z)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="layer in sortedLayers(item.layers)"
-                              :key="`spec-${item.order_detail_id}-${layer.z_index}-${layer.sticker_id}`">
-                              <td>
-                                <div class="fw-semibold">{{ layer.sticker_name || "Sticker" }}</div>
-                                <div class="small opacity-75">ID: {{ layer.sticker_id || "-" }}</div>
-                              </td>
-                              <td>{{ layer.position_label || "-" }}</td>
-                              <td>
-                                {{ formatMeasure(layer.render_width_mm) }} x
-                                {{ formatMeasure(layer.render_height_mm) }} mm
-                              </td>
-                              <td>
-                                {{ formatNumber(layer.x, 3) }} / {{ formatNumber(layer.y, 3) }}
-                              </td>
-                              <td>{{ formatNumber(layer.rotation_degrees, 2) }}°</td>
-                              <td>{{ layer.z_index }}</td>
-                            </tr>
-                            <tr v-if="!item.layers?.length">
-                              <td colspan="6" class="text-center opacity-75 py-4">
-                                Không có lớp sticker nào trong thiết kế này.
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div class="spec-grid mt-3">
-                        <div class="spec-card">
-                          <div class="spec-label">Khung vẽ (Canvas)</div>
-                          <div class="spec-value">
-                            {{ formatNumber(item.canvas_width_px, 0) }} x
-                            {{ formatNumber(item.canvas_height_px, 0) }} px
-                          </div>
+                  <div class="row g-3">
+                    <div v-for="view in sortedViews(item.views)"
+                      :key="`${item.order_detail_id}-${view.view_image_key || 'default'}`" class="col-12">
+                      <div class="view-block">
+                        <div class="view-block__head">
+                          <span class="view-pill">
+                            {{ view.label || viewLabel(view.view_image_key) }}
+                          </span>
+                          <span class="small opacity-75">
+                            {{ sortedLayers(view.layers).length }} sticker
+                          </span>
                         </div>
-                        <div class="spec-card">
-                          <div class="spec-label">Số lớp sticker</div>
-                          <div class="spec-value">{{ item.layers?.length || 0 }}</div>
+
+                        <div class="row g-3 mt-1">
+                          <div class="col-12 col-xl-5">
+                            <div class="preview-shell">
+                              <div class="preview-stage" :style="{
+                                aspectRatio: `${item.canvas_width_px} / ${item.canvas_height_px}`,
+                              }">
+                                <img v-if="resolveViewBaseImage(item, view)" class="preview-base"
+                                  :src="resolveViewBaseImage(item, view)" alt="Helmet base" />
+                                <div v-else class="preview-base preview-base--empty">
+                                  Không có ảnh nền nón
+                                </div>
+
+                                <div v-for="layer in sortedLayers(view.layers)"
+                                  :key="`${item.order_detail_id}-${view.view_image_key || 'default'}-${layer.z_index}-${layer.sticker_id}`"
+                                  class="preview-layer" :style="layerBoxStyle(item, layer)">
+                                  <div class="preview-layer__clip" :style="layerClipStyle(layer)">
+                                    <img v-if="layer.image_url" class="preview-layer__image" :src="layer.image_url"
+                                      alt="Sticker preview" :style="layerImageStyle(layer)" />
+                                    <div v-else class="preview-layer__missing">Thiếu ảnh</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-xl-7">
+                            <div class="table-responsive">
+                              <table class="table align-middle mb-0">
+                                <thead>
+                                  <tr class="small opacity-75">
+                                    <th>Sticker</th>
+                                    <th>Vị trí</th>
+                                    <th>Kích thước in</th>
+                                    <th>Tọa độ X / Y</th>
+                                    <th>Góc xoay</th>
+                                    <th>Lớp (Z)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr v-for="layer in sortedLayers(view.layers)"
+                                    :key="`spec-${item.order_detail_id}-${view.view_image_key || 'default'}-${layer.z_index}-${layer.sticker_id}`">
+                                    <td>
+                                      <div class="fw-semibold">
+                                        {{ layer.sticker_name || "Sticker" }}
+                                      </div>
+                                      <div class="small opacity-75">
+                                        ID: {{ layer.sticker_id || "-" }}
+                                      </div>
+                                    </td>
+                                    <td>{{ layer.position_label || "-" }}</td>
+                                    <td>
+                                      {{ formatMeasure(layer.render_width_mm) }} x
+                                      {{ formatMeasure(layer.render_height_mm) }} mm
+                                    </td>
+                                    <td>
+                                      {{ formatNumber(layer.x, 3) }} /
+                                      {{ formatNumber(layer.y, 3) }}
+                                    </td>
+                                    <td>{{ formatNumber(layer.rotation_degrees, 2) }}°</td>
+                                    <td>{{ layer.z_index }}</td>
+                                  </tr>
+                                  <tr v-if="!view.layers?.length">
+                                    <td colspan="6" class="text-center opacity-75 py-4">
+                                      Không có sticker nào ở góc này.
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -192,10 +222,44 @@ const loading = ref(true);
 const production = ref(null);
 const exportingFormat = ref("");
 
+const viewKeyOrder = {
+  front: 0,
+  front_right: 1,
+  right: 2,
+  back: 3,
+  left: 4,
+  front_left: 5,
+};
+
 function sortedLayers(layers) {
   return [...(layers || [])].sort((left, right) => {
     return Number(left?.z_index || 0) - Number(right?.z_index || 0);
   });
+}
+
+function sortedViews(views) {
+  return [...(views || [])].sort((left, right) => {
+    const leftKey = String(left?.view_image_key || "").trim();
+    const rightKey = String(right?.view_image_key || "").trim();
+    const leftOrder = viewKeyOrder[leftKey] ?? 999;
+    const rightOrder = viewKeyOrder[rightKey] ?? 999;
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return leftKey.localeCompare(rightKey);
+  });
+}
+
+function viewLabel(viewImageKey) {
+  const key = String(viewImageKey || "").trim();
+  return (
+    {
+      front: "Mặt trước",
+      front_right: "Chéo phải",
+      right: "Bên phải",
+      back: "Mặt sau",
+      left: "Bên trái",
+      front_left: "Chéo trái",
+    }[key] || "Ảnh mặc định"
+  );
 }
 
 function showRefundBadge(refundStatus) {
@@ -213,6 +277,16 @@ function formatNumber(value, digits = 2) {
   return numeric.toFixed(digits);
 }
 
+function resolveViewBaseImage(item, view) {
+  return (
+    view?.base_image_url ||
+    view?.preview_image_url ||
+    item?.base_image_url ||
+    item?.preview_image_url ||
+    ""
+  );
+}
+
 function layerBoxStyle(item, layer) {
   const canvasWidth = Number(item?.canvas_width_px || 1);
   const canvasHeight = Number(item?.canvas_height_px || 1);
@@ -220,18 +294,19 @@ function layerBoxStyle(item, layer) {
     left: `${((Number(layer?.left_px || 0) / canvasWidth) * 100).toFixed(4)}%`,
     top: `${((Number(layer?.top_px || 0) / canvasHeight) * 100).toFixed(4)}%`,
     width: `${((Number(layer?.box_size_px || 0) / canvasWidth) * 100).toFixed(4)}%`,
-    height: `${((Number(layer?.box_size_px || 0) / canvasWidth) * 100).toFixed(4)}%`,
+    height: `${((Number(layer?.box_size_px || 0) / canvasHeight) * 100).toFixed(4)}%`,
     transform: `rotate(${Number(layer?.rotation_degrees || 0)}deg)`,
   };
 }
 
 function layerClipStyle(layer) {
-  const boxSize = Math.max(Number(layer?.box_size_px || 0), 1);
+  const boxWidth = Math.max(Number(layer?.box_size_px || 0), 1);
+  const boxHeight = Math.max(Number(layer?.box_size_px || 0), 1);
   return {
-    left: `${((Number(layer?.visible_offset_x_px || 0) / boxSize) * 100).toFixed(4)}%`,
-    top: `${((Number(layer?.visible_offset_y_px || 0) / boxSize) * 100).toFixed(4)}%`,
-    width: `${((Number(layer?.visible_width_px || 0) / boxSize) * 100).toFixed(4)}%`,
-    height: `${((Number(layer?.visible_height_px || 0) / boxSize) * 100).toFixed(4)}%`,
+    left: `${((Number(layer?.visible_offset_x_px || 0) / boxWidth) * 100).toFixed(4)}%`,
+    top: `${((Number(layer?.visible_offset_y_px || 0) / boxHeight) * 100).toFixed(4)}%`,
+    width: `${((Number(layer?.visible_width_px || 0) / boxWidth) * 100).toFixed(4)}%`,
+    height: `${((Number(layer?.visible_height_px || 0) / boxHeight) * 100).toFixed(4)}%`,
   };
 }
 
@@ -283,7 +358,6 @@ onMounted(fetchProduction);
 </script>
 
 <style scoped>
-/* Giữ nguyên các style cũ của bạn */
 .card-soft {
   background: var(--main-extra-bg);
   border: 1px solid var(--border-color);
@@ -302,45 +376,6 @@ onMounted(fetchProduction);
   background: color-mix(in srgb, var(--main-color) 14%, transparent);
   border: 1px solid var(--hover-border-color);
   color: var(--font-color);
-}
-
-.status-pending,
-.payment-unpaid {
-  background: var(--status-warning-bg);
-  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.status-shipping,
-.payment-paid,
-.refund-resolved {
-  background: var(--status-success-bg);
-  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.status-completed {
-  background: var(--status-info-bg);
-  border: 1px solid color-mix(in srgb, var(--status-info) 55%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.status-canceled,
-.refund-contact-required {
-  background: var(--status-danger-bg);
-  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
-  color: var(--font-color);
-  font-weight: 700;
-}
-
-.refund-none {
-  background: color-mix(in srgb, var(--main-extra-bg) 80%, white 20%);
-  border: 1px solid var(--border-color);
-  color: var(--font-color);
-  font-weight: 700;
 }
 
 .btn-export,
@@ -383,6 +418,33 @@ onMounted(fetchProduction);
 
 .label {
   opacity: 0.7;
+}
+
+.view-block {
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.view-block__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.view-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--main-color) 16%, transparent);
+  border: 1px solid var(--hover-border-color);
 }
 
 .preview-shell {

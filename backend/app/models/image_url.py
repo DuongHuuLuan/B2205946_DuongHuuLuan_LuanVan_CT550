@@ -11,6 +11,7 @@ class ImageURL(Base):
     color_id = Column(Integer, ForeignKey("colors.id"))
     url = Column(String(255), nullable=False)
     public_id = Column(String(255), nullable=False)
+    view_image_key = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

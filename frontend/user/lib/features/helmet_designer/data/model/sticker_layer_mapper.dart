@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/model/sticker_crop_mapper.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_3d_surface.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
 
 class StickerLayerMapper {
@@ -19,10 +20,28 @@ class StickerLayerMapper {
           (json["z_index"] as num?)?.toInt() ??
           (json["zIndex"] as num?)?.toInt() ??
           0,
+      viewImageKey:
+          json["view_image_key"]?.toString() ??
+          json["viewImageKey"]?.toString(),
       tintColorValue:
           (json["tint_color_value"] as num?)?.toInt() ??
           (json["tintColorValue"] as num?)?.toInt(),
       crop: StickerCropMapper.fromJson(json["crop"] as Map<String, dynamic>?),
+      surface: helmet3dSurfaceFromValue(
+        json["surface"]?.toString() ?? json["surface_name"]?.toString(),
+      ),
+      surfaceX:
+          (json["surface_x"] as num?)?.toDouble() ??
+          (json["surfaceX"] as num?)?.toDouble() ??
+          0.5,
+      surfaceY:
+          (json["surface_y"] as num?)?.toDouble() ??
+          (json["surfaceY"] as num?)?.toDouble() ??
+          0.5,
+      surfaceScale:
+          (json["surface_scale"] as num?)?.toDouble() ??
+          (json["surfaceScale"] as num?)?.toDouble() ??
+          1,
     );
   }
 
@@ -36,8 +55,13 @@ class StickerLayerMapper {
       "scale": layer.scale,
       "rotation": layer.rotation,
       "z_index": layer.zIndex,
+      "view_image_key": layer.viewImageKey,
       "tint_color_value": layer.tintColorValue,
       "crop": StickerCropMapper.toJson(layer.crop),
+      "surface": layer.surface.value,
+      "surface_x": layer.surfaceX,
+      "surface_y": layer.surfaceY,
+      "surface_scale": layer.surfaceScale,
     };
   }
 }

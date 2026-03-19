@@ -1,24 +1,32 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/ai_sticker_request.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_design.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_designer_repository.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_3d_surface.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_crop.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_template.dart';
 import 'package:flutter/material.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
 
 class HelmetDesignerViewModel extends ChangeNotifier {
   final HelmetDesignerRepository _repository;
+  final ProductRepository _productRepository;
 
-  HelmetDesignerViewModel(this._repository);
+  HelmetDesignerViewModel(this._repository, this._productRepository);
 
   final List<StickerTemplate> _stickerCatalog = [];
   final List<StickerLayer> _stickerLayers = [];
+  final List<ProductImage> _designViews = [];
 
   HelmetDesign _currentDesign = HelmetDesign(
     id: 0,
     helmetProductId: 0,
     helmetName: "",
     helmetBaseImageUrl: "",
+    helmetModel3dUrl: null,
+    helmetModel3dIosUrl: null,
     stickers: const [],
     isShared: false,
   );
@@ -32,6 +40,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   String? errorMessage;
   String? shareUrl;
   int? selectedLayerId;
+  String? _activeViewImageKey;
   int _nextLayerId = 1;
   int? _selectedProductDetailId;
   int _orderQuantity = 1;
@@ -39,13 +48,38 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   List<StickerTemplate> get stickerCatalog =>
       List.unmodifiable(_stickerCatalog);
   List<StickerLayer> get stickerLayers => List.unmodifiable(_sortedLayers());
+  List<ProductImage> get designViews => List.unmodifiable(_designViews);
+  List<StickerLayer> get visibleStickerLayers {
+    final layers = _sortedLayers();
+    if (_designViews.isEmpty) return layers;
+    final activeKey = (_activeViewImageKey ?? '').trim();
+    return layers
+        .where((layer) => (layer.viewImageKey ?? '').trim() == activeKey)
+        .toList();
+  }
   HelmetDesign get currentDesign => _currentDesign;
   StickerLayer? get selectedLayer => _findLayerById(selectedLayerId);
+  ProductImage? get activeDesignView {
+    final activeKey = (_activeViewImageKey ?? '').trim();
+    for (final item in _designViews) {
+      if ((item.viewImageKey ?? '').trim() == activeKey) {
+        return item;
+      }
+    }
+    return _designViews.isNotEmpty ? _designViews.first : null;
+  }
   bool get hasLayers => _stickerLayers.isNotEmpty;
+  bool get hasDesignViews => _designViews.isNotEmpty;
+  bool get hasMultipleDesignViews => _designViews.length > 1;
   int? get selectedProductDetailId => _selectedProductDetailId;
   int get orderQuantity => _orderQuantity;
+  String? get activeViewImageKey => _activeViewImageKey;
+  String get currentPreviewImageUrl =>
+      activeDesignView?.url ?? _currentDesign.helmetBaseImageUrl;
   bool get hasOrderTarget =>
       (_selectedProductDetailId ?? 0) > 0 && _orderQuantity > 0;
+  bool get has3dModel =>
+      (_currentDesign.helmetModel3dUrl?.trim().isNotEmpty ?? false);
 
   Future<void> loadStickerCatalog() async {
     if (isLoadingCatalog) return;
@@ -70,14 +104,27 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     required int helmetProductId,
     required String helmetName,
     required String helmetBaseImageUrl,
+    List<ProductImage> designViews = const [],
+    String? helmetModel3dUrl,
+    String? helmetModel3dIosUrl,
     int? productDetailId,
     int orderQuantity = 1,
   }) {
+    _designViews
+      ..clear()
+      ..addAll(_sortedDesignViews(designViews));
+    _activeViewImageKey = _resolveInitialViewImageKey(
+      fallbackImageUrl: helmetBaseImageUrl,
+    );
     _currentDesign = HelmetDesign(
       id: 0,
       helmetProductId: helmetProductId,
       helmetName: helmetName,
-      helmetBaseImageUrl: helmetBaseImageUrl,
+      helmetBaseImageUrl: _resolvePreviewImageUrl(
+        fallbackImageUrl: helmetBaseImageUrl,
+      ),
+      helmetModel3dUrl: helmetModel3dUrl,
+      helmetModel3dIosUrl: helmetModel3dIosUrl,
       stickers: const [],
       isShared: false,
     );
@@ -111,11 +158,16 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     int? helmetProductId,
     String? helmetName,
     String? helmetBaseImageUrl,
+    String? helmetModel3dUrl,
+    String? helmetModel3dIosUrl,
   }) {
     _currentDesign = _currentDesign.copyWith(
       helmetProductId: helmetProductId,
       helmetName: helmetName,
-      helmetBaseImageUrl: helmetBaseImageUrl,
+      helmetBaseImageUrl:
+          helmetBaseImageUrl ?? _resolvePreviewImageUrl(),
+      helmetModel3dUrl: helmetModel3dUrl,
+      helmetModel3dIosUrl: helmetModel3dIosUrl,
       stickers: _sortedLayers(),
     );
     notifyListeners();
@@ -129,14 +181,12 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
     try {
       final design = await _repository.getDesignDetail(designId);
-      _currentDesign = design;
+      _currentDesign = await _restoreDesignContext(design);
       _stickerLayers
         ..clear()
         ..addAll(design.stickers);
       _normalizeLayerOrder(notify: false);
-      selectedLayerId = _stickerLayers.isNotEmpty
-          ? _sortedLayers().last.id
-          : null;
+      selectedLayerId = _resolveInitialSelectedLayerId();
       shareUrl = null;
       _reseedNextLayerId();
     } catch (e) {
@@ -191,7 +241,12 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       scale: _scaleValue(scale),
       rotation: rotation,
       zIndex: _stickerLayers.length,
+      viewImageKey: _designViews.isEmpty ? null : _activeViewImageKey,
       crop: StickerCrop(),
+      surface: Helmet3dSurface.front,
+      surfaceX: 0.5,
+      surfaceY: 0.45,
+      surfaceScale: 1,
     );
 
     _stickerLayers.add(layer);
@@ -207,9 +262,21 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_findLayerById(layerId) == null) return;
+    final layer = _findLayerById(layerId);
+    if (layer == null) return;
+    if (_designViews.isNotEmpty) {
+      final nextViewKey = (layer.viewImageKey ?? '').trim();
+      if (nextViewKey.isNotEmpty && nextViewKey != _activeViewImageKey) {
+        _setActiveViewImageKey(nextViewKey, notify: false);
+      }
+    }
     selectedLayerId = layerId;
     notifyListeners();
+  }
+
+  void selectDesignView(String? viewImageKey) {
+    if (_designViews.isEmpty) return;
+    _setActiveViewImageKey(viewImageKey);
   }
 
   void updateSelectedLayerPosition({required double x, required double y}) {
@@ -254,6 +321,22 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     _updateSelectedLayer(crop: normalized);
   }
 
+  void updateSelectedLayerSurface(Helmet3dSurface surface) {
+    _updateSelectedLayer(surface: surface);
+  }
+
+  void updateSelectedLayerSurfacePlacement({
+    double? surfaceX,
+    double? surfaceY,
+    double? surfaceScale,
+  }) {
+    _updateSelectedLayer(
+      surfaceX: surfaceX,
+      surfaceY: surfaceY,
+      surfaceScale: surfaceScale,
+    );
+  }
+
   void bringSelectedLayerForward() {
     _moveSelectedLayerBy(1);
   }
@@ -290,11 +373,22 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final localLayers = _sortedLayers();
+      final localDesignViews = List<ProductImage>.from(_designViews);
+      final localActiveViewImageKey = _activeViewImageKey;
       final saved = await _repository.saveDesign(_buildCurrentDesign());
-      _currentDesign = saved;
+      _designViews
+        ..clear()
+        ..addAll(localDesignViews);
+      _activeViewImageKey = localActiveViewImageKey;
+      _currentDesign = saved.copyWith(
+        helmetBaseImageUrl: _resolvePreviewImageUrl(
+          fallbackImageUrl: saved.helmetBaseImageUrl,
+        ),
+      );
       _stickerLayers
         ..clear()
-        ..addAll(saved.stickers);
+        ..addAll(_mergeSavedLayers(saved.stickers, localLayers));
       _normalizeLayerOrder(notify: false);
       _reseedNextLayerId();
       return saved;
@@ -367,6 +461,160 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<ProductImage> _sortedDesignViews(List<ProductImage> items) {
+    final views = List<ProductImage>.from(items);
+    views.sort((left, right) {
+      final priority = viewImageKeyPriority(
+        left.viewImageKey,
+      ).compareTo(viewImageKeyPriority(right.viewImageKey));
+      if (priority != 0) return priority;
+      return left.id.compareTo(right.id);
+    });
+    return views;
+  }
+
+  String? _resolveInitialViewImageKey({String? fallbackImageUrl}) {
+    if (_designViews.isEmpty) return null;
+    for (final item in _designViews) {
+      if ((item.viewImageKey ?? '').trim() == 'front') {
+        return item.viewImageKey?.trim();
+      }
+    }
+    final fallback = (fallbackImageUrl ?? '').trim();
+    if (fallback.isNotEmpty) {
+      for (final item in _designViews) {
+        if (item.url.trim() == fallback) {
+          return item.viewImageKey?.trim();
+        }
+      }
+    }
+    return _designViews.first.viewImageKey?.trim();
+  }
+
+  String? _resolveLoadedViewImageKey({
+    required List<StickerLayer> stickers,
+    String? fallbackImageUrl,
+  }) {
+    final byImage = _resolveInitialViewImageKey(fallbackImageUrl: fallbackImageUrl);
+    if ((byImage ?? '').isNotEmpty) return byImage;
+
+    for (final sticker in stickers) {
+      final key = (sticker.viewImageKey ?? '').trim();
+      if (key.isEmpty) continue;
+      final exists = _designViews.any(
+        (item) => (item.viewImageKey ?? '').trim() == key,
+      );
+      if (exists) return key;
+    }
+    return null;
+  }
+
+  String _resolvePreviewImageUrl({String? fallbackImageUrl}) {
+    return activeDesignView?.url ??
+        fallbackImageUrl ??
+        _currentDesign.helmetBaseImageUrl;
+  }
+
+  Future<HelmetDesign> _restoreDesignContext(HelmetDesign design) async {
+    _designViews.clear();
+    _activeViewImageKey = null;
+
+    final productId = design.helmetProductId;
+    if (productId <= 0) {
+      return design;
+    }
+
+    try {
+      final product = await _productRepository.productDetail(productId);
+      final resolvedViews = product.resolveDesignViewsForBaseImage(
+        design.helmetBaseImageUrl,
+      );
+      if (resolvedViews.isNotEmpty) {
+        _designViews.addAll(_sortedDesignViews(resolvedViews));
+      }
+
+      final currentBaseImageUrl =
+          product.resolveCurrentImageUrl(design.helmetBaseImageUrl) ??
+          design.helmetBaseImageUrl;
+
+      _activeViewImageKey = _resolveLoadedViewImageKey(
+        stickers: design.stickers,
+        fallbackImageUrl: currentBaseImageUrl,
+      );
+
+      final resolvedImageUrl = currentBaseImageUrl.isNotEmpty
+          ? currentBaseImageUrl
+          : activeDesignView?.url ??
+                product.pickPrimaryImageUrl() ??
+                design.helmetBaseImageUrl;
+
+      return design.copyWith(
+        helmetName: design.helmetName.isNotEmpty ? design.helmetName : product.name,
+        helmetBaseImageUrl: resolvedImageUrl,
+        helmetModel3dUrl: design.helmetModel3dUrl ?? product.model3dUrl,
+        helmetModel3dIosUrl:
+            design.helmetModel3dIosUrl ?? product.model3dIosUrl,
+      );
+    } catch (_) {
+      _activeViewImageKey = _resolveLoadedViewImageKey(
+        stickers: design.stickers,
+        fallbackImageUrl: design.helmetBaseImageUrl,
+      );
+      return design;
+    }
+  }
+
+  void _setActiveViewImageKey(String? viewImageKey, {bool notify = true}) {
+    if (_designViews.isEmpty) return;
+    final normalized = (viewImageKey ?? '').trim();
+    final matched = _designViews.where(
+      (item) => (item.viewImageKey ?? '').trim() == normalized,
+    );
+    final nextView = matched.isNotEmpty ? matched.first : _designViews.first;
+    _activeViewImageKey = (nextView.viewImageKey ?? '').trim();
+    if (selectedLayer != null &&
+        (selectedLayer!.viewImageKey ?? '').trim() != _activeViewImageKey) {
+      selectedLayerId = null;
+    }
+    _syncCurrentDesign();
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  List<StickerLayer> _mergeSavedLayers(
+    List<StickerLayer> savedLayers,
+    List<StickerLayer> localLayers,
+  ) {
+    final merged = <StickerLayer>[];
+    for (var index = 0; index < savedLayers.length; index++) {
+      final localLayer = index < localLayers.length ? localLayers[index] : null;
+      merged.add(
+        savedLayers[index].copyWith(
+          viewImageKey: localLayer?.viewImageKey,
+          clearViewImageKey: localLayer == null,
+          surface: localLayer?.surface,
+          surfaceX: localLayer?.surfaceX,
+          surfaceY: localLayer?.surfaceY,
+          surfaceScale: localLayer?.surfaceScale,
+        ),
+      );
+    }
+    return merged;
+  }
+
+  int? _resolveInitialSelectedLayerId() {
+    final visible = visibleStickerLayers;
+    if (visible.isNotEmpty) {
+      return visible.last.id;
+    }
+    final ordered = _sortedLayers();
+    if (ordered.isNotEmpty) {
+      return ordered.last.id;
+    }
+    return null;
+  }
+
   void _updateSelectedLayer({
     double? x,
     double? y,
@@ -375,6 +623,10 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     int? tintColorValue,
     bool clearTintColor = false,
     StickerCrop? crop,
+    Helmet3dSurface? surface,
+    double? surfaceX,
+    double? surfaceY,
+    double? surfaceScale,
   }) {
     final layerId = selectedLayerId;
     if (layerId == null) return;
@@ -390,6 +642,11 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       tintColorValue: tintColorValue,
       clearTintColor: clearTintColor,
       crop: crop,
+      surface: surface,
+      surfaceX: surfaceX == null ? null : _unitValue(surfaceX),
+      surfaceY: surfaceY == null ? null : _unitValue(surfaceY),
+      surfaceScale:
+          surfaceScale == null ? null : _surfaceScaleValue(surfaceScale),
     );
     _syncCurrentDesign();
     notifyListeners();
@@ -441,7 +698,10 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   }
 
   void _syncCurrentDesign() {
-    _currentDesign = _currentDesign.copyWith(stickers: _sortedLayers());
+    _currentDesign = _currentDesign.copyWith(
+      helmetBaseImageUrl: _resolvePreviewImageUrl(),
+      stickers: _sortedLayers(),
+    );
   }
 
   void _reseedNextLayerId() {
@@ -487,5 +747,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
   double _scaleValue(double value) {
     return value.clamp(0.1, 4.0).toDouble();
+  }
+
+  double _surfaceScaleValue(double value) {
+    return value.clamp(0.35, 2.4).toDouble();
   }
 }

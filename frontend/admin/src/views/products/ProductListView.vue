@@ -57,7 +57,7 @@
 
                   <td class="text-start ps-0" style="width: 50px;">
                     <div class="thumb-wrap">
-                      <img v-if="getFirstImage(p)" :src="getFirstImage(p)" class="thumb" :alt="p.name || 'product'" />
+                      <img v-if="getProductThumb(p)" :src="getProductThumb(p)" class="thumb" :alt="p.name || 'product'" />
                       <div v-else class="thumb thumb-placeholder">
                         <i class="fa-regular fa-image"></i>
                       </div>
@@ -145,6 +145,7 @@ import { ref, watch, onMounted } from "vue";
 import SearchToggle from '@/components/common/SearchToggle.vue';
 import Swal from "sweetalert2";
 import ProductService from "../../services/product.service";
+import { getProductThumb } from "@/utils/utils";
 
 const keyword = ref("");
 const page = ref(1);
@@ -153,12 +154,6 @@ const perPage = 8;
 const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
-
-function getFirstImage(product) {
-  const first = product?.product_images?.[0];
-  if (!first) return "";
-  return first ? first.url : "";
-}
 
 async function fetchProducts() {
   loading.value = true;

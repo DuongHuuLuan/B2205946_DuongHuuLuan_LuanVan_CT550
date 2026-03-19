@@ -72,7 +72,7 @@ class StickerService(BaseService):
         if generated_count >= settings.AI_STICKER_MAX_PER_DAY:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Ban da dat gioi han tao sticker AI trong ngay",
+                detail="Bạn đã đạt giới hạn tạo sticker AI trong ngày",
             )
 
     @staticmethod
@@ -89,7 +89,7 @@ class StickerService(BaseService):
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Khong the tai anh sticker len Cloudinary: {exc}",
+                detail=f"Không thể tải ảnh sticker lên Cloudinary: {exc}",
             ) from exc
 
     @staticmethod
@@ -102,7 +102,7 @@ class StickerService(BaseService):
         if not prompt:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Prompt khong duoc de trong",
+                detail="Prompt không được để trống",
             )
 
         StickerService._enforce_ai_generation_limit(db, user_id)
@@ -122,7 +122,7 @@ class StickerService(BaseService):
         if not image_url or not public_id:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Cloudinary khong tra ve thong tin anh hop le",
+                detail="Cloudinary không trả về thông tin hợp lệ",
             )
 
         sticker = Sticker(

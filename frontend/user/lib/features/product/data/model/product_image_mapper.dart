@@ -6,6 +6,7 @@ class ProductImageMapper extends ProductImage {
     required super.url,
     required super.publicId,
     required super.colorId,
+    super.viewImageKey,
   });
 
   factory ProductImageMapper.fromJson(Map<String, dynamic> json) {
@@ -17,6 +18,7 @@ class ProductImageMapper extends ProductImage {
       url: json["url"] ?? "",
       publicId: json["public_id"] ?? "",
       colorId: toNullableInt(json["color_id"]),
+      viewImageKey: json["view_image_key"]?.toString(),
     );
   }
 }

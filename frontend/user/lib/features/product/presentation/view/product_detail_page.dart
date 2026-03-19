@@ -12,6 +12,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_reponsitory.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -96,6 +97,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     ProductDetail productDetail,
     int quantity,
   ) {
+    final designViews = product.filterDesignViews(productDetail.colorId);
     context.push(
       "/helmet-designer",
       extra: {
@@ -104,6 +106,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         "quantity": quantity,
         "helmetName": product.name,
         "helmetBaseImageUrl": baseImageUrl ?? "",
+        "helmetModel3dUrl": product.model3dUrl,
+        "helmetDesignViews": designViews,
       },
     );
   }
@@ -447,13 +451,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     : () => _openHelmetDesigner(
                         p,
                         mainUrl ??
-                            (p.images.isNotEmpty ? p.images.first.url : null),
+                            p.pickPrimaryImageUrl(vm.selectedColorId),
                         productDetail,
                         vm.quantity,
                       ),
                 // icon: const Icon(Icons.design_services_outlined),
                 label: const Text(
-                  "THIẾT KẾ NÓN",
+                  "THÊM STICKER",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -1077,10 +1081,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required Product product,
     required int colorId,
   }) {
-    final byColor = product.images.where((e) => e.colorId == colorId).toList();
-    if (byColor.isNotEmpty) return byColor.first.url;
-    if (product.images.isNotEmpty) return product.images.first.url;
-    return null;
+    return product.pickPrimaryImageUrl(colorId);
   }
 }
 

@@ -276,7 +276,11 @@ class OrderService:
                     "product_detail_id": product_detail.id,
                     "design_id": cart_detail.design_id,
                     "design_snapshot_json": ProductionSnapshotService.build_design_snapshot(
-                        getattr(cart_detail, "design", None)
+                        getattr(cart_detail, "design", None),
+                        product_images=list(
+                            getattr(product_detail.product, "product_images", []) or []
+                        ),
+                        color_id=getattr(product_detail, "color_id", None),
                     ),
                     "quantity": requested_quantity,
                     "price": discounted_unit_price,

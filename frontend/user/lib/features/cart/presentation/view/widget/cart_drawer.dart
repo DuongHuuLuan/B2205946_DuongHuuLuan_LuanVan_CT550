@@ -225,10 +225,7 @@ class _CartItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final detailProduct = detail.productDetail;
-    final imageUrl = product
-        ?.filterProductImages(detailProduct.colorId)
-        .map((e) => e.url)
-        .firstWhere((url) => url.isNotEmpty, orElse: () => "");
+    final imageUrl = product?.pickPrimaryImageUrl(detailProduct.colorId) ?? "";
 
     final price = detailProduct.price;
     final discountedPrice = discount == null

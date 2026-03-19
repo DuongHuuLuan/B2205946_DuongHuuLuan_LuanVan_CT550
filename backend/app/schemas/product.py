@@ -11,6 +11,7 @@ from app.schemas.product_detail import ProductDetailCreate, ProductDetailOut
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
+    model_3d_url: Optional[str] = None
     unit: UnitEnum = UnitEnum.CHIEC
     category_id: int
 
@@ -40,6 +41,7 @@ class ProductOut(ProductBase):
 
     category: CategoryOut
     product_images: List[ImageUrlOut] = []
+    design_views: List[ImageUrlOut] = []
     product_details: List[ProductDetailOut] = []
     can_delete: bool = True
     delete_block_reason: Optional[str] = None

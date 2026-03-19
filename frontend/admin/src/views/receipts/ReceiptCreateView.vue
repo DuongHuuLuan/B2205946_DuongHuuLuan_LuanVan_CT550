@@ -103,8 +103,8 @@
                           <td>
                             <div class="d-flex align-items-center gap-2">
                               <div class="thumb">
-                                <img v-if="getProductThumb(f.value.product_id)"
-                                  :src="getProductThumb(f.value.product_id)" alt="thumb" />
+                                <img v-if="getProductThumb(f.value.product_id, f.value.color_id)"
+                                  :src="getProductThumb(f.value.product_id, f.value.color_id)" alt="thumb" />
                                 <div v-else class="thumb-placeholder">
                                   <i class="fa-regular fa-image"></i>
                                 </div>
@@ -283,7 +283,7 @@ import * as yup from "yup";
 import Swal from "sweetalert2";
 
 
-import { formatMoney } from "@/utils/utils";
+import { formatMoney, getProductThumb as resolveProductThumb } from "@/utils/utils";
 import ReceiptService from "@/services/receipt.service";
 import DistributorService from "@/services/distributor.service";
 import WarehouseService from "@/services/warehouse.service";
@@ -428,13 +428,9 @@ function getSizesForRow(row) {
   return Array.from(map.values());
 }
 
-function getProductThumb(productId) {
+function getProductThumb(productId, colorId = null) {
   const p = findProductById(productId);
-  if (!p) return "";
-
-  const first = p?.product_images?.[0]?.url || p?.images?.[0]?.url || "";
-
-  return first || "";
+  return resolveProductThumb(p, colorId);
 }
 
 function onProductSelect(idx, productId, setFieldValue) {

@@ -11,7 +11,10 @@ class ProductMapper extends Product {
     required super.description,
     required super.unit,
     required super.categoryId,
+    super.model3dUrl,
+    super.model3dIosUrl,
     required super.images,
+    required super.designViews,
     required super.productDetails,
     super.createdAt,
     super.updatedAt,
@@ -21,6 +24,8 @@ class ProductMapper extends Product {
     final productDetailJson = (json["product_details"] as List? ?? [])
         .cast<Map<String, dynamic>>();
     final imagesJson = (json["product_images"] as List? ?? [])
+        .cast<Map<String, dynamic>>();
+    final designViewsJson = (json["design_views"] as List? ?? [])
         .cast<Map<String, dynamic>>();
 
     int toInt(dynamic value) =>
@@ -32,8 +37,17 @@ class ProductMapper extends Product {
       description: json["description"] ?? "",
       unit: json["unit"] ?? "",
       categoryId: toInt(json["category_id"]),
+      model3dUrl:
+          json["model_3d_url"]?.toString() ??
+          json["model3dUrl"]?.toString(),
+      model3dIosUrl:
+          json["model_3d_ios_url"]?.toString() ??
+          json["model3dIosUrl"]?.toString(),
 
       images: imagesJson
+          .map<ProductImage>((e) => ProductImageMapper.fromJson(e))
+          .toList(),
+      designViews: designViewsJson
           .map<ProductImage>((e) => ProductImageMapper.fromJson(e))
           .toList(),
 

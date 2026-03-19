@@ -27,6 +27,7 @@ class DesignLayerBase(BaseModel):
     scale: float = Field(default=1.0, gt=0.0)
     rotation: float = 0.0
     z_index: int = 0
+    view_image_key: Optional[str] = None
     tint_color_value: Optional[int] = None
     crop: StickerCrop = Field(default_factory=StickerCrop)
 
@@ -63,6 +64,7 @@ class DesignLayerOut(DesignLayerBase):
             "scale": getattr(data, "scale"),
             "rotation": getattr(data, "rotation"),
             "z_index": getattr(data, "z_index"),
+            "view_image_key": getattr(data, "view_image_key", None),
             "tint_color_value": getattr(data, "tint_color_value"),
             "crop": {
                 "left": getattr(data, "crop_left", 0.0),

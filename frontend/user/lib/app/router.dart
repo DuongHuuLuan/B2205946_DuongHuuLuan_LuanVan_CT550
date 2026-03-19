@@ -6,6 +6,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/re
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/view/chat_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_designer_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_3d_view_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_try_on_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
@@ -14,6 +15,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/o
 import 'package:b2205946_duonghuuluan_luanvan/features/others/about/presentation/view/about_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_catagory_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_detail_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/view/product_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
@@ -221,6 +223,10 @@ class AppRouter {
             final helmetProductId = payload["helmetProductId"];
             final productDetailId = payload["productDetailId"];
             final quantity = payload["quantity"];
+            final rawDesignViews = payload["helmetDesignViews"];
+            final designViews = rawDesignViews is List
+                ? rawDesignViews.whereType<ProductImage>().toList()
+                : const <ProductImage>[];
 
             return HelmetDesignerPage(
               designId: designId,
@@ -236,8 +242,14 @@ class AppRouter {
               initialHelmetName: payload["helmetName"]?.toString(),
               initialHelmetBaseImageUrl: payload["helmetBaseImageUrl"]
                   ?.toString(),
+              initialHelmetModel3dUrl: payload["helmetModel3dUrl"]?.toString(),
+              initialHelmetDesignViews: designViews,
             );
           },
+        ),
+        GoRoute(
+          path: "/helmet-3d",
+          builder: (context, state) => const Helmet3dViewPage(),
         ),
         GoRoute(
           path: "/helmet-try-on",

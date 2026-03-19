@@ -6,11 +6,48 @@ const formatMoney = (number) => {
   }
 };
 
-const getProductThumb = (product) => {
+const getImages = (product) => {
+  return product?.images || product?.product_images || [];
+};
+
+const getImageKey = (image) =>
+  String(image?.view_image_key ?? image?.viewImageKey ?? "").trim();
+
+const pickPrimaryProductImage = (product, colorId = null) => {
   if (!product) return "";
-  const images = product?.images || product?.product_images || [];
-  const first = images?.[0]?.url || "";
-  return first || "";
+  const images = getImages(product);
+  const pickFrom = (list) => {
+    if (!Array.isArray(list) || !list.length) return null;
+    // const front = list.find((image) => getImageKey(image) === "front");
+    const front = list.find((image) => getImageKey(image) === "right");
+    if (front) return front;
+    const generic = list.find((image) => !getImageKey(image));
+    return generic || list[0] || null;
+  };
+
+  const hasColorFilter =
+    colorId !== null && colorId !== undefined && colorId !== "";
+  if (hasColorFilter) {
+    const byColor = images.filter(
+      (image) =>
+        String(image?.color_id ?? image?.colorId ?? "") === String(colorId),
+    );
+    if (byColor.length) return pickFrom(byColor);
+  }
+
+  const genericImages = images.filter(
+    (image) =>
+      (image?.color_id === null || image?.color_id === undefined) &&
+      (image?.colorId === null || image?.colorId === undefined),
+  );
+  if (genericImages.length) return pickFrom(genericImages);
+
+  return pickFrom(images);
+};
+
+const getProductThumb = (product, colorId = null) => {
+  const image = pickPrimaryProductImage(product, colorId);
+  return image?.url || "";
 };
 
 const normalizeEnumText = (value) => {
@@ -101,6 +138,7 @@ const formatDateTimeVN = (input) => {
 
 export {
   formatMoney,
+  pickPrimaryProductImage,
   getProductThumb,
   normalizeEnumText,
   statusLabel,

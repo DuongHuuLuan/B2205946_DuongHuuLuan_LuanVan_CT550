@@ -38,6 +38,12 @@
               <div v-if="images.length" class="image-grid">
                 <div v-for="img in images" :key="img.id" class="img-item">
                   <img :src="img.url" :alt="product.name || 'product'" />
+                  <div class="img-meta">
+                    <span class="img-badge">{{ imageColorLabel(img.color_id) }}</span>
+                    <span v-if="img.view_image_key" class="img-badge img-badge--accent">
+                      {{ imageViewLabel(img.view_image_key) }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div v-else class="img-empty">Không có ảnh.</div>
@@ -58,6 +64,20 @@
                 <span class="label">Mô tả:</span>
                 <div class="text-muted mt-1">
                   {{ product.description || "-" }}
+                </div>
+              </div>
+              <div class="mb-3">
+                <span class="label">Model 3D:</span>
+                <div class="text-muted mt-1">
+                  <a
+                    v-if="product.model_3d_url"
+                    :href="product.model_3d_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ product.model_3d_url }}
+                  </a>
+                  <span v-else>-</span>
                 </div>
               </div>
 
@@ -112,32 +132,50 @@ const images = computed(() => {
     : [];
 
   rawImages.sort((left, right) => {
-    const leftTime = Date.parse(left?.created_at || "") || 0;
-    const rightTime = Date.parse(right?.created_at || "") || 0;
-    if (rightTime !== leftTime) return rightTime - leftTime;
-    return Number(right?.id || 0) - Number(left?.id || 0);
+    const leftColor = Number(left?.color_id || 0);
+    const rightColor = Number(right?.color_id || 0);
+    if (leftColor !== rightColor) return leftColor - rightColor;
+
+    const keyOrder = {
+      front: 0,
+      front_right: 1,
+      right: 2,
+      back: 3,
+      left: 4,
+      front_left: 5,
+    };
+    const leftKey = keyOrder[String(left?.view_image_key || "").trim()] ?? 999;
+    const rightKey = keyOrder[String(right?.view_image_key || "").trim()] ?? 999;
+    if (leftKey !== rightKey) return leftKey - rightKey;
+
+    return Number(left?.id || 0) - Number(right?.id || 0);
   });
 
-  const seenKeys = new Set();
-  const deduped = [];
-
-  rawImages.forEach((img) => {
-    const colorId = img?.color_id;
-    const key =
-      colorId !== null && colorId !== undefined
-        ? `color:${colorId}`
-        : `generic:${img?.public_id || img?.url || img?.id || deduped.length}`;
-
-    if (seenKeys.has(key)) return;
-    seenKeys.add(key);
-    deduped.push(img);
-  });
-
-  return deduped;
+  return rawImages;
 });
 
 const details = computed(() => product.value.product_details ?? []);
 const canDelete = computed(() => Boolean(product.value) && product.value.can_delete !== false);
+
+function imageColorLabel(colorId) {
+  if (colorId === null || colorId === undefined) return "Không có màu";
+  const detail = details.value.find(
+    (item) => String(item?.color?.id ?? item?.color_id) === String(colorId)
+  );
+  return detail?.color?.name || `Màu #${colorId}`;
+}
+
+function imageViewLabel(viewKey) {
+  const labels = {
+    front: "Mặt trước",
+    front_right: "Trước phải",
+    right: "Bên phải",
+    back: "Mặt sau",
+    left: "Bên trái",
+    front_left: "Trước trái",
+  };
+  return labels[String(viewKey || "").trim()] || "Ảnh thường";
+}
 
 async function fetchProduct() {
   loading.value = true;
@@ -212,6 +250,7 @@ onMounted(fetchProduct);
 }
 
 .img-item {
+  position: relative;
   width: 100%;
   border-radius: 0.75rem;
   overflow: hidden;
@@ -223,6 +262,29 @@ onMounted(fetchProduct);
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.img-meta {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.img-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.img-badge--accent {
+  background: rgba(13, 110, 253, 0.78);
 }
 
 .img-empty {

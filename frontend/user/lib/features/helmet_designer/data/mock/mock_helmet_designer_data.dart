@@ -5,6 +5,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/he
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_template.dart';
 
 class MockHelmetDesignerData {
+  static const _demoHelmetModel3dUrl =
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb";
+
   static final List<Map<String, dynamic>> _stickerCatalog = [
     {
       "id": 1,
@@ -62,6 +65,7 @@ class MockHelmetDesignerData {
       "helmet_product_id": 101,
       "helmet_name": "Royal Street Helmet",
       "helmet_base_image_url": "assets/images/logo.webp",
+      "helmet_model_3d_url": _demoHelmetModel3dUrl,
       "stickers": [
         {
           "id": 1,
@@ -74,6 +78,10 @@ class MockHelmetDesignerData {
           "z_index": 0,
           "crop": {"left": 0, "top": 0, "right": 1, "bottom": 1},
           "tint_color_value": null,
+          "surface": "front",
+          "surface_x": 0.52,
+          "surface_y": 0.34,
+          "surface_scale": 0.92,
         },
         {
           "id": 2,
@@ -86,6 +94,10 @@ class MockHelmetDesignerData {
           "z_index": 1,
           "crop": {"left": 0.1, "top": 0.1, "right": 0.9, "bottom": 0.9},
           "tint_color_value": 4294924066,
+          "surface": "right",
+          "surface_x": 0.46,
+          "surface_y": 0.44,
+          "surface_scale": 0.78,
         },
       ],
       "is_shared": false,
@@ -130,6 +142,8 @@ class MockHelmetDesignerData {
       helmetProductId: design.helmetProductId,
       helmetName: design.helmetName,
       helmetBaseImageUrl: design.helmetBaseImageUrl,
+      helmetModel3dUrl: design.helmetModel3dUrl,
+      helmetModel3dIosUrl: design.helmetModel3dIosUrl,
       stickers: design.stickers,
       isShared: design.isShared,
       createdAt: design.createdAt ?? now,

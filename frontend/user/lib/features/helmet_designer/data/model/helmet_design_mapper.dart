@@ -25,6 +25,14 @@ class HelmetDesignMapper {
           json["helmet_base_image_url"]?.toString() ??
           json["helmetBaseImageUrl"]?.toString() ??
           "",
+      helmetModel3dUrl:
+          json["model_3d_url"]?.toString() ??
+          json["helmet_model_3d_url"]?.toString() ??
+          json["helmetModel3dUrl"]?.toString(),
+      helmetModel3dIosUrl:
+          json["model_3d_ios_url"]?.toString() ??
+          json["helmet_model_3d_ios_url"]?.toString() ??
+          json["helmetModel3dIosUrl"]?.toString(),
       stickers: rawStickers
           .whereType<Map>()
           .map(_mapDynamic)
@@ -43,6 +51,8 @@ class HelmetDesignMapper {
       "product_id": design.helmetProductId,
       "name": design.helmetName,
       "base_image_url": design.helmetBaseImageUrl,
+      "model_3d_url": design.helmetModel3dUrl,
+      "model_3d_ios_url": design.helmetModel3dIosUrl,
       "stickers": design.stickers.map(StickerLayerMapper.toJson).toList(),
       "is_shared": design.isShared,
       "created_at": design.createdAt?.toIso8601String(),

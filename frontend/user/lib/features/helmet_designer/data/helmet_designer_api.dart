@@ -17,6 +17,10 @@ class HelmetDesignerApi {
       return await DioClient.instance.post(
         ApiEndpoints.helmetStickerGenerate,
         data: body,
+        options: Options(
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 120),
+        ),
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);

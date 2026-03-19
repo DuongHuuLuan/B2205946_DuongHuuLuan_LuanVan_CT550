@@ -100,7 +100,8 @@
                       <td>
                         <div class="d-flex align-items-center gap-2">
                           <div class="thumb">
-                            <img v-if="getProductThumb(it.product)" :src="getProductThumb(it.product)" alt="thumb" />
+                            <img v-if="getProductThumb(it.product, it?.color?.id || it?.color_id)"
+                              :src="getProductThumb(it.product, it?.color?.id || it?.color_id)" alt="thumb" />
                             <div v-else class="thumb-placeholder">
                               <i class="fa-regular fa-image"></i>
                             </div>
@@ -204,7 +205,7 @@ import Swal from "sweetalert2";
 
 import WarehouseService from "@/services/warehouse.service";
 import CategoryService from "@/services/category.service";
-import { formatDateTimeVN } from "@/utils/utils";
+import { formatDateTimeVN, getProductThumb as resolveProductThumb } from "@/utils/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -223,8 +224,8 @@ const categoryId = ref("");
 const categories = ref([]);
 
 
-function getProductThumb(product) {
-  return product?.product_images?.[0]?.url || product?.images?.[0]?.url || "";
+function getProductThumb(product, colorId = null) {
+  return resolveProductThumb(product, colorId);
 }
 
 

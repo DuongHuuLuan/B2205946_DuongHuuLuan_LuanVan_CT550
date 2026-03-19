@@ -7,6 +7,7 @@ class ProductionLayerSpecOut(BaseModel):
     sticker_id: Optional[int] = None
     sticker_name: Optional[str] = None
     image_url: Optional[str] = None
+    view_image_key: Optional[str] = None
     x: float
     y: float
     scale: float
@@ -27,6 +28,14 @@ class ProductionLayerSpecOut(BaseModel):
     visible_offset_y_px: Optional[float] = None
 
 
+class ProductionViewOut(BaseModel):
+    view_image_key: Optional[str] = None
+    label: Optional[str] = None
+    base_image_url: Optional[str] = None
+    preview_image_url: Optional[str] = None
+    layers: List[ProductionLayerSpecOut] = Field(default_factory=list)
+
+
 class ProductionOrderDetailOut(BaseModel):
     order_detail_id: int
     product_detail_id: int
@@ -40,6 +49,7 @@ class ProductionOrderDetailOut(BaseModel):
     printable_width_mm: float
     printable_height_mm: float
     layers: List[ProductionLayerSpecOut] = Field(default_factory=list)
+    views: List[ProductionViewOut] = Field(default_factory=list)
 
 
 class OrderProductionOut(BaseModel):

@@ -180,7 +180,9 @@ final List<SingleChildWidget> Providers = [
 
   // helmet designer
   ChangeNotifierProvider(
-    create: (context) =>
-        HelmetDesignerViewModel(context.read<HelmetDesignerRepository>()),
+    create: (context) => HelmetDesignerViewModel(
+      context.read<HelmetDesignerRepository>(),
+      context.read<ProductRepository>(),
+    ),
   ),
 ];

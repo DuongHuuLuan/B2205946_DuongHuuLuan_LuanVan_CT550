@@ -4,6 +4,7 @@ from app.models import *
 from app.schemas import *
 from app.services.warehouse_service import WarehouseService
 from app.services.base import BaseService
+from app.services.image_service import ImageService
 
 
 class CartService(BaseService):
@@ -11,10 +12,10 @@ class CartService(BaseService):
     @staticmethod
     def _pick_image_url(product: Product, color_id: int | None):
         """Pick image URL based on color_id when possible."""
-        product_images = product.product_images or []
-        exact = next((img for img in product_images if img.color_id == color_id), None)
-        generic = next((img for img in product_images if img.color_id is None), None)
-        chosen = exact or generic or (product_images[0] if product_images else None)
+        chosen = ImageService.pick_primary_image(
+            list(product.product_images or []),
+            color_id=color_id,
+        )
         return chosen.url if chosen else None
 
     @staticmethod

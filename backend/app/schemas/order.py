@@ -5,6 +5,7 @@ from typing import List, Optional
 from app.models.order import OrderStatus, PaymentStatus, RefundSupportStatus
 from app.schemas import *
 from app.schemas.discount import DiscountOut
+from app.services.image_service import ImageService
 
 
 def _enum_value(value):
@@ -90,8 +91,11 @@ class OrderDetailOut(BaseModel):
             if product_detail.product:
                 result["product_name"] = product_detail.product.name
                 if product_detail.product.product_images:
-                    # Kiểm tra lại tên trường trong DB của bạn là .url hay .image_url
-                    result["image_url"] = product_detail.product.product_images[0].url
+                    chosen_image = ImageService.pick_primary_image(
+                        list(product_detail.product.product_images or []),
+                        color_id=getattr(product_detail, "color_id", None),
+                    )
+                    result["image_url"] = chosen_image.url if chosen_image else None
 
             # 2. Lấy thông tin màu sắc và kích thước
             if product_detail.color:

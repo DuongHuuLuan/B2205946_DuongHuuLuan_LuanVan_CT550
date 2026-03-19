@@ -17,6 +17,273 @@ class ProductionSnapshotService:
     BASE_LAYER_RATIO = 0.24
     MIN_LAYER_PX = 34.0
     MAX_LAYER_RATIO = 0.52
+    _VIEW_IMAGE_ORDER = {
+        "front": 0,
+        "front_right": 1,
+        "right": 2,
+        "back": 3,
+        "left": 4,
+        "front_left": 5,
+    }
+
+    @staticmethod
+    def _normalize_view_image_key(value: Any) -> Optional[str]:
+        key = str(value or "").strip().lower()
+        return key or None
+
+    @staticmethod
+    def _view_order(view_image_key: Any) -> int:
+        key = ProductionSnapshotService._normalize_view_image_key(view_image_key)
+        if key is None:
+            return len(ProductionSnapshotService._VIEW_IMAGE_ORDER) + 1
+        return ProductionSnapshotService._VIEW_IMAGE_ORDER.get(
+            key,
+            len(ProductionSnapshotService._VIEW_IMAGE_ORDER),
+        )
+
+    @staticmethod
+    def _view_label(view_image_key: Any) -> Optional[str]:
+        mapping = {
+            "front": "Mặt trước",
+            "front_right": "Chéo phải",
+            "right": "Bên phải",
+            "back": "Mặt sau",
+            "left": "Bên trái",
+            "front_left": "Chéo trái",
+        }
+        key = ProductionSnapshotService._normalize_view_image_key(view_image_key)
+        if key is None:
+            return None
+        return mapping.get(key)
+
+    @staticmethod
+    def _pick_primary_image(images: list[Any]) -> Optional[Any]:
+        if not images:
+            return None
+
+        front = next(
+            (
+                image
+                for image in images
+                if ProductionSnapshotService._normalize_view_image_key(
+                    getattr(image, "view_image_key", None)
+                )
+                == "front"
+            ),
+            None,
+        )
+        if front:
+            return front
+
+        generic = next(
+            (
+                image
+                for image in images
+                if ProductionSnapshotService._normalize_view_image_key(
+                    getattr(image, "view_image_key", None)
+                )
+                is None
+            ),
+            None,
+        )
+        return generic or images[0]
+
+    @staticmethod
+    def _dedupe_view_images(raw_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        seen: set[tuple[Optional[str], str]] = set()
+        items: list[dict[str, Any]] = []
+
+        for raw in raw_items:
+            view_image_key = ProductionSnapshotService._normalize_view_image_key(
+                raw.get("view_image_key")
+            )
+            base_image_url = str(
+                raw.get("base_image_url") or raw.get("url") or ""
+            ).strip()
+            if not base_image_url:
+                continue
+
+            key = (view_image_key, base_image_url)
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(
+                {
+                    "view_image_key": view_image_key,
+                    "base_image_url": base_image_url,
+                    "preview_image_url": str(
+                        raw.get("preview_image_url") or base_image_url
+                    ).strip()
+                    or base_image_url,
+                }
+            )
+
+        items.sort(
+            key=lambda item: (
+                ProductionSnapshotService._view_order(item.get("view_image_key")),
+                str(item.get("view_image_key") or ""),
+                str(item.get("base_image_url") or ""),
+            )
+        )
+        return items
+
+    @staticmethod
+    def _resolve_view_images_from_product(
+        product_images: Optional[list[Any]],
+        color_id: Optional[int] = None,
+    ) -> list[dict[str, Any]]:
+        images = list(product_images or [])
+        if not images:
+            return []
+
+        by_color = [
+            image for image in images if getattr(image, "color_id", None) == color_id
+        ]
+        common_images = [
+            image for image in images if getattr(image, "color_id", None) is None
+        ]
+
+        for bucket in (by_color, common_images):
+            keyed = [
+                image
+                for image in bucket
+                if ProductionSnapshotService._normalize_view_image_key(
+                    getattr(image, "view_image_key", None)
+                )
+                is not None
+            ]
+            if keyed:
+                return ProductionSnapshotService._dedupe_view_images(
+                    [
+                        {
+                            "view_image_key": getattr(image, "view_image_key", None),
+                            "base_image_url": getattr(image, "url", None),
+                            "preview_image_url": getattr(image, "url", None),
+                        }
+                        for image in keyed
+                    ]
+                )
+
+        primary = ProductionSnapshotService._pick_primary_image(by_color)
+        if primary is None:
+            primary = ProductionSnapshotService._pick_primary_image(common_images)
+        if primary is None:
+            primary = ProductionSnapshotService._pick_primary_image(images)
+        if primary is None:
+            return []
+
+        return ProductionSnapshotService._dedupe_view_images(
+            [
+                {
+                    "view_image_key": getattr(primary, "view_image_key", None),
+                    "base_image_url": getattr(primary, "url", None),
+                    "preview_image_url": getattr(primary, "url", None),
+                }
+            ]
+        )
+
+    @staticmethod
+    def _resolve_snapshot_view_images(
+        snapshot: dict[str, Any],
+        product_images: Optional[list[Any]] = None,
+        color_id: Optional[int] = None,
+    ) -> list[dict[str, Any]]:
+        raw = snapshot.get("view_images")
+        if isinstance(raw, list) and raw:
+            items = ProductionSnapshotService._dedupe_view_images(
+                [item for item in raw if isinstance(item, dict)]
+            )
+            if items:
+                return items
+
+        items = ProductionSnapshotService._resolve_view_images_from_product(
+            product_images,
+            color_id,
+        )
+        if items:
+            return items
+
+        fallback_url = str(
+            snapshot.get("base_image_url") or snapshot.get("preview_image_url") or ""
+        ).strip()
+        if not fallback_url:
+            return []
+
+        return [
+            {
+                "view_image_key": None,
+                "base_image_url": fallback_url,
+                "preview_image_url": fallback_url,
+            }
+        ]
+
+    @staticmethod
+    def _build_view_payloads(
+        snapshot: dict[str, Any],
+        layers: list[dict[str, Any]],
+        view_images: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        grouped: dict[Optional[str], list[dict[str, Any]]] = {}
+        for layer in layers:
+            key = ProductionSnapshotService._normalize_view_image_key(
+                layer.get("view_image_key")
+            )
+            grouped.setdefault(key, []).append(layer)
+
+        views: list[dict[str, Any]] = []
+        for view in view_images:
+            key = ProductionSnapshotService._normalize_view_image_key(
+                view.get("view_image_key")
+            )
+            view_layers = grouped.pop(key, [])
+            base_image_url = str(view.get("base_image_url") or "").strip()
+            preview_image_url = str(
+                view.get("preview_image_url") or base_image_url
+            ).strip() or base_image_url
+            views.append(
+                {
+                    "view_image_key": key,
+                    "label": ProductionSnapshotService._view_label(key)
+                    or "Ảnh mặc định",
+                    "base_image_url": base_image_url or None,
+                    "preview_image_url": preview_image_url or None,
+                    "layers": view_layers,
+                }
+            )
+
+        fallback_base_image = str(
+            snapshot.get("base_image_url") or snapshot.get("preview_image_url") or ""
+        ).strip()
+        for key, view_layers in grouped.items():
+            views.append(
+                {
+                    "view_image_key": key,
+                    "label": ProductionSnapshotService._view_label(key)
+                    or "Ảnh mặc định",
+                    "base_image_url": fallback_base_image or None,
+                    "preview_image_url": fallback_base_image or None,
+                    "layers": view_layers,
+                }
+            )
+
+        if not views:
+            views.append(
+                {
+                    "view_image_key": None,
+                    "label": "Ảnh mặc định",
+                    "base_image_url": fallback_base_image or None,
+                    "preview_image_url": fallback_base_image or None,
+                    "layers": layers,
+                }
+            )
+
+        views.sort(
+            key=lambda item: (
+                ProductionSnapshotService._view_order(item.get("view_image_key")),
+                str(item.get("view_image_key") or ""),
+            )
+        )
+        return views
 
     @staticmethod
     def _serialize_layer(layer: DesignLayer) -> dict[str, Any]:
@@ -30,6 +297,7 @@ class ProductionSnapshotService:
             "scale": layer.scale,
             "rotation": layer.rotation,
             "z_index": layer.z_index,
+            "view_image_key": getattr(layer, "view_image_key", None),
             "tint_color_value": layer.tint_color_value,
             "crop": {
                 "left": layer.crop_left,
@@ -40,7 +308,11 @@ class ProductionSnapshotService:
         }
 
     @staticmethod
-    def build_design_snapshot(design: Optional[Design]) -> Optional[dict[str, Any]]:
+    def build_design_snapshot(
+        design: Optional[Design],
+        product_images: Optional[list[Any]] = None,
+        color_id: Optional[int] = None,
+    ) -> Optional[dict[str, Any]]:
         if not design:
             return None
 
@@ -48,7 +320,7 @@ class ProductionSnapshotService:
             list(getattr(design, "layers", []) or []),
             key=lambda item: item.z_index,
         )
-        return {
+        snapshot = {
             "design_id": design.id,
             "name": design.name,
             "base_image_url": design.base_image_url,
@@ -58,8 +330,18 @@ class ProductionSnapshotService:
             "canvas_height_px": ProductionSnapshotService.DEFAULT_CANVAS_HEIGHT_PX,
             "printable_width_mm": ProductionSnapshotService.DEFAULT_PRINTABLE_WIDTH_MM,
             "printable_height_mm": ProductionSnapshotService.DEFAULT_PRINTABLE_HEIGHT_MM,
-            "layers": [ProductionSnapshotService._serialize_layer(layer) for layer in layers],
+            "layers": [
+                ProductionSnapshotService._serialize_layer(layer) for layer in layers
+            ],
         }
+
+        view_images = ProductionSnapshotService._resolve_view_images_from_product(
+            product_images,
+            color_id,
+        )
+        if view_images:
+            snapshot["view_images"] = view_images
+        return snapshot
 
     @staticmethod
     def _snapshot_or_fallback(order_detail: Any) -> dict[str, Any]:
@@ -67,8 +349,12 @@ class ProductionSnapshotService:
         if isinstance(snapshot, dict) and snapshot:
             return snapshot
 
+        product_detail = getattr(order_detail, "product_detail", None)
+        product = getattr(product_detail, "product", None)
         return ProductionSnapshotService.build_design_snapshot(
-            getattr(order_detail, "design", None)
+            getattr(order_detail, "design", None),
+            product_images=list(getattr(product, "product_images", []) or []),
+            color_id=getattr(product_detail, "color_id", None),
         ) or {}
 
     @staticmethod
@@ -121,11 +407,16 @@ class ProductionSnapshotService:
 
     @staticmethod
     def _layer_box_size_px(scale: float, canvas_width_px: float) -> float:
-        visual_size = canvas_width_px * ProductionSnapshotService.BASE_LAYER_RATIO * scale
+        visual_size = (
+            canvas_width_px * ProductionSnapshotService.BASE_LAYER_RATIO * scale
+        )
         return float(
             max(
                 ProductionSnapshotService.MIN_LAYER_PX,
-                min(visual_size, canvas_width_px * ProductionSnapshotService.MAX_LAYER_RATIO),
+                min(
+                    visual_size,
+                    canvas_width_px * ProductionSnapshotService.MAX_LAYER_RATIO,
+                ),
             )
         )
 
@@ -134,7 +425,10 @@ class ProductionSnapshotService:
         return float(
             max(
                 0.0,
-                min((x * canvas_width_px) - (box_size_px / 2), canvas_width_px - box_size_px),
+                min(
+                    (x * canvas_width_px) - (box_size_px / 2),
+                    canvas_width_px - box_size_px,
+                ),
             )
         )
 
@@ -143,7 +437,10 @@ class ProductionSnapshotService:
         return float(
             max(
                 0.0,
-                min((y * canvas_height_px) - (box_size_px / 2), canvas_height_px - box_size_px),
+                min(
+                    (y * canvas_height_px) - (box_size_px / 2),
+                    canvas_height_px - box_size_px,
+                ),
             )
         )
 
@@ -166,14 +463,21 @@ class ProductionSnapshotService:
     ) -> dict[str, Any]:
         canvas_width_px = ProductionSnapshotService._resolve_canvas_width(snapshot)
         canvas_height_px = ProductionSnapshotService._resolve_canvas_height(snapshot)
-        printable_width_mm = ProductionSnapshotService._resolve_printable_width_mm(snapshot)
-        printable_height_mm = ProductionSnapshotService._resolve_printable_height_mm(snapshot)
+        printable_width_mm = ProductionSnapshotService._resolve_printable_width_mm(
+            snapshot
+        )
+        printable_height_mm = ProductionSnapshotService._resolve_printable_height_mm(
+            snapshot
+        )
 
         x = float(raw_layer.get("x", 0.0) or 0.0)
         y = float(raw_layer.get("y", 0.0) or 0.0)
         scale = float(raw_layer.get("scale", 1.0) or 1.0)
         rotation = float(raw_layer.get("rotation", 0.0) or 0.0)
         z_index = int(raw_layer.get("z_index", 0) or 0)
+        view_image_key = ProductionSnapshotService._normalize_view_image_key(
+            raw_layer.get("view_image_key")
+        )
         crop = ProductionSnapshotService._normalize_crop(raw_layer.get("crop"))
 
         box_size_px = ProductionSnapshotService._layer_box_size_px(scale, canvas_width_px)
@@ -185,7 +489,9 @@ class ProductionSnapshotService:
         visible_offset_y_px = box_size_px * crop["top"]
 
         render_width_mm = (visible_width_px / canvas_width_px) * printable_width_mm
-        render_height_mm = (visible_height_px / canvas_height_px) * printable_height_mm
+        render_height_mm = (
+            visible_height_px / canvas_height_px
+        ) * printable_height_mm
         box_size_mm = (box_size_px / canvas_width_px) * printable_width_mm
 
         return {
@@ -198,11 +504,13 @@ class ProductionSnapshotService:
             "rotation": rotation,
             "rotation_degrees": round(math.degrees(rotation), 2),
             "z_index": z_index,
+            "view_image_key": view_image_key,
             "crop": crop,
             "render_width_mm": round(render_width_mm, 2),
             "render_height_mm": round(render_height_mm, 2),
             "box_size_mm": round(box_size_mm, 2),
-            "position_label": ProductionSnapshotService._position_label(x, y),
+            "position_label": ProductionSnapshotService._view_label(view_image_key)
+            or ProductionSnapshotService._position_label(x, y),
             "box_size_px": round(box_size_px, 2),
             "left_px": round(left_px, 2),
             "top_px": round(top_px, 2),
@@ -230,6 +538,16 @@ class ProductionSnapshotService:
 
         product_detail = getattr(order_detail, "product_detail", None)
         product = getattr(product_detail, "product", None)
+        view_images = ProductionSnapshotService._resolve_snapshot_view_images(
+            snapshot,
+            product_images=list(getattr(product, "product_images", []) or []),
+            color_id=getattr(product_detail, "color_id", None),
+        )
+        views = ProductionSnapshotService._build_view_payloads(
+            snapshot,
+            layers,
+            view_images,
+        )
 
         return {
             "order_detail_id": getattr(order_detail, "id", 0),
@@ -239,11 +557,20 @@ class ProductionSnapshotService:
             "base_image_url": snapshot.get("base_image_url"),
             "preview_image_url": snapshot.get("preview_image_url"),
             "design_snapshot_json": snapshot or None,
-            "canvas_width_px": ProductionSnapshotService._resolve_canvas_width(snapshot),
-            "canvas_height_px": ProductionSnapshotService._resolve_canvas_height(snapshot),
-            "printable_width_mm": ProductionSnapshotService._resolve_printable_width_mm(snapshot),
-            "printable_height_mm": ProductionSnapshotService._resolve_printable_height_mm(snapshot),
+            "canvas_width_px": ProductionSnapshotService._resolve_canvas_width(
+                snapshot
+            ),
+            "canvas_height_px": ProductionSnapshotService._resolve_canvas_height(
+                snapshot
+            ),
+            "printable_width_mm": ProductionSnapshotService._resolve_printable_width_mm(
+                snapshot
+            ),
+            "printable_height_mm": ProductionSnapshotService._resolve_printable_height_mm(
+                snapshot
+            ),
             "layers": layers,
+            "views": views,
         }
 
     @staticmethod

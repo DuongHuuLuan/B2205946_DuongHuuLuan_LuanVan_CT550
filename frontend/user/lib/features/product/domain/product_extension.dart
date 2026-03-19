@@ -1,9 +1,45 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+
+String _imageReference(String? url) {
+  final text = (url ?? "").trim();
+  if (text.isEmpty) return "";
+  final uri = Uri.tryParse(text);
+  final path = uri?.path.trim().toLowerCase() ?? "";
+  return path.isNotEmpty ? path : text.toLowerCase();
+}
+
+int _imagePriority(ProductImage image) {
+  final key = (image.viewImageKey ?? "").trim();
+  if (key == "front") return 0;
+  if (key.isEmpty) return 1;
+  return 2 + viewImageKeyPriority(key);
+}
+
+List<ProductImage> _orderedImages(Iterable<ProductImage> source) {
+  final items = source.toList();
+  items.sort((left, right) {
+    final priority = _imagePriority(left).compareTo(_imagePriority(right));
+    if (priority != 0) return priority;
+    return left.id.compareTo(right.id);
+  });
+  return items;
+}
 
 extension ProductX on Product {
-  // lấy danh sách màu sắc duy nhất
+  List<ProductImage> _imagesForColor(int? colorId) {
+    final byColor = images
+        .where((element) => element.colorId == colorId)
+        .toList();
+    if (byColor.isNotEmpty) return byColor;
+
+    final commons = images.where((element) => element.colorId == null).toList();
+    if (commons.isNotEmpty) return commons;
+
+    return images;
+  }
+
   List<ProductDetail> get uniqueColors {
     final seen = <int>{};
     return productDetails
@@ -11,12 +47,10 @@ extension ProductX on Product {
         .toList();
   }
 
-  // lấy danh sách size theo màu đã chọn
   List<ProductDetail> getUniqueSizesByColor(int? colorId) {
     if (productDetails.isEmpty) return [];
 
     final cId = colorId ?? productDetails.first.colorId;
-
     final seen = <int>{};
     return productDetails
         .where((element) => element.colorId == cId)
@@ -24,21 +58,8 @@ extension ProductX on Product {
         .toList();
   }
 
-  // tìm biến thể (variant) phù hợp nhất
-  // ProductDetail? findVariant(int? colorId, int? sizeId) {
-  //   if (variants.isEmpty) return null;
-  //   try {
-  //     return variants.firstWhere(
-  //       (element) => element.colorId == colorId && element.sizeId == sizeId,
-  //       orElse: () =>
-  //           variants.firstWhere((element) => element.colorId == colorId),
-  //     );
-  //   } catch (_) {
-  //     return variants.first;
-  //   }
-  // }
   ProductDetail? findProductDetail(int? colorId, int? sizeId) {
-    final vs = productDetails.cast<ProductDetail>(); // âœ… ép type về base
+    final vs = productDetails.cast<ProductDetail>();
     if (vs.isEmpty) return null;
 
     final cId = colorId ?? vs.first.colorId;
@@ -53,14 +74,63 @@ extension ProductX on Product {
     return vs.first;
   }
 
-  // lọc ảnh hiển thị (theo màu hoặc ảnh chung)
-  List<ProductImage> filterProductImages(int? colorId) {
-    final byColor = images
+  ProductImage? pickPrimaryImage([int? colorId]) {
+    final filtered = _orderedImages(_imagesForColor(colorId));
+    if (filtered.isNotEmpty) return filtered.first;
+    return null;
+  }
+
+  String? pickPrimaryImageUrl([int? colorId]) {
+    return pickPrimaryImage(colorId)?.url;
+  }
+
+  List<ProductImage> filterDesignViews(int? colorId) {
+    final byColor = designViews
         .where((element) => element.colorId == colorId)
         .toList();
-    if (byColor.isNotEmpty) return byColor;
+    final source = byColor.isNotEmpty
+        ? byColor
+        : designViews.where((element) => element.colorId == null).toList();
+    source.sort((left, right) {
+      final priority = viewImageKeyPriority(
+        left.viewImageKey,
+      ).compareTo(viewImageKeyPriority(right.viewImageKey));
+      if (priority != 0) return priority;
+      return left.id.compareTo(right.id);
+    });
+    return source;
+  }
 
-    final commons = images.where((element) => element.colorId == null).toList();
-    return commons.isNotEmpty ? commons : images;
+  ProductImage? matchImageByUrl(String? imageUrl) {
+    final reference = _imageReference(imageUrl);
+    if (reference.isEmpty) return null;
+
+    for (final image in designViews) {
+      if (_imageReference(image.url) == reference) return image;
+    }
+    for (final image in images) {
+      if (_imageReference(image.url) == reference) return image;
+    }
+    return null;
+  }
+
+  String? resolveCurrentImageUrl(String? imageUrl) {
+    return matchImageByUrl(imageUrl)?.url;
+  }
+
+  List<ProductImage> resolveDesignViewsForBaseImage(String? baseImageUrl) {
+    final matchedImage = matchImageByUrl(baseImageUrl);
+    final matchedViews = filterDesignViews(matchedImage?.colorId);
+    if (matchedViews.isNotEmpty) return matchedViews;
+
+    final commonViews = filterDesignViews(null);
+    if (commonViews.isNotEmpty) return commonViews;
+
+    final knownColorIds = designViews.map((image) => image.colorId).toSet();
+    if (designViews.isNotEmpty && knownColorIds.length == 1) {
+      return filterDesignViews(designViews.first.colorId);
+    }
+
+    return const [];
   }
 }

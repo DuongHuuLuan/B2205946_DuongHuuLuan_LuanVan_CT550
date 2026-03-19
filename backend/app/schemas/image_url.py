@@ -6,6 +6,7 @@ class ImageURLBase(BaseModel):
     url: str
     public_id: str
     color_id: Optional[int] = None
+    view_image_key: Optional[str] = None
 
 
 class ImageURLCreate(ImageURLBase):
@@ -19,6 +20,7 @@ class ImageUrlOut(ImageURLBase):
     url: str
     public_id: str
     color_id: Optional[int]
+    view_image_key: Optional[str]
     created_at: datetime
 
     class Config:

@@ -75,7 +75,51 @@ class ProductionExportService:
             "Ben phai": "Bên phải",
             "Phia sau": "Phía sau",
             "Mat truoc": "Mặt trước",
+            "Cheo phai": "Chéo phải",
+            "Cheo trai": "Chéo trái",
         }.get(raw, raw or "-")
+
+    @staticmethod
+    def _sorted_views(item: dict[str, Any]) -> list[dict[str, Any]]:
+        raw_views = [view for view in (item.get("views") or []) if isinstance(view, dict)]
+        if not raw_views:
+            return [
+                {
+                    "view_image_key": None,
+                    "label": "Ảnh mặc định",
+                    "base_image_url": item.get("base_image_url"),
+                    "preview_image_url": item.get("preview_image_url"),
+                    "layers": list(item.get("layers") or []),
+                }
+            ]
+
+        return sorted(
+            raw_views,
+            key=lambda view: (
+                ProductionSnapshotService._view_order(view.get("view_image_key")),
+                str(view.get("view_image_key") or ""),
+            ),
+        )
+
+    @staticmethod
+    def _view_label(view: dict[str, Any]) -> str:
+        label = str(view.get("label") or "").strip()
+        if label:
+            return ProductionExportService._position_label(label)
+        fallback = ProductionSnapshotService._view_label(view.get("view_image_key"))
+        return ProductionExportService._position_label(fallback or "Ảnh mặc định")
+
+    @staticmethod
+    def _resolve_view_base_image(
+        item: dict[str, Any],
+        view: dict[str, Any],
+    ) -> Optional[str]:
+        return (
+            view.get("base_image_url")
+            or view.get("preview_image_url")
+            or item.get("base_image_url")
+            or item.get("preview_image_url")
+        )
 
     @staticmethod
     def _register_ttf_font(font_name: str, candidates: list[Path]) -> Optional[str]:
@@ -370,15 +414,20 @@ class ProductionExportService:
 
         items = payload.get("items") or []
         for item_index, item in enumerate(items):
-            ProductionExportService._draw_pdf_preview_page(
-                pdf=pdf,
-                payload=payload,
-                item=item,
-                item_index=item_index,
-                image_cache=image_cache,
-                dpi=dpi,
-            )
-            pdf.showPage()
+            views = ProductionExportService._sorted_views(item)
+            for view_index, view in enumerate(views):
+                ProductionExportService._draw_pdf_preview_page(
+                    pdf=pdf,
+                    payload=payload,
+                    item=item,
+                    item_index=item_index,
+                    view=view,
+                    view_index=view_index,
+                    view_count=len(views),
+                    image_cache=image_cache,
+                    dpi=dpi,
+                )
+                pdf.showPage()
             ProductionExportService._draw_pdf_sticker_sheet(
                 pdf=pdf,
                 payload=payload,
@@ -398,6 +447,9 @@ class ProductionExportService:
         payload: dict[str, Any],
         item: dict[str, Any],
         item_index: int,
+        view: dict[str, Any],
+        view_index: int,
+        view_count: int,
         image_cache: dict[str, dict[str, Any]],
         dpi: int,
     ) -> None:
@@ -412,6 +464,7 @@ class ProductionExportService:
         pdf.setFillColor(colors.HexColor("#374151"))
         meta_lines = [
             f"Mục {item_index + 1}: {item.get('product_name') or 'Thiết kế nón bảo hiểm'}",
+            f"Góc hiển thị: {ProductionExportService._view_label(view)} ({view_index + 1}/{view_count})",
             f"Trạng thái đơn: {ProductionExportService._order_status_label(payload.get('status'))}",
             f"Trạng thái thanh toán: {ProductionExportService._payment_status_label(payload.get('payment_status'))}",
             f"Hỗ trợ hoàn tiền: {ProductionExportService._refund_support_label(payload.get('refund_support_status'))}",
@@ -436,7 +489,7 @@ class ProductionExportService:
         pdf.rect(preview_x_pt, preview_y_pt, preview_width_pt, preview_height_pt, stroke=1, fill=1)
 
         base_asset = ProductionExportService._load_image_asset(
-            item.get("base_image_url"),
+            ProductionExportService._resolve_view_base_image(item, view),
             image_cache,
         )
         ProductionExportService._draw_image_contain(
@@ -450,7 +503,7 @@ class ProductionExportService:
 
         scale_x = preview_width_pt / float(item.get("canvas_width_px", 1.0) or 1.0)
         scale_y = preview_height_pt / float(item.get("canvas_height_px", 1.0) or 1.0)
-        for layer in item.get("layers") or []:
+        for layer in view.get("layers") or []:
             ProductionExportService._draw_layer_preview(
                 pdf=pdf,
                 layer=layer,
@@ -465,11 +518,15 @@ class ProductionExportService:
         info_y = preview_y_pt + preview_height_pt
         pdf.setFillColor(colors.HexColor("#111827"))
         ProductionExportService._set_pdf_font(pdf, 11, bold=True)
-        pdf.drawString(info_x, info_y, "Thông số lớp sticker")
+        pdf.drawString(
+            info_x,
+            info_y,
+            f"Thông số sticker - {ProductionExportService._view_label(view)}",
+        )
         info_y -= 6 * mm
 
         ProductionExportService._set_pdf_font(pdf, 9)
-        for layer in item.get("layers") or []:
+        for layer in view.get("layers") or []:
             lines = [
                 f"- {layer.get('sticker_name') or 'Sticker'}",
                 f"  Kích thước: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
@@ -482,6 +539,9 @@ class ProductionExportService:
             info_y -= 1.5 * mm
             if info_y <= 18 * mm:
                 break
+
+        if not (view.get("layers") or []):
+            pdf.drawString(info_x, info_y, "Không có sticker ở góc này.")
 
         ProductionExportService._set_pdf_font(pdf, 8, italic=True)
         pdf.setFillColor(colors.HexColor("#6B7280"))
@@ -523,46 +583,72 @@ class ProductionExportService:
             pdf.drawString(margin_x, current_y, f"Bộ bản in {copy_index + 1}/{item.get('quantity')}")
             current_y -= 6 * mm
 
-            for layer in item.get("layers") or []:
-                draw_width_pt = float(layer.get("render_width_mm", 0.0) or 0.0) * mm
-                draw_height_pt = float(layer.get("render_height_mm", 0.0) or 0.0) * mm
-                box_size_pt = float(layer.get("box_size_mm", 0.0) or 0.0) * mm
-                row_height_pt = max(draw_height_pt, 20 * mm) + (10 * mm)
+            for view in ProductionExportService._sorted_views(item):
+                view_layers = list(view.get("layers") or [])
+                if not view_layers:
+                    continue
 
-                if current_y - row_height_pt <= 16 * mm:
+                if current_y - (8 * mm) <= 16 * mm:
                     pdf.showPage()
                     current_y = start_page_header()
 
-                image_x = margin_x + (4 * mm)
-                image_y = current_y - draw_height_pt - (2 * mm)
-                ProductionExportService._draw_pdf_printable_layer(
-                    pdf=pdf,
-                    layer=layer,
-                    x_pt=image_x,
-                    y_pt=image_y,
-                    draw_width_pt=draw_width_pt,
-                    draw_height_pt=draw_height_pt,
-                    box_size_pt=box_size_pt,
-                    image_cache=image_cache,
-                )
-
-                info_x = image_x + max(draw_width_pt, 32 * mm) + (10 * mm)
-                info_y = current_y - (1 * mm)
                 ProductionExportService._set_pdf_font(pdf, 9, bold=True)
                 pdf.setFillColor(colors.HexColor("#111827"))
-                pdf.drawString(info_x, info_y, layer.get("sticker_name") or "Sticker")
-                ProductionExportService._set_pdf_font(pdf, 8.5)
-                info_y -= 4.5 * mm
-                for line in [
-                    f"Mã sticker: {layer.get('sticker_id') or '-'}",
-                    f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
-                    f"Vị trí dán: {ProductionExportService._position_label(layer.get('position_label'))}",
-                    f"Góc xoay trên nón: {layer.get('rotation_degrees')}°",
-                ]:
-                    pdf.drawString(info_x, info_y, line)
-                    info_y -= 4.2 * mm
+                pdf.drawString(
+                    margin_x,
+                    current_y,
+                    f"Góc: {ProductionExportService._view_label(view)}",
+                )
+                current_y -= 5.5 * mm
 
-                current_y -= row_height_pt
+                for layer in view_layers:
+                    draw_width_pt = float(layer.get("render_width_mm", 0.0) or 0.0) * mm
+                    draw_height_pt = float(layer.get("render_height_mm", 0.0) or 0.0) * mm
+                    box_size_pt = float(layer.get("box_size_mm", 0.0) or 0.0) * mm
+                    row_height_pt = max(draw_height_pt, 20 * mm) + (10 * mm)
+
+                    if current_y - row_height_pt <= 16 * mm:
+                        pdf.showPage()
+                        current_y = start_page_header()
+                        ProductionExportService._set_pdf_font(pdf, 9, bold=True)
+                        pdf.setFillColor(colors.HexColor("#111827"))
+                        pdf.drawString(
+                            margin_x,
+                            current_y,
+                            f"Góc: {ProductionExportService._view_label(view)}",
+                        )
+                        current_y -= 5.5 * mm
+
+                    image_x = margin_x + (4 * mm)
+                    image_y = current_y - draw_height_pt - (2 * mm)
+                    ProductionExportService._draw_pdf_printable_layer(
+                        pdf=pdf,
+                        layer=layer,
+                        x_pt=image_x,
+                        y_pt=image_y,
+                        draw_width_pt=draw_width_pt,
+                        draw_height_pt=draw_height_pt,
+                        box_size_pt=box_size_pt,
+                        image_cache=image_cache,
+                    )
+
+                    info_x = image_x + max(draw_width_pt, 32 * mm) + (10 * mm)
+                    info_y = current_y - (1 * mm)
+                    ProductionExportService._set_pdf_font(pdf, 9, bold=True)
+                    pdf.setFillColor(colors.HexColor("#111827"))
+                    pdf.drawString(info_x, info_y, layer.get("sticker_name") or "Sticker")
+                    ProductionExportService._set_pdf_font(pdf, 8.5)
+                    info_y -= 4.5 * mm
+                    for line in [
+                        f"Mã sticker: {layer.get('sticker_id') or '-'}",
+                        f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
+                        f"Vị trí dán: {ProductionExportService._position_label(layer.get('position_label'))}",
+                        f"Góc xoay trên nón: {layer.get('rotation_degrees')}°",
+                    ]:
+                        pdf.drawString(info_x, info_y, line)
+                        info_y -= 4.2 * mm
+
+                    current_y -= row_height_pt
 
             current_y -= 2 * mm
 
@@ -648,49 +734,61 @@ class ProductionExportService:
                 )
                 current_y_mm += 5.0
 
-                for layer in item.get("layers") or []:
-                    draw_width_mm = float(layer.get("render_width_mm", 0.0) or 0.0)
-                    draw_height_mm = float(layer.get("render_height_mm", 0.0) or 0.0)
-                    box_size_mm = float(layer.get("box_size_mm", 0.0) or 0.0)
-                    image_x_mm = margin_mm + 4.0
-                    image_y_mm = current_y_mm
-                    info_x_mm = image_x_mm + max(draw_width_mm, 32.0) + 8.0
+                for view in ProductionExportService._sorted_views(item):
+                    view_layers = list(view.get("layers") or [])
+                    if not view_layers:
+                        continue
 
                     body.append(
-                        f'<rect x="{image_x_mm}" y="{image_y_mm}" width="{draw_width_mm}" height="{draw_height_mm}" '
-                        'fill="none" stroke="#D1D5DB" stroke-dasharray="2 1.5" />'
+                        f'<text x="{margin_mm}" y="{current_y_mm}" font-size="4" font-weight="700" fill="#111827">'
+                        f"Góc: {html.escape(ProductionExportService._view_label(view))}"
+                        "</text>"
                     )
+                    current_y_mm += 5.0
 
-                    image_tag = ProductionExportService._build_svg_image_tag(
-                        layer=layer,
-                        x_mm=image_x_mm,
-                        y_mm=image_y_mm,
-                        draw_width_mm=draw_width_mm,
-                        draw_height_mm=draw_height_mm,
-                        box_size_mm=box_size_mm,
-                        clip_id=f"clip-{clip_counter}",
-                        defs=defs,
-                        image_cache=image_cache,
-                    )
-                    clip_counter += 1
-                    if image_tag:
-                        body.append(image_tag)
+                    for layer in view_layers:
+                        draw_width_mm = float(layer.get("render_width_mm", 0.0) or 0.0)
+                        draw_height_mm = float(layer.get("render_height_mm", 0.0) or 0.0)
+                        box_size_mm = float(layer.get("box_size_mm", 0.0) or 0.0)
+                        image_x_mm = margin_mm + 4.0
+                        image_y_mm = current_y_mm
+                        info_x_mm = image_x_mm + max(draw_width_mm, 32.0) + 8.0
 
-                    name = html.escape(layer.get("sticker_name") or "Sticker")
-                    lines = [
-                        name,
-                        f"Mã sticker: {layer.get('sticker_id') or '-'}",
-                        f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
-                        f"Vị trí dán: {html.escape(ProductionExportService._position_label(layer.get('position_label')))} | góc xoay {layer.get('rotation_degrees')}°",
-                    ]
-                    for idx, line in enumerate(lines):
-                        weight = "700" if idx == 0 else "400"
                         body.append(
-                            f'<text x="{info_x_mm}" y="{image_y_mm + 4.5 + (idx * 4.5)}" '
-                            f'font-size="3.8" font-weight="{weight}" fill="#111827">{html.escape(line)}</text>'
+                            f'<rect x="{image_x_mm}" y="{image_y_mm}" width="{draw_width_mm}" height="{draw_height_mm}" '
+                            'fill="none" stroke="#D1D5DB" stroke-dasharray="2 1.5" />'
                         )
 
-                    current_y_mm += max(draw_height_mm, 20.0) + 8.0
+                        image_tag = ProductionExportService._build_svg_image_tag(
+                            layer=layer,
+                            x_mm=image_x_mm,
+                            y_mm=image_y_mm,
+                            draw_width_mm=draw_width_mm,
+                            draw_height_mm=draw_height_mm,
+                            box_size_mm=box_size_mm,
+                            clip_id=f"clip-{clip_counter}",
+                            defs=defs,
+                            image_cache=image_cache,
+                        )
+                        clip_counter += 1
+                        if image_tag:
+                            body.append(image_tag)
+
+                        name = html.escape(layer.get("sticker_name") or "Sticker")
+                        lines = [
+                            name,
+                            f"Mã sticker: {layer.get('sticker_id') or '-'}",
+                            f"Kích thước thực: {layer.get('render_width_mm')} x {layer.get('render_height_mm')} mm",
+                            f"Vị trí dán: {html.escape(ProductionExportService._position_label(layer.get('position_label')))} | góc xoay {layer.get('rotation_degrees')}°",
+                        ]
+                        for idx, line in enumerate(lines):
+                            weight = "700" if idx == 0 else "400"
+                            body.append(
+                                f'<text x="{info_x_mm}" y="{image_y_mm + 4.5 + (idx * 4.5)}" '
+                                f'font-size="3.8" font-weight="{weight}" fill="#111827">{html.escape(line)}</text>'
+                            )
+
+                        current_y_mm += max(draw_height_mm, 20.0) + 8.0
 
                 current_y_mm += 2.0
 
