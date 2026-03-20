@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET")
     AI_STICKER_CLOUDINARY_FOLDER: str = os.getenv("AI_STICKER_CLOUDINARY_FOLDER", "helmet_shop/stickers")
+    EVALUATE_IMAGE_CLOUDINARY_FOLDER: str = os.getenv("EVALUATE_IMAGE_CLOUDINARY_FOLDER", "helmet_shop/evaluates")
     PRODUCT_MODEL_3D_CLOUDINARY_FOLDER: str = os.getenv("PRODUCT_MODEL_3D_CLOUDINARY_FOLDER", "helmet_shop/models")
 
     # OpenAI image generation

@@ -1,13 +1,11 @@
-import os
-import shutil
-import uuid
-from pathlib import Path
 from typing import List, Optional
 
+import cloudinary.uploader
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from fastapi.params import Query
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.api.deps import require_admin, require_user
 from app.db.session import get_db
 from app.models.user import User
@@ -23,21 +21,47 @@ from app.services.evaluate_service import EvaluateService
 router = APIRouter(prefix="/evaluates", tags=["Evaluates"])
 
 MAX_EVALUATE_IMAGES = 5
-BACKEND_DIR = Path(__file__).resolve().parents[3]
-UPLOAD_DIR = BACKEND_DIR / "static" / "evaluates"
 
 
-def _save_upload_image(image: UploadFile) -> str:
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+def _upload_evaluate_images_to_cloudinary(files: List[UploadFile]) -> List[dict]:
+    uploaded_images: List[dict] = []
+    uploaded_public_ids: List[str] = []
+    try:
+        for file in files:
+            result = cloudinary.uploader.upload(
+                file.file,
+                folder=settings.EVALUATE_IMAGE_CLOUDINARY_FOLDER,
+                resource_type="image",
+            )
+            image_url = result.get("secure_url")
+            public_id = result.get("public_id")
+            if not image_url:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Cloudinary khÃ´ng tráº£ vá» URL áº£nh há»£p lá»‡",
+                )
+            uploaded_images.append({"url": image_url, "public_id": public_id})
+            if public_id:
+                uploaded_public_ids.append(public_id)
+    except HTTPException:
+        for public_id in uploaded_public_ids:
+            try:
+                cloudinary.uploader.destroy(public_id)
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        for public_id in uploaded_public_ids:
+            try:
+                cloudinary.uploader.destroy(public_id)
+            except Exception:
+                pass
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"KhÃ´ng thá»ƒ táº£i áº£nh Ä‘Ã¡nh giÃ¡ lÃªn Cloudinary: {exc}",
+        ) from exc
 
-    ext = os.path.splitext(image.filename or "")[1]
-    file_name = f"{uuid.uuid4()}{ext}"
-    file_path = UPLOAD_DIR / file_name
-
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
-
-    return f"/static/evaluates/{file_name}"
+    return uploaded_images
 
 @router.get("/admin", response_model=EvaluatePaginationOut)
 def get_admin_evaluations(
@@ -117,24 +141,23 @@ async def post_evaluate(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_user),
 ):
-    uploaded_images = images or []
+    uploaded_files = images or []
 
-    if len(uploaded_images) > MAX_EVALUATE_IMAGES:
+    if len(uploaded_files) > MAX_EVALUATE_IMAGES:
         raise HTTPException(status_code=400, detail=f"Chỉ được tải tối đa {MAX_EVALUATE_IMAGES} ảnh")
 
-    image_urls: List[str] = []
-    for image in uploaded_images:
+    for image in uploaded_files:
         if not image.content_type or not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Tất cả file tải lên phải là ảnh")
-        image_urls.append(_save_upload_image(image))
+    uploaded_images = _upload_evaluate_images_to_cloudinary(uploaded_files)
 
-    return EvaluateService.create_evaluation(
+    return EvaluateService.create_evaluation_with_uploaded_images(
         db=db,
         user_id=current_user.id,
         order_id=order_id,
         rate=rate,
         content=content,
-        image_urls=image_urls,
+        uploaded_images=uploaded_images,
     )
 
 

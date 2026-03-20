@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
+import cloudinary.uploader
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -132,6 +133,76 @@ class EvaluateService(BaseService):
             )
 
         db.commit()
+
+        evaluate = (
+            db.query(Evaluate)
+            .options(joinedload(Evaluate.images))
+            .filter(Evaluate.id == new_eval.id)
+            .first()
+        )
+        return evaluate
+
+    @staticmethod
+    def create_evaluation_with_uploaded_images(
+        db: Session,
+        user_id: int,
+        order_id: int,
+        rate: int,
+        content: Optional[str],
+        uploaded_images: List[dict],
+    ):
+        # Kiểm tra đơn hàng tồn tại
+        order = EvaluateService.get_or_404(db, Order, order_id, "Đơn hàng không tồn tại")
+        
+        #Kiểm tra quyền sở hữu
+        EvaluateService.assert_owner(user_id, order.user_id, "Bạn không có quyền đánh giá đơn hàng của người khác")
+
+        #Kiểm tra trạng thái đơn hàng
+        if order.status != OrderStatus.COMPLETED:
+            raise HTTPException(status_code=400, detail="Chỉ có thể đánh giá đơn hàng đã hoàn thành")
+
+        #Kiểm tra xem đã đánh giá chưa
+        existing_eval = db.query(Evaluate).filter(Evaluate.order_id == order_id).first()
+        if existing_eval:
+            raise HTTPException(status_code=400, detail="Bạn đã đánh giá đơn hàng này rồi")
+
+        uploaded_public_ids = [
+            str(item.get("public_id") or "").strip()
+            for item in uploaded_images
+            if item.get("public_id")
+        ]
+
+        try:
+            #Tạo đánh giá mới
+            new_eval = Evaluate(
+                order_id=order_id,
+                user_id=user_id,
+                rate=rate,
+                content=content,
+                image=uploaded_images[0]["url"] if uploaded_images else None,
+            )
+            db.add(new_eval)
+            db.flush() 
+
+            for idx, image in enumerate(uploaded_images):
+                db.add(
+                    EvaluateImage(
+                        evaluate_id=new_eval.id,
+                        image_url=image["url"],
+                        public_id=image.get("public_id"),
+                        sort_order=idx,
+                    )
+                )
+
+            db.commit()
+        except Exception:
+            db.rollback()
+            for public_id in uploaded_public_ids:
+                try:
+                    cloudinary.uploader.destroy(public_id)
+                except Exception:
+                    pass
+            raise
 
         evaluate = (
             db.query(Evaluate)
