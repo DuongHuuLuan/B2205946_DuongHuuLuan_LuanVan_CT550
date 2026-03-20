@@ -79,7 +79,7 @@
                 <ErrorMessage name="description" class="invalid-feedback d-block" />
               </div>
 
-              <div class="col-12">
+              <!-- <div class="col-12">
                 <label class="form-label">URL model 3D (.glb)</label>
                 <Field name="model_3d_url" v-slot="{ field, meta, errors }">
                   <input
@@ -97,20 +97,16 @@
                   Để trống nếu sản phẩm chưa có model 3D. Khi upload file, backend sẽ lưu vào `static/models` và tự sinh URL cho sản phẩm.
                 </div>
                 <ErrorMessage name="model_3d_url" class="invalid-feedback d-block" />
-              </div>
+              </div> -->
 
               <div class="col-12">
                 <label class="form-label">Upload model 3D (.glb)</label>
-                <input
-                  ref="model3dFileInput"
-                  type="file"
-                  accept=".glb,model/gltf-binary,application/octet-stream"
-                  class="form-control bg-transparent"
-                  @change="onModel3dFileChange"
-                />
-                <div class="form-text">
-                  Nếu chọn file `.glb`, hệ thống sẽ lưu trực tiếp trên server trong `static/models`. File được ưu tiên hơn URL nhập tay.
-                </div>
+                <input ref="model3dFileInput" type="file" accept=".glb,model/gltf-binary,application/octet-stream"
+                  class="form-control bg-transparent" @change="onModel3dFileChange" />
+                <!-- <div class="form-text">
+                  Nếu chọn file `.glb`, hệ thống sẽ lưu trực tiếp trên server trong `static/models`. File được ưu tiên
+                  hơn URL nhập tay.
+                </div> -->
                 <div v-if="model3dFileName" class="small mt-2 opacity-75">
                   Đã chọn: {{ model3dFileName }}
                 </div>
@@ -587,9 +583,9 @@ async function onSubmit(values, { resetForm, setErrors }) {
       e?.message === "MODEL_3D_UPLOAD_FAILED"
         ? "Lưu sản phẩm thành công nhưng model 3D chưa được ghi nhận. Hãy kiểm tra lại backend."
         :
-      data?.message ||
-      data?.error ||
-      "Tạo sản phẩm thất bại. Vui lòng thử lại.";
+        data?.message ||
+        data?.error ||
+        "Tạo sản phẩm thất bại. Vui lòng thử lại.";
     Swal.fire("Tạo sản phẩm thất bại", msg, "error");
   }
 }

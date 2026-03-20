@@ -57,6 +57,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
         .where((layer) => (layer.viewImageKey ?? '').trim() == activeKey)
         .toList();
   }
+
   HelmetDesign get currentDesign => _currentDesign;
   StickerLayer? get selectedLayer => _findLayerById(selectedLayerId);
   ProductImage? get activeDesignView {
@@ -68,6 +69,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     }
     return _designViews.isNotEmpty ? _designViews.first : null;
   }
+
   bool get hasLayers => _stickerLayers.isNotEmpty;
   bool get hasDesignViews => _designViews.isNotEmpty;
   bool get hasMultipleDesignViews => _designViews.length > 1;
@@ -164,8 +166,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     _currentDesign = _currentDesign.copyWith(
       helmetProductId: helmetProductId,
       helmetName: helmetName,
-      helmetBaseImageUrl:
-          helmetBaseImageUrl ?? _resolvePreviewImageUrl(),
+      helmetBaseImageUrl: helmetBaseImageUrl ?? _resolvePreviewImageUrl(),
       helmetModel3dUrl: helmetModel3dUrl,
       helmetModel3dIosUrl: helmetModel3dIosUrl,
       stickers: _sortedLayers(),
@@ -495,7 +496,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     required List<StickerLayer> stickers,
     String? fallbackImageUrl,
   }) {
-    final byImage = _resolveInitialViewImageKey(fallbackImageUrl: fallbackImageUrl);
+    final byImage = _resolveInitialViewImageKey(
+      fallbackImageUrl: fallbackImageUrl,
+    );
     if ((byImage ?? '').isNotEmpty) return byImage;
 
     for (final sticker in stickers) {
@@ -549,7 +552,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
                 design.helmetBaseImageUrl;
 
       return design.copyWith(
-        helmetName: design.helmetName.isNotEmpty ? design.helmetName : product.name,
+        helmetName: design.helmetName.isNotEmpty
+            ? design.helmetName
+            : product.name,
         helmetBaseImageUrl: resolvedImageUrl,
         helmetModel3dUrl: design.helmetModel3dUrl ?? product.model3dUrl,
         helmetModel3dIosUrl:
@@ -645,8 +650,9 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       surface: surface,
       surfaceX: surfaceX == null ? null : _unitValue(surfaceX),
       surfaceY: surfaceY == null ? null : _unitValue(surfaceY),
-      surfaceScale:
-          surfaceScale == null ? null : _surfaceScaleValue(surfaceScale),
+      surfaceScale: surfaceScale == null
+          ? null
+          : _surfaceScaleValue(surfaceScale),
     );
     _syncCurrentDesign();
     notifyListeners();

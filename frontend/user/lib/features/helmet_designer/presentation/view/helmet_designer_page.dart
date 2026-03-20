@@ -1,11 +1,14 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/ai_sticker_request.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_3d_surface.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_crop.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_template.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_preview_canvas.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/viewmodel/helmet_designer_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/ai_sticker_section.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_view_selector.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/designer_hero_card.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/hint_card.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/layer_tile.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/layer_toolbar.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/sticker_catalog_card.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -173,10 +176,8 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
-          _HeroCard(
-            title: vm.currentDesign.helmetName.isEmpty
-                ? "Khởi tạo mẫu nón"
-                : vm.currentDesign.helmetName,
+          DesignerHeroCard(
+            title: vm.currentDesign.helmetName,
             subtitle: vm.hasOrderTarget
                 ? "Đang thiết kế cho biến thể #${vm.selectedProductDetailId} với số lượng ${vm.orderQuantity}. Sau khi hoàn tất, bạn có thể lưu, chia sẻ hoặc đặt mua ngay."
                 : "Canvas đã kết nối với quản lý sticker. Đặt mua sẽ cần chọn biến thể sản phẩm từ trang chi tiết.",
@@ -222,9 +223,15 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                           if (!mounted) return;
                           if (ordered) {
                             messenger.showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
                                   "Đã lưu thiết kế và sản phẩm vào giỏ hàng.",
+                                ),
+                                action: SnackBarAction(
+                                  label: "Xem giỏ hàng",
+                                  onPressed: () {
+                                    context.go("/cart");
+                                  },
                                 ),
                               ),
                             );
@@ -257,7 +264,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           ),
           const SizedBox(height: 10),
           if (vm.hasMultipleDesignViews) ...[
-            _DesignViewSelector(
+            DesignViewSelector(
               views: vm.designViews,
               activeViewImageKey: vm.activeViewImageKey,
               onSelected: vm.selectDesignView,
@@ -269,8 +276,8 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             selectedLayerId: vm.selectedLayerId,
             helmetBaseImageUrl: vm.currentPreviewImageUrl,
             emptyMessage: vm.hasLayers && vm.hasMultipleDesignViews
-                ? "Goc nay chua co sticker. Hay them moi hoac chuyen sang goc khac."
-                : "Chon sticker de bat dau thiet ke.",
+                ? "Góc này chưa có sticker. Hãy thêm mới hoặc chuyển sang góc khác."
+                : "Chọn sticker để bắt đầu thiết kế.",
             onLayerTap: vm.selectLayer,
             onBackgroundTap: () => vm.selectLayer(null),
             onLayerTransform: (layerId, x, y, scale, rotation) {
@@ -288,28 +295,29 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           const SizedBox(height: 12),
           if (vm.hasMultipleDesignViews)
             Text(
-              "Chon goc anh de gan sticker dung mat. Sticker moi se duoc them vao goc dang xem.",
+              "Chọn góc ảnh để gắn sticker đúng mặt. Sticker mới sẽ được thêm vào góc đang xem.",
               style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.light.textSecondary,
               ),
             )
           else
-          Text(
-            "Kéo sticker để di chuyển. Dùng hai ngón tay để thu phóng và xoay trực tiếp trên bản xem trước.",
-            style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.light.textSecondary,
+            Text(
+              "Kéo sticker để di chuyển. Dùng hai ngón tay để thu phóng và xoay trực tiếp trên bản xem trước.",
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.light.textSecondary,
+              ),
             ),
-          ),
           const SizedBox(height: 16),
           if (selectedLayer != null)
-            _LayerToolbar(layer: selectedLayer, palette: _pickerColors)
+            LayerToolbar(layer: selectedLayer, palette: _pickerColors)
           else
-            const _HintCard(
+            const HintCard(
               text:
                   "Chọn một sticker từ danh sách hoặc thêm sticker từ thư viện để bắt đầu chỉnh sửa.",
             ),
           const SizedBox(height: 20),
-          _AiStickerSection(
+
+          AiStickerSection(
             promptController: _aiPromptController,
             selectedStyle: _selectedAiStyle,
             selectedColor: _selectedAiColor,
@@ -365,40 +373,22 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final item = vm.stickerCatalog[index];
-                return _StickerCatalogCard(template: item);
+                return StickerCatalogCard(template: item);
               },
             ),
           ),
-          // const SizedBox(height: 20),
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: Text(
-          //         "Danh sách lớp (Layers)",
-          //         style: textTheme.titleMedium?.copyWith(
-          //           fontWeight: FontWeight.bold,
-          //         ),
-          //       ),
-          //     ),
-          //     Text(
-          //       "${vm.stickerLayers.length} sticker",
-          //       style: textTheme.bodyMedium?.copyWith(
-          //         color: AppColors.light.textSecondary,
-          //       ),
-          //     ),
-          //   ],
-          // ),
+
           const SizedBox(height: 10),
           if (!vm.hasLayers)
-            const _HintCard(
+            const HintCard(
               text:
                   "Chưa có sticker nào trong thiết kế. Hãy nhấn vào sticker ở trên để thêm vào nón.",
             )
           else
-            ...vm.stickerLayers.reversed.map(_LayerTile.new),
+            ...vm.stickerLayers.reversed.map(LayerTile.new),
           if (vm.errorMessage != null) ...[
             const SizedBox(height: 16),
-            _HintCard(text: vm.errorMessage!, isError: true),
+            HintCard(text: vm.errorMessage!, isError: true),
           ],
         ],
       ),
@@ -424,12 +414,72 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             : _colorToHex(_selectedAiColor!),
         removeBackground: _removeAiBackground,
       ),
+      addToCanvas: false,
     );
     if (!mounted || sticker == null) return;
 
     _aiPromptController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Đã tạo thành công sticker: ${sticker.name}")),
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Sticker AI của bạn",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  sticker.imageUrl,
+                  height: 200,
+                  width: 200,
+                  fit: BoxFit.contain,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.pop(),
+                      child: Text(
+                        "Xong",
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.pop();
+                        vm.addStickerFromTemplate(sticker);
+                      },
+                      child: Text(
+                        "Thiết kế ngay",
+                        style: TextStyle(color: AppColors.secondary),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -437,653 +487,4 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
     final value = color.value.toRadixString(16).padLeft(8, '0');
     return "#${value.substring(2).toUpperCase()}";
   }
-}
-
-class _HeroCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Widget trailing;
-
-  const _HeroCard({
-    required this.title,
-    required this.subtitle,
-    required this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF13243B), Color(0xFF30527D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.84),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          trailing,
-        ],
-      ),
-    );
-  }
-}
-
-class _DesignViewSelector extends StatelessWidget {
-  final List<ProductImage> views;
-  final String? activeViewImageKey;
-  final ValueChanged<String?> onSelected;
-
-  const _DesignViewSelector({
-    required this.views,
-    required this.activeViewImageKey,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final item in views) ...[
-            ChoiceChip(
-              label: Text(viewImageKeyLabel(item.viewImageKey)),
-              selected: (item.viewImageKey ?? '').trim() ==
-                  (activeViewImageKey ?? '').trim(),
-              onSelected: (_) => onSelected(item.viewImageKey),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StickerCatalogCard extends StatelessWidget {
-  final StickerTemplate template;
-
-  const _StickerCatalogCard({required this.template});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context
-          .read<HelmetDesignerViewModel>()
-          .addStickerFromTemplate(template),
-      child: Container(
-        width: 122,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.light.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Center(
-                child: template.imageUrl.startsWith("assets/")
-                    ? Image.asset(template.imageUrl, fit: BoxFit.contain)
-                    : Image.network(
-                        template.imageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.image_not_supported),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              template.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            Text(
-              template.category,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.light.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LayerToolbar extends StatelessWidget {
-  final StickerLayer layer;
-  final List<Color> palette;
-
-  const _LayerToolbar({required this.layer, required this.palette});
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.read<HelmetDesignerViewModel>();
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.light.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Layer đang chọn #${layer.id}",
-            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => vm.rotateSelectedLayerBy(-0.15),
-                icon: const Icon(Icons.rotate_left),
-                label: const Text("Xoay trái"),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => vm.rotateSelectedLayerBy(0.15),
-                icon: const Icon(Icons.rotate_right),
-                label: const Text("Xoay phải"),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => vm.resizeSelectedLayerBy(0.9),
-                icon: const Icon(Icons.remove),
-                label: const Text("Thu nhỏ"),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => vm.resizeSelectedLayerBy(1.1),
-                icon: const Icon(Icons.add),
-                label: const Text("Phóng to"),
-              ),
-              OutlinedButton.icon(
-                onPressed: vm.bringSelectedLayerForward,
-                icon: const Icon(Icons.flip_to_front),
-                label: const Text("Lên trên"),
-              ),
-              OutlinedButton.icon(
-                onPressed: vm.removeSelectedLayer,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text("Xóa"),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "Màu sticker",
-            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _ColorChipButton(
-                label: "Gốc",
-                isSelected: layer.tintColorValue == null,
-                color: null,
-                onTap: () => vm.updateSelectedLayerTint(null),
-              ),
-              ...palette.map(
-                (color) => _ColorChipButton(
-                  color: color,
-                  isSelected: layer.tintColorValue == color.value,
-                  onTap: () => vm.updateSelectedLayerTint(color.value),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            "Cắt ngang (Crop)",
-            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          RangeSlider(
-            values: RangeValues(layer.crop.left, layer.crop.right),
-            min: 0,
-            max: 1,
-            divisions: 20,
-            labels: RangeLabels(
-              layer.crop.left.toStringAsFixed(2),
-              layer.crop.right.toStringAsFixed(2),
-            ),
-            onChanged: (values) {
-              final range = _normalizeRange(values);
-              vm.updateSelectedLayerCrop(
-                layer.crop.copyWith(left: range.start, right: range.end),
-              );
-            },
-          ),
-          Text(
-            "Cắt dọc (Crop)",
-            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          RangeSlider(
-            values: RangeValues(layer.crop.top, layer.crop.bottom),
-            min: 0,
-            max: 1,
-            divisions: 20,
-            labels: RangeLabels(
-              layer.crop.top.toStringAsFixed(2),
-              layer.crop.bottom.toStringAsFixed(2),
-            ),
-            onChanged: (values) {
-              final range = _normalizeRange(values);
-              vm.updateSelectedLayerCrop(
-                layer.crop.copyWith(top: range.start, bottom: range.end),
-              );
-            },
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => vm.updateSelectedLayerCrop(StickerCrop()),
-              icon: const Icon(Icons.crop_free),
-              label: const Text("Đặt lại Crop"),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AiStickerSection extends StatelessWidget {
-  final TextEditingController promptController;
-  final String selectedStyle;
-  final Color? selectedColor;
-  final bool removeBackground;
-  final List<String> styles;
-  final List<Color> palette;
-  final bool isGenerating;
-  final ValueChanged<String> onStyleChanged;
-  final ValueChanged<Color?> onColorChanged;
-  final ValueChanged<bool> onBackgroundChanged;
-  final VoidCallback onGenerate;
-
-  const _AiStickerSection({
-    required this.promptController,
-    required this.selectedStyle,
-    required this.selectedColor,
-    required this.removeBackground,
-    required this.styles,
-    required this.palette,
-    required this.isGenerating,
-    required this.onStyleChanged,
-    required this.onColorChanged,
-    required this.onBackgroundChanged,
-    required this.onGenerate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.light.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Tạo sticker bằng AI",
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Nhập mô tả ngắn, chọn phong cách và màu chủ đạo. Sticker AI sẽ được thêm vào thiết kế ngay lập tức.",
-            style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.light.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: promptController,
-            minLines: 2,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText:
-                  "Ví dụ: rồng lửa decal, cáo đua xe, đám mây dễ thương...",
-            ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: styles.map((style) {
-              return ChoiceChip(
-                label: Text(style),
-                selected: selectedStyle == style,
-                onSelected: (_) => onStyleChanged(style),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _ColorChipButton(
-                label: "Mặc định",
-                isSelected: selectedColor == null,
-                color: null,
-                onTap: () => onColorChanged(null),
-              ),
-              ...palette.map(
-                (color) => _ColorChipButton(
-                  color: color,
-                  isSelected: selectedColor?.value == color.value,
-                  onTap: () => onColorChanged(color),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: removeBackground,
-            onChanged: onBackgroundChanged,
-            title: const Text("Tự động tách nền"),
-          ),
-          const SizedBox(height: 6),
-          FilledButton.icon(
-            onPressed: isGenerating ? null : onGenerate,
-            icon: isGenerating
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.auto_awesome),
-            label: const Text("Tạo Sticker ngay"),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ColorChipButton extends StatelessWidget {
-  final Color? color;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final String? label;
-
-  const _ColorChipButton({
-    required this.isSelected,
-    required this.onTap,
-    this.color,
-    this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = isSelected
-        ? AppColors.secondary
-        : AppColors.light.border;
-    final fillColor = color ?? Colors.white;
-    final showCheck = isSelected && color != null;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: label == null ? 0 : 12,
-          vertical: label == null ? 0 : 8,
-        ),
-        width: label == null ? 34 : null,
-        height: label == null ? 34 : null,
-        decoration: BoxDecoration(
-          color: fillColor,
-          shape: label == null ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: label == null ? null : BorderRadius.circular(999),
-          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: label != null
-            ? Text(
-                label!,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              )
-            : showCheck
-            ? Icon(
-                Icons.check,
-                size: 14,
-                color: color == const Color(0xFFFFFFFF)
-                    ? AppColors.primary
-                    : Colors.white,
-              )
-            : const SizedBox.shrink(),
-      ),
-    );
-  }
-}
-
-class _LayerTile extends StatelessWidget {
-  final StickerLayer layer;
-
-  const _LayerTile(this.layer);
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.watch<HelmetDesignerViewModel>();
-    final isSelected = vm.selectedLayerId == layer.id;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        onTap: () =>
-            context.read<HelmetDesignerViewModel>().selectLayer(layer.id),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 10,
-        ),
-        leading: SizedBox(
-          width: 72,
-          height: 72,
-          child: Stack(
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F8FC),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.light.border),
-                ),
-                child: _LayerStickerPreview(layer: layer),
-              ),
-              Positioned(
-                left: 6,
-                top: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.72),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "${layer.zIndex + 1}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        title: Text(
-          viewImageKeyLabel(layer.viewImageKey),
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              isSelected ? "Đang chọn sticker này" : "Nhấn để xem rõ sticker",
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Vị trí: (${layer.x.toStringAsFixed(2)}, ${layer.y.toStringAsFixed(2)}) · Tỷ lệ: ${layer.scale.toStringAsFixed(2)}",
-            ),
-          ],
-        ),
-        trailing: isSelected
-            ? const Icon(Icons.check_circle, color: AppColors.secondary)
-            : const Icon(Icons.touch_app_outlined),
-      ),
-    );
-  }
-}
-
-class _LayerStickerPreview extends StatelessWidget {
-  final StickerLayer layer;
-
-  const _LayerStickerPreview({required this.layer});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget child;
-    if (layer.imageUrl.startsWith("assets/")) {
-      child = Image.asset(layer.imageUrl, fit: BoxFit.contain);
-    } else {
-      child = Image.network(
-        layer.imageUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
-      );
-    }
-
-    if (layer.tintColorValue != null) {
-      child = ColorFiltered(
-        colorFilter: ColorFilter.mode(
-          Color(layer.tintColorValue!),
-          BlendMode.modulate,
-        ),
-        child: child,
-      );
-    }
-
-    final widthFactor = (layer.crop.right - layer.crop.left)
-        .clamp(0.12, 1.0)
-        .toDouble();
-    final heightFactor = (layer.crop.bottom - layer.crop.top)
-        .clamp(0.12, 1.0)
-        .toDouble();
-    final alignX = (((layer.crop.left + layer.crop.right) / 2) * 2 - 1)
-        .clamp(-1.0, 1.0)
-        .toDouble();
-    final alignY = (((layer.crop.top + layer.crop.bottom) / 2) * 2 - 1)
-        .clamp(-1.0, 1.0)
-        .toDouble();
-
-    return ClipRect(
-      child: Align(
-        alignment: Alignment(alignX, alignY),
-        widthFactor: widthFactor,
-        heightFactor: heightFactor,
-        child: child,
-      ),
-    );
-  }
-}
-
-class _HintCard extends StatelessWidget {
-  final String text;
-  final bool isError;
-
-  const _HintCard({required this.text, this.isError = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isError ? const Color(0xFFFFF0F0) : const Color(0xFFF5F8FC),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isError ? const Color(0xFFFFC2C2) : AppColors.light.border,
-        ),
-      ),
-      child: Text(text),
-    );
-  }
-}
-
-RangeValues _normalizeRange(RangeValues values, {double minSpan = 0.15}) {
-  var start = values.start;
-  var end = values.end;
-  if (end - start >= minSpan) {
-    return values;
-  }
-
-  end = (start + minSpan).clamp(0.0, 1.0);
-  start = (end - minSpan).clamp(0.0, 1.0);
-  return RangeValues(start.toDouble(), end.toDouble());
 }

@@ -33,18 +33,18 @@ int viewImageKeyPriority(String? value) {
 String viewImageKeyLabel(String? value) {
   switch ((value ?? '').trim()) {
     case 'front':
-      return 'Mat truoc';
+      return 'Mặt trước';
     case 'front_right':
-      return 'Cheo phai';
+      return 'Trước phải';
     case 'right':
-      return 'Ben phai';
+      return 'Bên phải';
     case 'back':
-      return 'Mat sau';
+      return 'Mặt sau';
     case 'left':
-      return 'Ben trai';
+      return 'Bên trái';
     case 'front_left':
-      return 'Cheo trai';
+      return 'Trước trái';
     default:
-      return 'Anh mac dinh';
+      return 'Ảnh mặc định';
   }
 }

@@ -77,7 +77,7 @@ class _DesignStickerInfoState extends State<DesignStickerInfo> {
     final colorScheme = Theme.of(context).colorScheme;
     final title = (widget.designName?.trim().isNotEmpty ?? false)
         ? widget.designName!.trim()
-        : "Thiet ke rieng";
+        : "Thiết kế riêng";
 
     return Container(
       padding: const EdgeInsets.all(8),

@@ -24,6 +24,8 @@ class CartService(BaseService):
             return None
         return design_id
 
+
+# Hàm kiểm tra thiết kế hợp lệ
     @staticmethod
     def _validate_design(
         db: Session,
@@ -44,6 +46,8 @@ class CartService(BaseService):
             )
         return design
 
+
+#Hàm tìm sản phẩm đã có trong giỏ
     @staticmethod
     def _find_existing_cart_detail(
         db: Session,

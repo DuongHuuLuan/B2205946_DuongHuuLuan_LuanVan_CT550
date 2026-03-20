@@ -211,7 +211,7 @@ class _InteractiveStickerLayerState extends State<_InteractiveStickerLayer> {
                       ),
                       child: const Icon(
                         Icons.open_with,
-                        size: 12,
+                        size: 15,
                         color: Colors.white,
                       ),
                     ),
@@ -280,16 +280,11 @@ class _StickerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget child;
-    if (imageUrl.startsWith("assets/")) {
-      child = Image.asset(imageUrl, fit: BoxFit.contain);
-    } else {
-      child = Image.network(
-        imageUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
-      );
-    }
+    Widget child = Image.network(
+      imageUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+    );
 
     if (tintColorValue != null) {
       child = ColorFiltered(
@@ -334,22 +329,12 @@ class _HelmetCanvasBackground extends StatelessWidget {
       return CustomPaint(painter: _HelmetCanvasPainter(showGuides: showGuides));
     }
 
-    Widget child;
-    if (imageUrl.startsWith("assets/")) {
-      child = Image.asset(
-        imageUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
-      );
-    } else {
-      child = Image.network(
-        imageUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
-      );
-    }
+    Widget child = Image.network(
+      imageUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) =>
+          const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
+    );
 
     return Stack(
       fit: StackFit.expand,
