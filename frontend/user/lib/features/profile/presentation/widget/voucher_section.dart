@@ -74,11 +74,15 @@ class _VoucherCard extends StatelessWidget {
                   size: 30,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  item.code,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.secondary,
+                Expanded(
+                  child: Text(
+                    item.code,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
                   ),
                 ),
               ],

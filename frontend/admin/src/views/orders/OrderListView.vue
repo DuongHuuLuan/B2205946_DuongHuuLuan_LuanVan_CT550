@@ -111,8 +111,10 @@
                     </span>
                   </td>
 
-                  <td class="text-center fw-semibold">
-                    {{ formatMoney(calcTotal(order)) }}
+                  <td class="text-center">
+                    <div class="fw-semibold">
+                      {{ formatMoney(calcTotal(order)) }}
+                    </div>
                   </td>
 
                   <td class="text-end pe-3">
@@ -207,11 +209,16 @@ const loading = ref(false);
 
 function calcTotal(order) {
   const details = order?.order_details || [];
-  return details.reduce((sum, item) => {
+  const subtotal = details.reduce((sum, item) => {
     const qty = Number(item?.quantity || 0);
     const price = Number(item?.price || 0);
     return sum + qty * price;
   }, 0);
+  return subtotal + calcShippingFee(order);
+}
+
+function calcShippingFee(order) {
+  return Number(order?.shipping_fee || 0);
 }
 
 function canReviewOrder(orderStatus) {

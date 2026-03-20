@@ -221,6 +221,10 @@
                     <span class="ms-4 fs-5 fw-semibold">{{ calcTQuantity(orderItems) }}</span>
                   </div>
                   <div class="d-flex justify-content-between gap-3 mt-1">
+                    <span class="small opacity-75">Phí vận chuyển:</span>
+                    <span class="ms-4">{{ formatMoney(calcShippingFee(order)) }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between gap-3 mt-1">
                     <span class="small opacity-75">Tổng tiền:</span>
                     <span class="ms-4 fs-5 fw-semibold">{{ formatMoney(calcTotal(orderItems)) }}</span>
                   </div>
@@ -283,8 +287,19 @@ function calcLineTotal(item) {
   return quantity * price;
 }
 
-function calcTotal(items) {
+function calcSubtotal(items) {
   return (items || []).reduce((sum, item) => sum + calcLineTotal(item), 0);
+}
+
+function calcShippingFee(orderValue = order.value) {
+  return Number(orderValue?.shipping_fee || 0);
+}
+
+function calcTotal(input, itemsArg) {
+  if (Array.isArray(input)) {
+    return calcSubtotal(input) + calcShippingFee(order.value);
+  }
+  return calcSubtotal(itemsArg) + calcShippingFee(input);
 }
 
 function calcTQuantity(items) {
