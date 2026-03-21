@@ -1,3 +1,4 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/widget/cart_row.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -40,9 +41,7 @@ class CartTable extends StatelessWidget {
           if (isLoading && cartDetails.isEmpty)
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Center(
-                child: CircularProgressIndicator(color: colorScheme.primary),
-              ),
+              child: Center(child: AppLogoLoader(size: 64, strokeWidth: 3.5)),
             )
           else if (cartDetails.isEmpty)
             Padding(

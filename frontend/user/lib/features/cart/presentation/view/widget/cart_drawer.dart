@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
+import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -77,7 +78,9 @@ class _CartDrawerView extends StatelessWidget {
               child: Consumer<CartViewmodel>(
                 builder: (context, vm, _) {
                   if (vm.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: AppLogoLoader(size: 64, strokeWidth: 3.5),
+                    );
                   }
 
                   final filteredDetails = productDetailId == null

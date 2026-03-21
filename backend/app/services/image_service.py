@@ -14,7 +14,7 @@ class ImageService:
             (
                 image
                 for image in images
-                if str(getattr(image, "view_image_key", "") or "").strip() == "front"
+                if str(getattr(image, "view_image_key", "") or "").strip() == "front-left"
             ),
             None,
         )

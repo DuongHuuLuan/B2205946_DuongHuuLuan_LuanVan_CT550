@@ -34,22 +34,33 @@ def get_sticker_catalog(
     return {"items": items}
 
 
-@router.get("/admin/system", response_model=StickerAdminPaginationOut)
-def get_system_stickers(
+@router.get("/admin", response_model=StickerAdminPaginationOut)
+def get_admin_stickers(
     page: int = 1,
     per_page: Optional[int] = None,
     q: Optional[str] = None,
     category: Optional[str] = None,
+    scope: Optional[str] = "system",
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    return StickerService.list_system_stickers(
+    return StickerService.list_admin_stickers(
         db=db,
         page=page,
         per_page=per_page,
         keyword=q,
         category=category,
+        scope=scope,
     )
+
+
+@router.get("/admin/{sticker_id}", response_model=StickerAdminOut)
+def get_admin_sticker(
+    sticker_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return StickerService.get_admin_sticker(db=db, sticker_id=sticker_id)
 
 
 @router.get("/admin/system/{sticker_id}", response_model=StickerAdminOut)

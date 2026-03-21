@@ -37,10 +37,13 @@ class StickerListOut(BaseModel):
 
 class StickerAdminOut(StickerOut):
     owner_user_id: Optional[int] = None
+    owner_username: Optional[str] = None
+    owner_email: Optional[str] = None
     public_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     usage_count: int = 0
+    can_edit: bool = True
     can_delete: bool = True
 
     model_config = ConfigDict(from_attributes=True)

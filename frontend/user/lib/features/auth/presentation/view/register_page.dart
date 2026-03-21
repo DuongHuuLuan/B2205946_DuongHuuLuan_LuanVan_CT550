@@ -1,3 +1,4 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -217,9 +218,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           const SizedBox(height: 30),
                           if (vm.isLoading)
-                            CircularProgressIndicator(
-                              color: colorScheme.primary,
-                            )
+                            AppLogoLoader(size: 36, strokeWidth: 2.5)
                           else
                             ElevatedButton(
                               onPressed: _handleRegister,

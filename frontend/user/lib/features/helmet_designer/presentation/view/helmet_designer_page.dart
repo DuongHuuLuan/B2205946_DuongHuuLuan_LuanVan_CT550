@@ -10,6 +10,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentat
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/layer_toolbar.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/sticker_catalog_card.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -440,11 +441,34 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
 
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  sticker.imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: sticker.imageUrl,
                   height: 200,
                   width: 200,
                   fit: BoxFit.contain,
+                  fadeInDuration: const Duration(milliseconds: 400),
+                  placeholder: (context, url) => const Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.broken_image_outlined,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Lỗi tải sticker",
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

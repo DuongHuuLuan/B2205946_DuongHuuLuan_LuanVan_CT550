@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -165,10 +166,7 @@ class _ProductPageState extends State<ProductPage> {
                   SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.secondary,
-                    ),
+                    child: AppLogoLoader(size: 20, strokeWidth: 2),
                   ),
               ],
             ),
@@ -223,7 +221,7 @@ class _ProductPageState extends State<ProductPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
+                      AppLogoLoader(size: 64, strokeWidth: 3.5),
                       SizedBox(height: 8),
                       Text("Đang tải"),
                     ],

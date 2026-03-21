@@ -7,7 +7,7 @@
           <div class="small opacity-75">Cập nhật tên, ảnh và thông tin kỹ thuật của sticker.</div>
         </div>
 
-        <RouterLink class="btn btn-outline-secondary" :to="{ name: 'stickers.detail', params: { id } }">
+        <RouterLink class="btn btn-outline-secondary" :to="{ name: 'stickers.detail', params: { id }, query: route.query }">
           <i class="fa-solid fa-arrow-left me-1"></i> Về chi tiết
         </RouterLink>
       </div>
@@ -54,20 +54,13 @@
                 </div>
 
                 <div class="row g-3">
-                  <div class="col-12 col-md-6">
+                  <div class="col-12">
                     <label class="form-label">Danh mục (Category)</label>
                     <Field name="category" v-slot="{ field, meta }">
                       <input v-bind="field" type="text" class="form-control bg-transparent"
                         :class="{ 'is-invalid': meta.touched && !meta.valid }" />
                     </Field>
                     <ErrorMessage name="category" class="invalid-feedback d-block" />
-                  </div>
-
-                  <div class="col-12 col-md-6">
-                    <label class="form-label">Public ID (Cloudinary)</label>
-                    <Field name="public_id" v-slot="{ field }">
-                      <input v-bind="field" type="text" class="form-control bg-transparent" />
-                    </Field>
                   </div>
                 </div>
 
@@ -203,7 +196,7 @@ async function handleImageSelected(event, setFieldValue, setFieldError) {
 async function fetchSticker() {
   loading.value = true;
   try {
-    const sticker = await StickerService.get(id);
+    const sticker = await StickerService.getSystem(id);
     originalValues.value = {
       name: sticker?.name || "",
       image_url: sticker?.image_url || "",
@@ -222,7 +215,7 @@ async function fetchSticker() {
       error?.response?.data?.error ||
       "Không thể tải dữ liệu sticker.";
     await Swal.fire("Lỗi", message, "error");
-    router.push({ name: "stickers.list" });
+    router.push({ name: "stickers.list", query: route.query });
   } finally {
     loading.value = false;
   }
@@ -245,7 +238,7 @@ async function onSubmit(values, { setErrors, resetForm }) {
     resetForm({ values: { ...values } });
     resetUploadUi();
     await Swal.fire("Thành công", "Đã cập nhật thông tin sticker.", "success");
-    router.push({ name: "stickers.detail", params: { id } });
+    router.push({ name: "stickers.detail", params: { id }, query: route.query });
   } catch (error) {
     const message =
       error?.response?.data?.detail ||

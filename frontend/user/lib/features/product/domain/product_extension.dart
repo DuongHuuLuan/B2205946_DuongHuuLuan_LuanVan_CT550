@@ -120,8 +120,12 @@ extension ProductX on Product {
     return vs.first;
   }
 
+  List<ProductImage> galleryImagesForColor([int? colorId]) {
+    return _orderedImages(_imagesForColor(colorId));
+  }
+
   ProductImage? pickPrimaryImage([int? colorId]) {
-    final filtered = _orderedImages(_imagesForColor(colorId));
+    final filtered = galleryImagesForColor(colorId);
     if (filtered.isNotEmpty) return filtered.first;
     return null;
   }

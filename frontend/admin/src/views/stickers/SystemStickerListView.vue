@@ -3,11 +3,12 @@
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Sticker hệ thống</h4>
-          <div class="small opacity-75">Quản lý thư viện sticker dùng chung cho tất cả người dùng.</div>
+          <h4 class="mb-1">Quản lý sticker</h4>
+          <div class="small opacity-75">{{ scopeDescription }}</div>
         </div>
 
-        <RouterLink class="icon-btn icon-add" :to="{ name: 'stickers.create' }" title="Thêm sticker mới">
+        <RouterLink v-if="scope !== 'user'" class="icon-btn icon-add" :to="{ name: 'stickers.create' }"
+          title="Thêm sticker hệ thống">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
@@ -17,11 +18,20 @@
       <div class="card card-soft">
         <div class="card-body">
           <div class="row g-2 align-items-center">
-            <div class="col-12 col-md-6 col-lg-5">
-              <SearchToggle v-model="keyword" placeholder="Tìm theo tên hoặc danh mục..." />
+            <div class="col-12 col-lg-4">
+              <SearchToggle v-model="keyword" placeholder="Tìm theo tên, danh mục hoặc người tạo..." />
             </div>
 
-            <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
+            <div class="col-12 col-lg-5">
+              <div class="scope-switch">
+                <button v-for="option in scopeOptions" :key="option.value" type="button" class="scope-btn"
+                  :class="{ active: scope === option.value }" @click="applyScope(option.value)">
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-3 d-flex justify-content-lg-end gap-2">
               <span class="badge bg-secondary-subtle text-secondary align-self-center">
                 Tổng cộng: {{ meta.total }}
               </span>
@@ -39,11 +49,11 @@
               <thead>
                 <tr>
                   <th class="ps-3" style="width: 120px">Mã</th>
-                  <th style="min-width: 320px">Sticker</th>
+                  <th style="min-width: 360px">Sticker</th>
                   <th style="min-width: 160px">Danh mục</th>
-                  <!-- <th class="text-center" style="width: 120px">Trong suốt</th> -->
+                  <th style="width: 160px">Loại</th>
                   <th class="text-center" style="width: 120px">Đã dùng</th>
-                  <th class="text-center" style="width: 160px">Thao tác</th>
+                  <th class="text-center" style="width: 180px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -53,7 +63,7 @@
                     <span class="code-pill">S{{ sticker.id }}</span>
                   </td>
                   <td>
-                    <RouterLink class="sticker-link" :to="{ name: 'stickers.detail', params: { id: sticker.id } }">
+                    <RouterLink class="sticker-link" :to="detailRouteFor(sticker)">
                       <div class="d-flex align-items-center gap-3">
                         <div class="thumb">
                           <img v-if="sticker.image_url" :src="sticker.image_url" alt="Sticker" />
@@ -62,7 +72,16 @@
                           </div>
                         </div>
                         <div>
-                          <div class="fw-semibold">{{ sticker.name }}</div>
+                          <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="fw-semibold">{{ sticker.name }}</div>
+                            <span class="badge scope-badge"
+                              :class="isSystemSticker(sticker) ? 'scope-system' : 'scope-user'">
+                              {{ isSystemSticker(sticker) ? "Hệ thống" : "Người dùng tạo" }}
+                            </span>
+                          </div>
+                          <div v-if="sticker.owner_user_id" class="small text-muted mt-1">
+                            {{ formatOwnerLabel(sticker) }}
+                          </div>
                         </div>
                       </div>
                     </RouterLink>
@@ -70,24 +89,31 @@
                   <td>
                     <span class="badge category-badge">{{ sticker.category || "-" }}</span>
                   </td>
-                  <!-- <td class="text-center">
-                    <span class="badge" :class="sticker.has_transparent_background ? 'flag-yes' : 'flag-no'">
-                      {{ sticker.has_transparent_background ? "Có" : "Không" }}
+                  <td>
+                    <span class="badge scope-badge"
+                      :class="Boolean(sticker.is_ai_generated) ? 'scope-ai' : 'scope-manual'">
+                      {{ sticker.is_ai_generated ? "AI" : "Thường" }}
                     </span>
-                  </td> -->
+                  </td>
                   <td class="text-center">
                     <span class="badge usage-badge">{{ sticker.usage_count ?? 0 }}</span>
                   </td>
                   <td class="text-center">
                     <div class="d-flex justify-content-center gap-2">
-                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'stickers.edit', params: { id: sticker.id } }"
-                        title="Chỉnh sửa">
-                        <i class="fa-solid fa-pen-to-square"></i>
+                      <RouterLink class="icon-btn icon-view" :to="detailRouteFor(sticker)" title="Chi tiết">
+                        <i class="fa-solid fa-eye"></i>
                       </RouterLink>
-                      <button class="icon-btn icon-delete" title="Xóa" :disabled="!sticker.can_delete"
-                        @click="onDeleteClick(sticker)">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
+                      <template v-if="isSystemSticker(sticker)">
+                        <RouterLink class="icon-btn icon-edit"
+                          :to="{ name: 'stickers.edit', params: { id: sticker.id }, query: detailQueryFor(sticker) }"
+                          title="Chỉnh sửa">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </RouterLink>
+                        <button class="icon-btn icon-delete" title="Xóa" :disabled="!sticker.can_delete"
+                          @click="onDeleteClick(sticker)">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </template>
                     </div>
                   </td>
                 </tr>
@@ -136,23 +162,85 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import Swal from "sweetalert2";
 
 import SearchToggle from "@/components/common/SearchToggle.vue";
 import StickerService from "@/services/sticker.service";
 
+const route = useRoute();
+const router = useRouter();
+
+const scopeOptions = [
+  { value: "system", label: "Sticker hệ thống" },
+  { value: "user", label: "Người dùng tạo" },
+];
+
+function normalizeScope(value) {
+  return value === "user" ? "user" : "system";
+}
+
+function buildScopeQuery(value = scope.value) {
+  const normalized = normalizeScope(value);
+  return normalized === "system" ? {} : { scope: normalized };
+}
+
 const keyword = ref("");
+const scope = ref(normalizeScope(route.query.scope));
 const page = ref(1);
 const perPage = 8;
 
 const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 
+const scopeDescription = computed(() =>
+  scope.value === "system"
+    ? "Danh sách sticker dùng chung cho tất cả người dùng."
+    : "Danh sách sticker do người dùng tạo."
+);
+
+function isSystemSticker(sticker) {
+  return !sticker?.owner_user_id;
+}
+
+function detailQueryFor(sticker) {
+  return isSystemSticker(sticker) ? buildScopeQuery(scope.value) : { scope: "user" };
+}
+
+function detailRouteFor(sticker) {
+  return {
+    name: "stickers.detail",
+    params: { id: sticker.id },
+    query: detailQueryFor(sticker),
+  };
+}
+
+function formatOwnerLabel(sticker) {
+  const ownerName = sticker?.owner_username?.trim();
+  const ownerEmail = sticker?.owner_email?.trim();
+  const ownerId = sticker?.owner_user_id;
+
+  if (ownerName && ownerEmail) {
+    return `Tạo bởi: ${ownerName} (${ownerEmail})`;
+  }
+  if (ownerName) {
+    return `Tạo bởi: ${ownerName}`;
+  }
+  if (ownerEmail) {
+    return `Tạo bởi: ${ownerEmail}`;
+  }
+  if (ownerId) {
+    return `Tạo bởi người dùng #${ownerId}`;
+  }
+  return "Sticker hệ thống";
+}
+
 async function fetchStickers() {
   try {
-    const response = await StickerService.getAll({
+    const response = await StickerService.getAdminList({
       q: keyword.value.trim() || undefined,
+      scope: scope.value,
       page: page.value,
       per_page: perPage,
     });
@@ -174,7 +262,29 @@ async function fetchStickers() {
   }
 }
 
+async function applyScope(nextScope) {
+  const normalized = normalizeScope(nextScope);
+  if (scope.value === normalized) return;
+
+  scope.value = normalized;
+  await router.replace({ query: buildScopeQuery(normalized) });
+  if (page.value !== 1) {
+    page.value = 1;
+    return;
+  }
+  await fetchStickers();
+}
+
 async function onDeleteClick(sticker) {
+  if (!isSystemSticker(sticker)) {
+    await Swal.fire(
+      "Chỉ xem",
+      "Sticker do người dùng tạo chỉ được xem chi tiết trong màn quản trị này.",
+      "info",
+    );
+    return;
+  }
+
   if (!sticker?.can_delete) {
     await Swal.fire(
       "Không thể xóa",
@@ -219,6 +329,20 @@ watch(keyword, async () => {
 watch(page, async () => {
   await fetchStickers();
 });
+
+watch(
+  () => route.query.scope,
+  async (value) => {
+    const normalized = normalizeScope(value);
+    if (normalized === scope.value) return;
+    scope.value = normalized;
+    if (page.value !== 1) {
+      page.value = 1;
+      return;
+    }
+    await fetchStickers();
+  },
+);
 </script>
 
 <style scoped>
@@ -227,6 +351,32 @@ watch(page, async () => {
   border: 1px solid var(--border-color);
   border-radius: 1rem;
   color: var(--font-color);
+}
+
+.scope-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scope-btn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--font-color);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  transition: 0.12s ease;
+}
+
+.scope-btn:hover {
+  background: var(--hover-background-color);
+  border-color: var(--hover-border-color);
+}
+
+.scope-btn.active {
+  background: color-mix(in srgb, var(--main-color) 16%, transparent);
+  border-color: var(--hover-border-color);
 }
 
 .icon-btn {
@@ -257,6 +407,10 @@ watch(page, async () => {
   width: 42px;
   height: 42px;
   border-radius: 1rem;
+}
+
+.icon-view {
+  color: #2563eb;
 }
 
 .icon-edit {
@@ -310,22 +464,35 @@ watch(page, async () => {
 }
 
 .category-badge,
-.usage-badge {
-  background: color-mix(in srgb, var(--main-color) 14%, transparent);
+.usage-badge,
+.scope-badge {
   border: 1px solid var(--hover-border-color);
   color: var(--font-color);
   font-weight: 600;
 }
 
-.flag-yes {
-  background: var(--status-success-bg);
-  border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
-  color: var(--font-color);
+.category-badge,
+.usage-badge {
+  background: color-mix(in srgb, var(--main-color) 14%, transparent);
 }
 
-.flag-no {
-  background: var(--status-warning-bg);
-  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
-  color: var(--font-color);
+.scope-system {
+  background: color-mix(in srgb, #2563eb 16%, transparent);
+  border-color: color-mix(in srgb, #2563eb 45%, transparent);
+}
+
+.scope-user {
+  background: color-mix(in srgb, #f97316 16%, transparent);
+  border-color: color-mix(in srgb, #f97316 45%, transparent);
+}
+
+.scope-ai {
+  background: color-mix(in srgb, #8b5cf6 16%, transparent);
+  border-color: color-mix(in srgb, #8b5cf6 45%, transparent);
+}
+
+.scope-manual {
+  background: color-mix(in srgb, #64748b 16%, transparent);
+  border-color: color-mix(in srgb, #64748b 45%, transparent);
 }
 </style>

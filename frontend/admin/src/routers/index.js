@@ -406,7 +406,7 @@ const routes = [
         path: "/stickers",
         name: "stickers.list",
         component: SystemStickerListView,
-        meta: { title: "Sticker hệ thống" },
+        meta: { title: "Quản lý sticker" },
       },
       {
         path: "/stickers/create",
@@ -418,7 +418,7 @@ const routes = [
         path: "/stickers/:id",
         name: "stickers.detail",
         component: SystemStickerDetailView,
-        meta: { title: "Chi tiết sticker hệ thống" },
+        meta: { title: "Chi tiết sticker" },
         props: true,
       },
       {

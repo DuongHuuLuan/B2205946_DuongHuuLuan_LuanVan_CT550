@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
+import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
@@ -447,10 +448,7 @@ class _ProductCardState extends State<ProductCard>
         color: colorScheme.secondary.withOpacity(0.5),
         shape: BoxShape.circle,
       ),
-      child: const CircularProgressIndicator(
-        strokeWidth: 2,
-        color: Colors.white,
-      ),
+      child: AppLogoLoader(size: 20, strokeWidth: 2),
     );
   }
 

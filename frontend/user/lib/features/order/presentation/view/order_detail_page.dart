@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/view/evaluate_create_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
@@ -199,7 +200,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLogoLoader(size: 80, strokeWidth: 4))
           : _error != null
           ? _ErrorView(message: _error!, onRetry: _loadOrder)
           : order == null

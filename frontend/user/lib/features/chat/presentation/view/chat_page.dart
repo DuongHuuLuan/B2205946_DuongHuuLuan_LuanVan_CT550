@@ -60,7 +60,6 @@ class _ChatPageState extends State<ChatPage> {
       _scrollToBottom();
     } catch (_) {
       if (!mounted) return;
-      // Chuyển đổi thông báo lỗi sang tiếng Việt
       final message = vm.errorMessage ?? "Không thể gửi tin nhắn.";
       ScaffoldMessenger.of(
         context,

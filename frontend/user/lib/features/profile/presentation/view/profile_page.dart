@@ -1,3 +1,4 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
@@ -144,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       body: vm.isLoading && profile == null && vm.orders.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLogoLoader(size: 80, strokeWidth: 4))
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               child: Column(

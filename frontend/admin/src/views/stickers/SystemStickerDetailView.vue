@@ -3,18 +3,20 @@
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Chi tiết sticker hệ thống</h4>
+          <h4 class="mb-1">{{ heading }}</h4>
           <div class="small opacity-75">ID: {{ id }}</div>
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-          <RouterLink class="btn btn-outline-secondary" :to="{ name: 'stickers.list' }">
+          <RouterLink class="btn btn-outline-secondary" :to="{ name: 'stickers.list', query: listQuery }">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
           </RouterLink>
-          <RouterLink class="btn btn-outline-secondary" :to="{ name: 'stickers.edit', params: { id } }">
+          <RouterLink v-if="canEdit" class="btn btn-outline-secondary"
+            :to="{ name: 'stickers.edit', params: { id }, query: route.query }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" :disabled="!sticker?.can_delete" @click="onDelete">
+          <button v-if="canDeleteAction" class="btn btn-outline-danger" type="button" :disabled="!sticker?.can_delete"
+            @click="onDelete">
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
@@ -50,6 +52,18 @@
                   <div class="value">{{ sticker.name || "-" }}</div>
                 </div>
                 <div class="info-item">
+                  <div class="label">Loại sticker</div>
+                  <div class="value">
+                    <span class="badge" :class="isUserSticker ? 'scope-user' : 'scope-system'">
+                      {{ isUserSticker ? "Người dùng tạo" : "Hệ thống" }}
+                    </span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="label">Người tạo</div>
+                  <div class="value">{{ ownerLabel }}</div>
+                </div>
+                <div class="info-item">
                   <div class="label">Danh mục (Category)</div>
                   <div class="value">{{ sticker.category || "-" }}</div>
                 </div>
@@ -69,9 +83,18 @@
                     </span>
                   </div>
                 </div>
+
                 <div class="info-item">
                   <div class="label">Đã được sử dụng</div>
                   <div class="value">{{ sticker.usage_count ?? 0 }} thiết kế</div>
+                </div>
+                <div class="info-item">
+                  <div class="label">Có thể chỉnh sửa</div>
+                  <div class="value">
+                    <span class="badge" :class="canEdit ? 'flag-yes' : 'flag-no'">
+                      {{ canEdit ? "Có" : "Không" }}
+                    </span>
+                  </div>
                 </div>
                 <div class="info-item">
                   <div class="label">Có thể xóa</div>
@@ -90,11 +113,6 @@
                   <div class="value">{{ formatDateTimeVN(sticker.updated_at) }}</div>
                 </div>
               </div>
-
-              <div v-if="!sticker.can_delete" class="alert alert-warning mt-3 mb-0">
-                Sticker này đã được người dùng sử dụng trong thiết kế, vì vậy không thể xóa để đảm bảo tính nhất quán
-                của dữ liệu.
-              </div>
             </div>
           </div>
         </div>
@@ -104,8 +122,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import Swal from "sweetalert2";
 
 import StickerService from "@/services/sticker.service";
@@ -113,15 +131,45 @@ import { formatDateTimeVN } from "@/utils/utils";
 
 const props = defineProps({ id: String });
 const id = props.id;
+const route = useRoute();
 const router = useRouter();
 
 const loading = ref(true);
 const sticker = ref(null);
 
+const isUserSticker = computed(() => Boolean(sticker.value?.owner_user_id));
+const canEdit = computed(() => Boolean(sticker.value?.can_edit));
+const canDeleteAction = computed(() => !isUserSticker.value);
+const showSystemDeleteWarning = computed(() => !isUserSticker.value && sticker.value && !sticker.value.can_delete);
+const heading = computed(() => (isUserSticker.value ? "Chi tiết sticker người dùng tạo" : "Chi tiết sticker hệ thống"));
+const listQuery = computed(() => (route.query.scope === "user" ? { scope: "user" } : {}));
+
+const ownerLabel = computed(() => {
+  if (!isUserSticker.value) return "Hệ thống";
+
+  const ownerName = sticker.value?.owner_username?.trim();
+  const ownerEmail = sticker.value?.owner_email?.trim();
+  const ownerId = sticker.value?.owner_user_id;
+
+  if (ownerName && ownerEmail) {
+    return `${ownerName} (${ownerEmail})`;
+  }
+  if (ownerName) {
+    return ownerName;
+  }
+  if (ownerEmail) {
+    return ownerEmail;
+  }
+  if (ownerId) {
+    return `Người dùng #${ownerId}`;
+  }
+  return "Người dùng";
+});
+
 async function fetchSticker() {
   loading.value = true;
   try {
-    sticker.value = await StickerService.get(id);
+    sticker.value = await StickerService.getAdmin(id);
   } catch (error) {
     const message =
       error?.response?.data?.detail ||
@@ -129,13 +177,22 @@ async function fetchSticker() {
       error?.response?.data?.error ||
       "Không tìm thấy dữ liệu sticker.";
     await Swal.fire("Lỗi", message, "error");
-    router.push({ name: "stickers.list" });
+    router.push({ name: "stickers.list", query: listQuery.value });
   } finally {
     loading.value = false;
   }
 }
 
 async function onDelete() {
+  if (!canDeleteAction.value) {
+    await Swal.fire(
+      "Chỉ xem",
+      "Sticker do người dùng tạo chỉ được xem chi tiết trong màn quản trị này.",
+      "info",
+    );
+    return;
+  }
+
   if (!sticker.value?.can_delete) {
     await Swal.fire(
       "Không thể xóa",
@@ -160,7 +217,7 @@ async function onDelete() {
   try {
     await StickerService.delete(id);
     await Swal.fire("Thành công", "Đã xóa sticker hệ thống.", "success");
-    router.push({ name: "stickers.list" });
+    router.push({ name: "stickers.list", query: listQuery.value });
   } catch (error) {
     const message =
       error?.response?.data?.detail ||
@@ -227,6 +284,10 @@ onMounted(fetchSticker);
   font-weight: 600;
 }
 
+.break-all {
+  word-break: break-all;
+}
+
 .flag-yes {
   background: var(--status-success-bg);
   border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
@@ -236,6 +297,18 @@ onMounted(fetchSticker);
 .flag-no {
   background: var(--status-warning-bg);
   border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+  color: var(--font-color);
+}
+
+.scope-system {
+  background: color-mix(in srgb, #2563eb 16%, transparent);
+  border: 1px solid color-mix(in srgb, #2563eb 45%, transparent);
+  color: var(--font-color);
+}
+
+.scope-user {
+  background: color-mix(in srgb, #f97316 16%, transparent);
+  border: 1px solid color-mix(in srgb, #f97316 45%, transparent);
   color: var(--font-color);
 }
 </style>

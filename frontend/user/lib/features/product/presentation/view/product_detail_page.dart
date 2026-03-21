@@ -1,5 +1,7 @@
 ﻿import 'dart:math';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate_
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -123,9 +126,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (vm.isLoading && vm.product == null) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
+        body: Center(child: AppLogoLoader(size: 80, strokeWidth: 4)),
       );
     }
 
@@ -202,27 +203,36 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   Container(
                     color: Colors.white,
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: mainUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: mainUrl,
-                              fit: BoxFit
-                                  .contain, // Contain giúp thấy toàn bộ mũ
-                              placeholder: (context, url) =>
-                                  _imagePlaceholder(colorScheme),
-                              errorWidget: (context, url, error) =>
-                                  _imagePlaceholder(colorScheme),
-                            )
-                          : _imagePlaceholder(colorScheme),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1,
+                          child: _ProductImageGallery(
+                            images: productImages,
+                            selectedColorId: vm.selectedColorId,
+                            colorScheme: colorScheme,
+                            onPageChanged: vm.setImgIndex,
+                          ),
+                        ),
+                        if (productImages.length > 1) ...[
+                          const SizedBox(height: 14),
+                          _GalleryProgressIndicator(
+                            itemCount: productImages.length,
+                            activeIndex: vm.imgIndex,
+                            colorScheme: colorScheme,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ],
                     ),
                   ),
 
                   // Danh sách màu sắc (Thumbnails)
-                  if (vm.colors.length > 1)
+                  if (vm.colors.isNotEmpty)
                     _buildSectionTitle("Chọn màu sắc", textTheme, colorScheme),
 
-                  if (vm.colors.length > 1)
+                  if (vm.colors.isNotEmpty)
                     Container(
                       height: 70,
                       margin: const EdgeInsets.only(top: 8),
@@ -263,13 +273,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   : CachedNetworkImage(
                                       imageUrl: thumbUrl,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Icon(
-                                        Icons.image,
-                                        color: colorScheme.outline,
+                                      placeholder: (context, url) => Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.0,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
                                       ),
                                       errorWidget: (context, url, error) =>
                                           Icon(
-                                            Icons.image,
+                                            Icons.image_not_supported_outlined,
                                             color: colorScheme.outline,
                                           ),
                                     ),
@@ -450,8 +466,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ? null
                     : () => _openHelmetDesigner(
                         p,
-                        mainUrl ??
-                            p.pickPrimaryImageUrl(vm.selectedColorId),
+                        mainUrl ?? p.pickPrimaryImageUrl(vm.selectedColorId),
                         productDetail,
                         vm.quantity,
                       ),
@@ -551,7 +566,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: AppLogoLoader(size: 16, strokeWidth: 1.8),
               ),
               SizedBox(width: 12),
               Expanded(child: Text("Đang tải đánh giá sản phẩm...")),
@@ -741,12 +756,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final rateMap = {
       for (final rate in data.summary.rateCounts) rate.star: rate.count,
     };
-    // final galleryImages = data.items
-    //     .expand((e) => e.images)
-    //     .map((e) => e.imageUrl)
-    //     .where((url) => url.isNotEmpty)
-    //     .toList();
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -798,10 +807,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               );
             }),
           ),
-          // if (galleryImages.isNotEmpty) ...[
-          //   const SizedBox(height: 12),
-          //   _buildReviewGallery(galleryImages, colorScheme),
-          // ],
         ],
       ),
     );
@@ -948,9 +953,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.secondary,
-                    ),
+                    child: AppLogoLoader(size: 64, strokeWidth: 3.5),
                   );
                 }
 
@@ -1082,6 +1085,181 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required int colorId,
   }) {
     return product.pickPrimaryImageUrl(colorId);
+  }
+}
+
+class _ProductImageGallery extends StatefulWidget {
+  final List<ProductImage> images;
+  final int? selectedColorId;
+  final ColorScheme colorScheme;
+  final ValueChanged<int> onPageChanged;
+
+  const _ProductImageGallery({
+    required this.images,
+    required this.selectedColorId,
+    required this.colorScheme,
+    required this.onPageChanged,
+  });
+
+  @override
+  State<_ProductImageGallery> createState() => _ProductImageGalleryState();
+}
+
+class _ProductImageGalleryState extends State<_ProductImageGallery> {
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProductImageGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedColorId != oldWidget.selectedColorId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(0);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int nextIndex) {
+    _pageController.animateToPage(
+      nextIndex,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.images.isEmpty) return _galleryPlaceholder(widget.colorScheme);
+
+    final currentIndex = _pageController.hasClients
+        ? (_pageController.page?.round() ?? 0)
+        : 0;
+    final canGoPrev = currentIndex > 0;
+    final canGoNext = currentIndex < widget.images.length - 1;
+
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: widget.images.length,
+          onPageChanged: widget.onPageChanged,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: CachedNetworkImage(
+                imageUrl: widget.images[index].url,
+                fit: BoxFit.contain,
+                placeholder: (context, url) =>
+                    _galleryPlaceholder(widget.colorScheme),
+                errorWidget: (context, url, error) =>
+                    _galleryPlaceholder(widget.colorScheme),
+              ),
+            );
+          },
+        ),
+        _buildArrow(
+          isVisible: canGoPrev,
+          alignment: Alignment.centerLeft,
+          icon: Icons.chevron_left,
+          onTap: () => _goTo(currentIndex - 1),
+        ),
+        _buildArrow(
+          isVisible: canGoNext,
+          alignment: Alignment.centerRight,
+          icon: Icons.chevron_right,
+          onTap: () => _goTo(currentIndex + 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArrow({
+    required bool isVisible,
+    required Alignment alignment,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Positioned(
+      left: alignment == Alignment.centerLeft ? 12 : null,
+      right: alignment == Alignment.centerRight ? 12 : null,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: IgnorePointer(
+          ignoring: !isVisible,
+          child: AnimatedOpacity(
+            opacity: isVisible ? 1 : 0,
+            duration: const Duration(milliseconds: 180),
+            child: ArrowButton(icon: icon, onTap: onTap),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _galleryPlaceholder(ColorScheme colorScheme) => Container(
+  color: colorScheme.surfaceVariant,
+  alignment: Alignment.center,
+  child: SizedBox(
+    width: 26, // Bạn có thể chỉnh kích thước vòng xoay
+    height: 26,
+    child: CircularProgressIndicator(
+      strokeWidth: 3.0, // Độ dày của vòng xoay
+      color: colorScheme.primary,
+    ),
+  ),
+);
+
+class _GalleryProgressIndicator extends StatelessWidget {
+  final int itemCount;
+  final int activeIndex;
+  final ColorScheme colorScheme;
+
+  const _GalleryProgressIndicator({
+    required this.itemCount,
+    required this.activeIndex,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (itemCount <= 1) return const SizedBox.shrink();
+
+    final safeIndex = activeIndex.clamp(0, itemCount - 1);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(itemCount, (index) {
+        final isActive = index == safeIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 18 : 12,
+          height: 4,
+          decoration: BoxDecoration(
+            color: isActive
+                ? colorScheme.onSurface
+                : colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      }),
+    );
   }
 }
 

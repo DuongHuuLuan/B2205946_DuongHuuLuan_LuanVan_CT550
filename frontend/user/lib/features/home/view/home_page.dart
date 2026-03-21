@@ -1,4 +1,5 @@
 ﻿import 'dart:ui';
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -110,9 +111,7 @@ class _HomePageState extends State<HomePage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
-                ),
+                child: Center(child: AppLogoLoader(size: 64, strokeWidth: 3.5)),
               ),
             )
           else if (productVm.errorMessage != null && productVm.products.isEmpty)
@@ -140,7 +139,7 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
+                      AppLogoLoader(size: 36, strokeWidth: 2.5),
                       SizedBox(height: 8),
                       Text("Đang tải"),
                     ],

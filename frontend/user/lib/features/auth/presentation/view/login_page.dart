@@ -1,4 +1,5 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -200,9 +201,9 @@ class _LoginPageState extends State<LoginPage> {
                                 ? SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(
+                                    child: AppLogoLoader(
+                                      size: 20,
                                       strokeWidth: 2,
-                                      color: colorScheme.onPrimary,
                                     ),
                                   )
                                 : const Text(

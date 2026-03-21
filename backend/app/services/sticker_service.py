@@ -8,10 +8,10 @@ from typing import Dict, List, Optional
 import cloudinary.uploader
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import settings
-from app.models import DesignLayer, Sticker
+from app.models import DesignLayer, Sticker, User
 from app.schemas.sticker import AiStickerGenerateIn, StickerCreate, StickerUpdate
 from app.services.base import BaseService
 from app.services.openai_image_service import OpenAIImageService
@@ -204,41 +204,55 @@ class StickerService(BaseService):
         return sticker_map
 
     @staticmethod
-    def _system_sticker_usage_query(db: Session):
-        return (
-            db.query(
-                Sticker,
-                func.count(DesignLayer.id).label("usage_count"),
+    def _validate_admin_scope(scope: Optional[str]) -> str:
+        normalized = (scope or "system").strip().lower()
+        if normalized not in {"system", "user"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phạm vi sticker không hợp lệ",
             )
-            .outerjoin(DesignLayer, DesignLayer.sticker_id == Sticker.id)
-            .filter(Sticker.owner_user_id.is_(None))
-            .group_by(Sticker.id)
-        )
+        return normalized
 
     @staticmethod
-    def _attach_usage_fields(sticker: Sticker, usage_count: int) -> Sticker:
+    def _attach_admin_fields(sticker: Sticker, usage_count: int) -> Sticker:
         normalized_usage = int(usage_count or 0)
+        owner = getattr(sticker, "owner", None)
+        is_system_sticker = sticker.owner_user_id is None
+
         setattr(sticker, "usage_count", normalized_usage)
-        setattr(sticker, "can_delete", normalized_usage == 0)
+        setattr(sticker, "owner_username", getattr(owner, "username", None))
+        setattr(sticker, "owner_email", getattr(owner, "email", None))
+        setattr(sticker, "can_edit", is_system_sticker)
+        setattr(sticker, "can_delete", is_system_sticker and normalized_usage == 0)
         return sticker
 
     @staticmethod
-    def list_system_stickers(
+    def list_admin_stickers(
         db: Session,
         page: int = 1,
         per_page: Optional[int] = None,
         keyword: Optional[str] = None,
         category: Optional[str] = None,
+        scope: Optional[str] = "system",
     ) -> dict:
-        base_query = db.query(Sticker).filter(Sticker.owner_user_id.is_(None))
+        normalized_scope = StickerService._validate_admin_scope(scope)
+        base_query = db.query(Sticker).options(joinedload(Sticker.owner))
+
+        if normalized_scope == "system":
+            base_query = base_query.filter(Sticker.owner_user_id.is_(None))
+        else:
+            base_query = base_query.filter(Sticker.owner_user_id.isnot(None))
 
         if keyword:
             like_pattern = f"%{keyword.strip()}%"
+            base_query = base_query.outerjoin(User, Sticker.owner_user_id == User.id)
             base_query = base_query.filter(
                 or_(
                     Sticker.name.ilike(like_pattern),
                     Sticker.category.ilike(like_pattern),
                     Sticker.image_url.ilike(like_pattern),
+                    User.username.ilike(like_pattern),
+                    User.email.ilike(like_pattern),
                 )
             )
 
@@ -265,31 +279,36 @@ class StickerService(BaseService):
             page = max(int(page), 1)
 
         skip = (page - 1) * per_page
-        usage_query = StickerService._system_sticker_usage_query(db)
-
-        if keyword:
-            like_pattern = f"%{keyword.strip()}%"
-            usage_query = usage_query.filter(
-                or_(
-                    Sticker.name.ilike(like_pattern),
-                    Sticker.category.ilike(like_pattern),
-                    Sticker.image_url.ilike(like_pattern),
-                )
-            )
-
-        if category:
-            usage_query = usage_query.filter(Sticker.category.ilike(category.strip()))
-
-        rows = (
-            usage_query.order_by(Sticker.id.desc())
+        stickers = (
+            base_query.order_by(Sticker.id.desc())
             .offset(skip)
             .limit(per_page)
             .all()
         )
 
+        sticker_ids = [sticker.id for sticker in stickers]
+        usage_rows = (
+            db.query(
+                DesignLayer.sticker_id,
+                func.count(DesignLayer.id).label("usage_count"),
+            )
+            .filter(DesignLayer.sticker_id.in_(sticker_ids))
+            .group_by(DesignLayer.sticker_id)
+            .all()
+            if sticker_ids
+            else []
+        )
+        usage_map = {
+            sticker_id: int(usage_count or 0)
+            for sticker_id, usage_count in usage_rows
+        }
+
         items = [
-            StickerService._attach_usage_fields(sticker, usage_count)
-            for sticker, usage_count in rows
+            StickerService._attach_admin_fields(
+                sticker,
+                usage_map.get(sticker.id, 0),
+            )
+            for sticker in stickers
         ]
 
         return {
@@ -318,16 +337,44 @@ class StickerService(BaseService):
 
     @staticmethod
     def get_system_sticker(db: Session, sticker_id: int) -> Sticker:
-        row = (
-            StickerService._system_sticker_usage_query(db)
+        sticker = (
+            db.query(Sticker)
+            .options(joinedload(Sticker.owner))
+            .filter(
+                Sticker.id == sticker_id,
+                Sticker.owner_user_id.is_(None),
+            )
+            .first()
+        )
+        if not sticker:
+            raise HTTPException(status_code=404, detail="System sticker not found")
+
+        usage_count = (
+            db.query(func.count(DesignLayer.id))
+            .filter(DesignLayer.sticker_id == sticker.id)
+            .scalar()
+            or 0
+        )
+        return StickerService._attach_admin_fields(sticker, usage_count)
+
+    @staticmethod
+    def get_admin_sticker(db: Session, sticker_id: int) -> Sticker:
+        sticker = (
+            db.query(Sticker)
+            .options(joinedload(Sticker.owner))
             .filter(Sticker.id == sticker_id)
             .first()
         )
-        if not row:
-            raise HTTPException(status_code=404, detail="System sticker not found")
+        if not sticker:
+            raise HTTPException(status_code=404, detail="Sticker not found")
 
-        sticker, usage_count = row
-        return StickerService._attach_usage_fields(sticker, usage_count)
+        usage_count = (
+            db.query(func.count(DesignLayer.id))
+            .filter(DesignLayer.sticker_id == sticker.id)
+            .scalar()
+            or 0
+        )
+        return StickerService._attach_admin_fields(sticker, usage_count)
 
     @staticmethod
     def create_system_sticker(db: Session, sticker_in: StickerCreate) -> Sticker:
@@ -346,7 +393,7 @@ class StickerService(BaseService):
         db.add(sticker)
         db.commit()
         db.refresh(sticker)
-        return StickerService._attach_usage_fields(sticker, 0)
+        return StickerService._attach_admin_fields(sticker, 0)
 
     @staticmethod
     def update_system_sticker(
@@ -381,7 +428,7 @@ class StickerService(BaseService):
             .scalar()
             or 0
         )
-        return StickerService._attach_usage_fields(sticker, usage_count)
+        return StickerService._attach_admin_fields(sticker, usage_count)
 
     @staticmethod
     def delete_system_sticker(db: Session, sticker_id: int) -> dict:

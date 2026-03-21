@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/register_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
@@ -80,9 +81,7 @@ class AppRouter {
           path: "/splash",
           builder: (context, state) => Scaffold(
             backgroundColor: AppColors.light.background,
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
+            body: Center(child: AppLogoLoader(size: 96, strokeWidth: 4.5)),
           ),
         ),
 

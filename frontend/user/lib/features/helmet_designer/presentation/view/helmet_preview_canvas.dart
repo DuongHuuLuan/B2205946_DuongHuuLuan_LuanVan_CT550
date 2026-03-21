@@ -1,6 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_crop.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 typedef LayerTransformCallback =
@@ -280,10 +281,22 @@ class _StickerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget child = Image.network(
-      imageUrl,
+    Widget child = CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+      // Hiệu ứng mờ dần khi ảnh hiện ra (tùy chọn, mặc định là 1000ms)
+      fadeInDuration: const Duration(milliseconds: 300),
+
+      placeholder: (context, url) => const Center(
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      ),
+
+      errorWidget: (context, url, error) =>
+          const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
     );
 
     if (tintColorValue != null) {
@@ -329,10 +342,20 @@ class _HelmetCanvasBackground extends StatelessWidget {
       return CustomPaint(painter: _HelmetCanvasPainter(showGuides: showGuides));
     }
 
-    Widget child = Image.network(
-      imageUrl,
+    Widget child = CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) =>
+      fadeInDuration: const Duration(milliseconds: 500),
+
+      placeholder: (context, url) => const Center(
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(strokeWidth: 3.0),
+        ),
+      ),
+
+      errorWidget: (context, url, error) =>
           const CustomPaint(painter: _HelmetCanvasPainter(showGuides: false)),
     );
 
