@@ -45,11 +45,11 @@ class ProductionSnapshotService:
     def _view_label(view_image_key: Any) -> Optional[str]:
         mapping = {
             "front": "Mặt trước",
-            "front_right": "Chéo phải",
+            "front_right": "Trước phải",
             "right": "Bên phải",
             "back": "Mặt sau",
             "left": "Bên trái",
-            "front_left": "Chéo trái",
+            "front_left": "Trước trái",
         }
         key = ProductionSnapshotService._normalize_view_image_key(view_image_key)
         if key is None:

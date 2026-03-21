@@ -57,7 +57,8 @@
 
                   <td class="text-start ps-0" style="width: 50px;">
                     <div class="thumb-wrap">
-                      <img v-if="getProductThumb(p)" :src="getProductThumb(p)" class="thumb" :alt="p.name || 'product'" />
+                      <img v-if="getProductThumb(p)" :src="getProductThumb(p)" class="thumb"
+                        :alt="p.name || 'product'" />
                       <div v-else class="thumb thumb-placeholder">
                         <i class="fa-regular fa-image"></i>
                       </div>

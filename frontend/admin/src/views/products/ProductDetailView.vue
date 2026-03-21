@@ -34,19 +34,44 @@
 
           <div v-else class="row g-3">
             <div class="col-12 col-lg-5">
-              <label class="form-label">Ảnh sản phẩm</label>
-              <div v-if="images.length" class="image-grid">
-                <div v-for="img in images" :key="img.id" class="img-item">
+              <label class="form-label d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                <span>Ảnh sản phẩm</span>
+                <span v-if="activeImageGroup" class="small opacity-75">
+                  {{ activeImageGroup.label }} ({{ activeImageGroup.count }} ảnh)
+                </span>
+              </label>
+
+              <div v-if="imageColorGroups.length > 1" class="image-filter-list">
+                <button type="button" class="image-filter"
+                  :class="{ 'image-filter--active': activeImageColorKey === IMAGE_FILTER_ALL }"
+                  @click="activeImageColorKey = IMAGE_FILTER_ALL">
+                  Tất cả
+                  <span class="image-filter__count">{{ images.length }}</span>
+                </button>
+                <button v-for="group in imageColorGroups" :key="group.key" type="button" class="image-filter"
+                  :class="{ 'image-filter--active': activeImageColorKey === group.key }"
+                  @click="activeImageColorKey = group.key">
+                  {{ group.label }}
+                  <span class="image-filter__count">{{ group.count }}</span>
+                </button>
+              </div>
+
+              <div v-if="visibleImages.length" class="image-grid">
+                <div v-for="img in visibleImages" :key="img.id || img.url" class="img-item">
                   <img :src="img.url" :alt="product.name || 'product'" />
                   <div class="img-meta">
-                    <span class="img-badge">{{ imageColorLabel(img.color_id) }}</span>
+                    <span v-if="showImageColorBadge" class="img-badge">
+                      {{ imageColorLabel(img.color_id) }}
+                    </span>
                     <span v-if="img.view_image_key" class="img-badge img-badge--accent">
                       {{ imageViewLabel(img.view_image_key) }}
                     </span>
                   </div>
                 </div>
               </div>
-              <div v-else class="img-empty">Không có ảnh.</div>
+              <div v-else class="img-empty">
+                {{ images.length ? "Không có ảnh cho nhóm màu này." : "Không có ảnh." }}
+              </div>
             </div>
 
             <div class="col-12 col-lg-7">
@@ -66,20 +91,15 @@
                   {{ product.description || "-" }}
                 </div>
               </div>
-              <div class="mb-3">
+              <!-- <div class="mb-3">
                 <span class="label">Model 3D:</span>
                 <div class="text-muted mt-1">
-                  <a
-                    v-if="product.model_3d_url"
-                    :href="product.model_3d_url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a v-if="product.model_3d_url" :href="product.model_3d_url" target="_blank" rel="noopener noreferrer">
                     {{ product.model_3d_url }}
                   </a>
                   <span v-else>-</span>
                 </div>
-              </div>
+              </div> -->
 
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
@@ -115,7 +135,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import ProductService from "@/services/product.service";
@@ -125,6 +145,16 @@ const router = useRouter();
 
 const loading = ref(true);
 const product = ref(null);
+
+const IMAGE_FILTER_ALL = "__all__";
+const IMAGE_FILTER_NONE = "__none__";
+const activeImageColorKey = ref("");
+
+function normalizeImageColorKey(colorId) {
+  return colorId === null || colorId === undefined || colorId === ""
+    ? IMAGE_FILTER_NONE
+    : String(colorId);
+}
 
 const images = computed(() => {
   const rawImages = Array.isArray(product.value?.product_images)
@@ -154,8 +184,78 @@ const images = computed(() => {
   return rawImages;
 });
 
-const details = computed(() => product.value.product_details ?? []);
+const imageColorGroups = computed(() => {
+  const groups = [];
+  const groupMap = new Map();
+
+  images.value.forEach((img) => {
+    const key = normalizeImageColorKey(img?.color_id);
+    if (!groupMap.has(key)) {
+      const group = {
+        key,
+        colorId: img?.color_id ?? null,
+        label: imageColorLabel(img?.color_id),
+        count: 0,
+      };
+      groupMap.set(key, group);
+      groups.push(group);
+    }
+
+    groupMap.get(key).count += 1;
+  });
+
+  return groups;
+});
+
+const visibleImages = computed(() => {
+  if (!images.value.length) return [];
+  if (activeImageColorKey.value === IMAGE_FILTER_ALL) return images.value;
+
+  const effectiveColorKey = activeImageColorKey.value || imageColorGroups.value[0]?.key;
+  if (!effectiveColorKey) return images.value;
+
+  return images.value.filter(
+    (img) => normalizeImageColorKey(img?.color_id) === effectiveColorKey
+  );
+});
+
+const activeImageGroup = computed(() => {
+  if (!images.value.length) return null;
+  if (activeImageColorKey.value === IMAGE_FILTER_ALL) {
+    return { label: "Tất cả màu", count: images.value.length };
+  }
+
+  return (
+    imageColorGroups.value.find((group) => group.key === activeImageColorKey.value) ||
+    imageColorGroups.value[0] ||
+    null
+  );
+});
+
+const details = computed(() => product.value?.product_details ?? []);
 const canDelete = computed(() => Boolean(product.value) && product.value.can_delete !== false);
+const showImageColorBadge = computed(
+  () => imageColorGroups.value.length > 1 && activeImageColorKey.value === IMAGE_FILTER_ALL
+);
+
+watch(
+  imageColorGroups,
+  (groups) => {
+    if (!groups.length) {
+      activeImageColorKey.value = "";
+      return;
+    }
+
+    const hasActiveGroup = groups.some((group) => group.key === activeImageColorKey.value);
+    if (
+      !activeImageColorKey.value ||
+      (!hasActiveGroup && activeImageColorKey.value !== IMAGE_FILTER_ALL)
+    ) {
+      activeImageColorKey.value = groups[0].key;
+    }
+  },
+  { immediate: true }
+);
 
 function imageColorLabel(colorId) {
   if (colorId === null || colorId === undefined) return "Không có màu";
@@ -186,7 +286,7 @@ async function fetchProduct() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Không thế tải sản phẩm.";
+      "Không thể tải sản phẩm.";
     await Swal.fire("Lỗi", msg, "error");
     router.push({ name: "products.list" });
   } finally {
@@ -241,6 +341,49 @@ onMounted(fetchProduct);
 
 .label {
   font-weight: 600;
+}
+
+.image-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.image-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--main-extra-bg) 88%, transparent);
+  color: var(--font-color);
+  font-size: 13px;
+  line-height: 1;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.image-filter:hover {
+  border-color: var(--hover-border-color);
+  transform: translateY(-1px);
+}
+
+.image-filter--active {
+  border-color: var(--hover-border-color);
+  background: color-mix(in srgb, var(--main-color) 20%, var(--main-extra-bg));
+}
+
+.image-filter__count {
+  min-width: 20px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 11px;
+  text-align: center;
 }
 
 .image-grid {

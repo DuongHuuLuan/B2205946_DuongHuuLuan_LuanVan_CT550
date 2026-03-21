@@ -12,7 +12,7 @@ String _imageReference(String? url) {
 
 int _imagePriority(ProductImage image) {
   final key = (image.viewImageKey ?? "").trim();
-  if (key == "front") return 0;
+  if (key == "front_left") return 0;
   if (key.isEmpty) return 1;
   return 2 + viewImageKeyPriority(key);
 }
@@ -25,6 +25,14 @@ List<ProductImage> _orderedImages(Iterable<ProductImage> source) {
     return left.id.compareTo(right.id);
   });
   return items;
+}
+
+String _viewIdentity(ProductImage image) {
+  final key = (image.viewImageKey ?? "").trim().toLowerCase();
+  if (key.isNotEmpty) return "view:$key";
+  final ref = _imageReference(image.url);
+  if (ref.isNotEmpty) return "url:$ref";
+  return "id:${image.id}";
 }
 
 extension ProductX on Product {
@@ -40,17 +48,55 @@ extension ProductX on Product {
     return images;
   }
 
+  int _colorViewCoverage(int colorId) {
+    final identities = <String>{};
+
+    for (final image in images) {
+      if (image.colorId == colorId) {
+        identities.add(_viewIdentity(image));
+      }
+    }
+
+    for (final image in designViews) {
+      if (image.colorId == colorId) {
+        identities.add(_viewIdentity(image));
+      }
+    }
+
+    return identities.length;
+  }
+
   List<ProductDetail> get uniqueColors {
     final seen = <int>{};
-    return productDetails
-        .where((element) => seen.add(element.colorId))
-        .toList();
+    final indexedColors = <({int index, ProductDetail detail})>[];
+
+    for (var index = 0; index < productDetails.length; index++) {
+      final detail = productDetails[index];
+      if (seen.add(detail.colorId)) {
+        indexedColors.add((index: index, detail: detail));
+      }
+    }
+
+    final coverageByColor = <int, int>{
+      for (final entry in indexedColors)
+        entry.detail.colorId: _colorViewCoverage(entry.detail.colorId),
+    };
+
+    indexedColors.sort((left, right) {
+      final coverage = (coverageByColor[right.detail.colorId] ?? 0).compareTo(
+        coverageByColor[left.detail.colorId] ?? 0,
+      );
+      if (coverage != 0) return coverage;
+      return left.index.compareTo(right.index);
+    });
+
+    return indexedColors.map((entry) => entry.detail).toList();
   }
 
   List<ProductDetail> getUniqueSizesByColor(int? colorId) {
     if (productDetails.isEmpty) return [];
 
-    final cId = colorId ?? productDetails.first.colorId;
+    final cId = colorId ?? uniqueColors.first.colorId;
     final seen = <int>{};
     return productDetails
         .where((element) => element.colorId == cId)
@@ -62,7 +108,7 @@ extension ProductX on Product {
     final vs = productDetails.cast<ProductDetail>();
     if (vs.isEmpty) return null;
 
-    final cId = colorId ?? vs.first.colorId;
+    final cId = colorId ?? uniqueColors.first.colorId;
     final sId = sizeId ?? vs.first.sizeId;
 
     final exact = vs.where((e) => e.colorId == cId && e.sizeId == sId);

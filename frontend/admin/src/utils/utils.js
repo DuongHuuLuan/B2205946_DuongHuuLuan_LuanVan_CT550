@@ -19,7 +19,7 @@ const pickPrimaryProductImage = (product, colorId = null) => {
   const pickFrom = (list) => {
     if (!Array.isArray(list) || !list.length) return null;
     // const front = list.find((image) => getImageKey(image) === "front");
-    const front = list.find((image) => getImageKey(image) === "right");
+    const front = list.find((image) => getImageKey(image) === "front_left");
     if (front) return front;
     const generic = list.find((image) => !getImageKey(image));
     return generic || list[0] || null;

@@ -135,8 +135,15 @@ class _ProductCardState extends State<ProductCard>
     _selectedSizeId = null;
 
     if (_p.productDetails.isNotEmpty) {
-      _selectedColorId = _p.productDetails.first.colorId;
-      _selectedSizeId = _p.productDetails.first.sizeId;
+      final preferredColors = _p.uniqueColors;
+      _selectedColorId = preferredColors.isNotEmpty
+          ? preferredColors.first.colorId
+          : _p.productDetails.first.colorId;
+
+      final preferredSizes = _p.getUniqueSizesByColor(_selectedColorId);
+      _selectedSizeId = preferredSizes.isNotEmpty
+          ? preferredSizes.first.sizeId
+          : _p.productDetails.first.sizeId;
     }
 
     _evaluateSummary = _evaluateSummaryCache[_p.id];

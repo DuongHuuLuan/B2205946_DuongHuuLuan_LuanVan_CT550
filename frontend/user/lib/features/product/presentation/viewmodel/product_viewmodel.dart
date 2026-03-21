@@ -185,8 +185,15 @@ class ProductViewmodel extends ChangeNotifier {
 
   void _resetSelection() {
     if (product != null && product!.productDetails.isNotEmpty) {
-      _selectedColorId = product!.productDetails.first.colorId;
-      _selectedSizeId = product!.productDetails.first.sizeId;
+      final preferredColors = product!.uniqueColors;
+      _selectedColorId = preferredColors.isNotEmpty
+          ? preferredColors.first.colorId
+          : product!.productDetails.first.colorId;
+
+      final preferredSizes = product!.getUniqueSizesByColor(_selectedColorId);
+      _selectedSizeId = preferredSizes.isNotEmpty
+          ? preferredSizes.first.sizeId
+          : product!.productDetails.first.sizeId;
       _imgIndex = 0;
       _quantity = 1;
       _loadSelectedStock();

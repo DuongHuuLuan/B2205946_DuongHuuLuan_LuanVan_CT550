@@ -253,11 +253,11 @@ function viewLabel(viewImageKey) {
   return (
     {
       front: "Mặt trước",
-      front_right: "Chéo phải",
+      front_right: "Trước phải",
       right: "Bên phải",
       back: "Mặt sau",
       left: "Bên trái",
-      front_left: "Chéo trái",
+      front_left: "Trước trái",
     }[key] || "Ảnh mặc định"
   );
 }

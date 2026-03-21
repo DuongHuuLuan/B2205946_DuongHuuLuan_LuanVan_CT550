@@ -75,8 +75,8 @@ class ProductionExportService:
             "Ben phai": "Bên phải",
             "Phia sau": "Phía sau",
             "Mat truoc": "Mặt trước",
-            "Cheo phai": "Chéo phải",
-            "Cheo trai": "Chéo trái",
+            "Truoc phai": "Trước phải",
+            "Truoc trai": "Trước trái",
         }.get(raw, raw or "-")
 
     @staticmethod
