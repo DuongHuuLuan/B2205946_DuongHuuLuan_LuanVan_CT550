@@ -148,6 +148,27 @@ class ChatViewmodel extends ChangeNotifier {
     }
   }
 
+  Future<void> recallMessage(int messageId) async {
+    final conversation = _activeConversation;
+    if (conversation == null) return;
+
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final message = await _repository.recallMessage(
+        conversation.id,
+        messageId,
+      );
+      _upsertMessage(message);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> markConversationRead({int? messageId}) async {
     final conversation = _activeConversation;
     if (conversation == null) return;
@@ -255,6 +276,16 @@ class ChatViewmodel extends ChangeNotifier {
             ChatReadResult.fromJson(Map<String, dynamic>.from(data)),
             actorUserId: actorUserId,
           );
+        }
+        return;
+      }
+
+      if (event == "message:recalled") {
+        final data = map["data"];
+        if (data is Map) {
+          final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
+          _upsertMessage(message);
+          notifyListeners();
         }
       }
     } catch (_) {

@@ -75,6 +75,16 @@ class ChatApi {
     }
   }
 
+  Future<Response> recallMessage(int conversationId, int messageId) async {
+    try {
+      return await DioClient.instance.post(
+        ApiEndpoints.chatRecallMessage(conversationId, messageId),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   Future<Response> markConversationRead(
     int conversationId, {
     int? messageId,

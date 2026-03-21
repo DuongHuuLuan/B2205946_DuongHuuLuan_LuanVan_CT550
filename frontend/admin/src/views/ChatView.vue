@@ -104,7 +104,12 @@
                 <div v-for="message in messages" :key="message.id || message.client_msg_id" class="message-row"
                   :class="{ mine: isMine(message) }">
                   <div class="message-bubble">
-                    <div v-if="message.media_items?.length" class="d-flex flex-column gap-2">
+                    <div v-if="isRecalled(message)" class="message-recalled">
+                      <i class="fa-solid fa-rotate-left me-2"></i>
+                      {{ message.content || "Tin nhắn đã được thu hồi" }}
+                    </div>
+
+                    <div v-else-if="message.media_items?.length" class="d-flex flex-column gap-2">
                       <template v-for="media in message.media_items" :key="`${message.id}-${media.id}`">
                         <img v-if="media.media_type === 'image'" :src="media.path" alt="tệp đính kèm"
                           class="message-image" />
@@ -115,30 +120,34 @@
                       </template>
                     </div>
 
-                    <div v-if="message.content" :class="{ 'mt-2': message.media_items?.length }">
+                    <div v-if="!isRecalled(message) && message.content"
+                      :class="{ 'mt-2': message.media_items?.length }">
                       {{ message.content }}
                     </div>
                   </div>
 
-                  <div class="message-meta">
-                    {{
-                      isMine(message) && wasSeenByCustomer(message)
-                        ? "Đã xem"
-                        : formatMessageTime(message.created_at)
-                    }}
+                  <div class="message-meta-row">
+                    <button v-if="canRecallMessage(message)" class="message-action" type="button"
+                      :disabled="recallingMessageId === message.id" @click="recallMessage(message)">
+                      <i v-if="recallingMessageId === message.id" class="fa-solid fa-spinner fa-spin me-1"></i>
+                      <i v-else class="fa-solid fa-rotate-left me-1"></i>
+                      Thu hồi
+                    </button>
+                    <div class="message-meta">{{ formatMessageMeta(message) }}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="selectedFiles.length" class="file-preview border-top">
-              <div v-for="(file, index) in selectedFiles" :key="`${file.name}-${index}`" class="file-preview-item">
-                <div class="small fw-semibold text-truncate">
-                  {{ file.name }}
+              <div v-if="selectedFiles.length" class="file-preview border-top">
+                <div v-for="(file, index) in selectedFiles" :key="`${file.name}-${index}`" class="file-preview-item">
+                  <div class="small fw-semibold text-truncate">
+                    {{ file.name }}
+                  </div>
+                  <button class="btn btn-sm btn-link text-danger p-0" type="button" @click="removeSelectedFile(index)">
+                    Gỡ bỏ
+                  </button>
                 </div>
-                <button class="btn btn-sm btn-link text-danger p-0" type="button" @click="removeSelectedFile(index)">
-                  Gỡ bỏ
-                </button>
               </div>
             </div>
 
@@ -191,6 +200,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import Swal from "sweetalert2";
 import ChatService from "@/services/chat.service";
 import UserService from "@/services/user.service";
 import {
@@ -208,6 +218,7 @@ const messages = ref([]);
 const loadingConversations = ref(false);
 const loadingMessages = ref(false);
 const sending = ref(false);
+const recallingMessageId = ref(null);
 const errorMessage = ref("");
 const draft = ref("");
 const selectedFiles = ref([]);
@@ -250,6 +261,8 @@ function normalizeConversation(item = {}) {
 function normalizeMessage(item = {}) {
   return {
     media_items: [],
+    is_recalled: false,
+    recalled_at: null,
     ...item,
   };
 }
@@ -378,8 +391,21 @@ function isMine(message) {
   return Number(message.user_id) === currentAdminId.value;
 }
 
+function isRecalled(message) {
+  return Boolean(message?.is_recalled);
+}
+
 function wasSeenByCustomer(message) {
   return isMine(message) && Number(message.id || 0) <= lastSeenByCustomerMessageId.value;
+}
+
+function canRecallMessage(message) {
+  return (
+    Boolean(activeConversation.value) &&
+    isMine(message) &&
+    !isRecalled(message) &&
+    Number(message.id || 0) > 0
+  );
 }
 
 function fileNameFromUrl(path = "") {
@@ -394,6 +420,12 @@ function formatMessageTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatMessageMeta(message) {
+  if (isRecalled(message)) return "Đã thu hồi";
+  if (isMine(message) && wasSeenByCustomer(message)) return "Đã xem";
+  return formatMessageTime(message?.created_at);
 }
 
 function formatConversationStamp(conversation) {
@@ -587,6 +619,33 @@ async function submitMessage() {
   }
 }
 
+async function recallMessage(message) {
+  if (!activeConversation.value || !canRecallMessage(message)) return;
+
+  const result = await Swal.fire({
+    title: "Thu hồi tin nhắn?",
+    text: "Bạn có chắc chắn muốn thu hồi tin nhắn?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Thu hồi",
+    cancelButtonText: "Hủy",
+  });
+  if (!result.isConfirmed) return;
+
+  recallingMessageId.value = message.id;
+  errorMessage.value = "";
+
+  try {
+    const response = await ChatService.recallMessage(activeConversation.value.id, message.id);
+    upsertMessage(response);
+  } catch (error) {
+    errorMessage.value =
+      error?.response?.data?.detail || error?.message || "Không thể thu hồi tin nhắn.";
+  } finally {
+    recallingMessageId.value = null;
+  }
+}
+
 async function refreshAll() {
   await loadConversations();
   if (activeConversationId.value) {
@@ -650,6 +709,19 @@ watch(
       return;
     }
 
+    if (payload.event === "message:recalled" && payload.data) {
+      if (payload.conversation) {
+        upsertConversation(payload.conversation);
+      }
+
+      if (Number(payload.conversation_id) !== Number(activeConversationId.value)) {
+        return;
+      }
+
+      upsertMessage(payload.data);
+      return;
+    }
+
     if (payload.event === "conversation:upsert" && payload.conversation) {
       upsertConversation(payload.conversation, { moveToTop: true });
     }
@@ -681,7 +753,8 @@ onBeforeUnmount(() => {
 }
 
 .chat-shell {
-  min-height: 72vh;
+  /* min-height: 72vh; */
+  min-height: 80vh;
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   overflow: hidden;
@@ -693,7 +766,8 @@ onBeforeUnmount(() => {
 }
 
 .conversation-list {
-  max-height: calc(72vh - 73px);
+  /* max-height: calc(72vh - 73px); */
+  max-height: calc(80vh - 73px);
   overflow: auto;
 }
 
@@ -725,7 +799,8 @@ onBeforeUnmount(() => {
 .chat-messages {
   flex: 1;
   min-height: 0;
-  max-height: calc(72vh - 182px);
+  /* max-height: calc(72vh - 182px); */
+  max-height: calc(80vh - 182px);
   overflow: auto;
 }
 
@@ -753,10 +828,38 @@ onBeforeUnmount(() => {
   color: #112033;
 }
 
-.message-meta {
+.message-recalled {
+  font-style: italic;
+  opacity: 0.82;
+}
+
+.message-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 0.25rem 0.4rem 0;
+}
+
+.message-meta {
   font-size: 0.8rem;
   opacity: 0.75;
+}
+
+.message-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--font-extra-color);
+  font-size: 0.8rem;
+  transition: color 0.15s ease;
+}
+
+.message-action:hover:not(:disabled) {
+  color: var(--status-danger);
+}
+
+.message-action:disabled {
+  opacity: 0.65;
 }
 
 .message-image {

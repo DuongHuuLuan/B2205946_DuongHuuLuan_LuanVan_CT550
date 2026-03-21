@@ -24,6 +24,11 @@ abstract class ChatRepository {
     List<String> filePaths = const [],
   });
 
+  Future<ChatMessage> recallMessage(
+    int conversationId,
+    int messageId,
+  );
+
   Future<ChatReadResult> markConversationRead(
     int conversationId, {
     int? messageId,

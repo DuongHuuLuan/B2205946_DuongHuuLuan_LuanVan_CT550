@@ -16,6 +16,8 @@ from app.services.push_notification_service import PushNotificationService
 
 
 class ChatService(BaseService):
+    RECALLED_MESSAGE_PLACEHOLDER = "Tin nhắn đã được thu hồi"
+
     @staticmethod
     def _assert_member(conversation: Conversation, user: User) -> None:
         if user.id not in (conversation.user_id, conversation.admin_id):
@@ -129,6 +131,42 @@ class ChatService(BaseService):
         return ChatService._serialize_conversation(conversation, current_user, unread_count)
 
     @staticmethod
+    def _serialize_message_media(media: MessageMedia) -> dict:
+        return {
+            "id": media.id,
+            "path": media.path,
+            "media_type": media.media_type,
+            "created_at": media.created_at,
+        }
+
+    @staticmethod
+    def serialize_message(message: Message) -> dict:
+        is_recalled = message.deleted_at is not None
+        return {
+            "id": message.id,
+            "conversation_id": message.conversation_id,
+            "user_id": message.user_id,
+            "type": message.type,
+            "client_msg_id": message.client_msg_id,
+            "content": (
+                ChatService.RECALLED_MESSAGE_PLACEHOLDER
+                if is_recalled
+                else message.content
+            ),
+            "created_at": message.created_at,
+            "media_items": (
+                []
+                if is_recalled
+                else [
+                    ChatService._serialize_message_media(media)
+                    for media in (message.media_items or [])
+                ]
+            ),
+            "is_recalled": is_recalled,
+            "recalled_at": message.deleted_at,
+        }
+
+    @staticmethod
     def _guess_media_type_from_upload(file: UploadFile) -> MessageMediaType:
         content_type = (file.content_type or "").lower()
         if content_type.startswith("image/"):
@@ -223,7 +261,6 @@ class ChatService(BaseService):
         limit = max(1, min(limit, 50))
         query = db.query(Message).options(joinedload(Message.media_items)).filter(
             Message.conversation_id == conversation_id,
-            Message.deleted_at.is_(None),
         )
         if cursor:
             query = query.filter(Message.id < cursor)
@@ -334,6 +371,44 @@ class ChatService(BaseService):
                 except Exception:
                     pass
             raise
+
+    @staticmethod
+    def recall_message(
+        db: Session,
+        conversation_id: int,
+        message_id: int,
+        current_user: User,
+    ) -> Message:
+        conversation = ChatService.get_or_404(db, Conversation, conversation_id, "Conversation not found")
+        ChatService._assert_member(conversation, current_user)
+
+        message = (
+            db.query(Message)
+            .options(joinedload(Message.media_items))
+            .filter(
+                Message.id == message_id,
+                Message.conversation_id == conversation_id,
+            )
+            .first()
+        )
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        if message.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="You can only recall your own messages")
+
+        if message.deleted_at is None:
+            message.deleted_at = datetime.utcnow()
+            message.updated_at = datetime.utcnow()
+            db.commit()
+        else:
+            db.rollback()
+
+        return (
+            db.query(Message)
+            .options(joinedload(Message.media_items))
+            .filter(Message.id == message.id)
+            .first()
+        )
 
     @staticmethod
     def mark_as_read(

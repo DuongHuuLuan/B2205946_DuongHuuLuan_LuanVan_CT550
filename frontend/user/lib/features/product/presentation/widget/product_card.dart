@@ -1,5 +1,4 @@
-﻿import 'dart:math';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
@@ -63,11 +62,7 @@ class _ProductCardState extends State<ProductCard>
       final primaryUrl = _p.pickPrimaryImageUrl(c.colorId);
       if (primaryUrl == null || primaryUrl.isEmpty) continue;
       result.add(
-        _ColorThumb(
-          colorId: c.colorId,
-          label: c.colorName,
-          url: primaryUrl,
-        ),
+        _ColorThumb(colorId: c.colorId, label: c.colorName, url: primaryUrl),
       );
     }
     return result;

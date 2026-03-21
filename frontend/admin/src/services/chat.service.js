@@ -51,6 +51,12 @@ class ChatService {
     ).data;
   }
 
+  async recallMessage(conversationId, messageId) {
+    return (
+      await this.api.post(`/conversations/${conversationId}/messages/${messageId}/recall`)
+    ).data;
+  }
+
   async markConversationRead(conversationId, messageId = null) {
     return (
       await this.api.post(`/conversations/${conversationId}/read`, {

@@ -420,6 +420,14 @@ function handleAdminSocketMessage(rawEvent) {
       return;
     }
 
+    if (payload.event === "message:recalled" && payload.data) {
+      publishChatEvent(payload);
+      if (payload.conversation) {
+        upsertConversation(payload.conversation);
+      }
+      return;
+    }
+
     if (payload.event === "conversation:upsert" && payload.conversation) {
       publishChatEvent(payload);
       upsertConversation(payload.conversation, { moveToTop: true });
@@ -557,3 +565,4 @@ export function formatUnreadBadge(value) {
 }
 
 export { dismissChatToast };
+

@@ -9,6 +9,8 @@ class ChatMessage {
   final String? content;
   final DateTime? createdAt;
   final List<ChatMessageMedia> mediaItems;
+  final bool isRecalled;
+  final DateTime? recalledAt;
 
   const ChatMessage({
     required this.id,
@@ -19,6 +21,8 @@ class ChatMessage {
     required this.content,
     required this.createdAt,
     required this.mediaItems,
+    required this.isRecalled,
+    required this.recalledAt,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -40,6 +44,8 @@ class ChatMessage {
                 )
                 .toList()
           : const [],
+      isRecalled: json["is_recalled"] == true,
+      recalledAt: _parseDate(json["recalled_at"]),
     );
   }
 

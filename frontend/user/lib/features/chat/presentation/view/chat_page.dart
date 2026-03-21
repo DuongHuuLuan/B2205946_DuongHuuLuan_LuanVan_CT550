@@ -68,6 +68,40 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _confirmRecall(ChatViewmodel vm, ChatMessage message) async {
+    final shouldRecall = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Thu hồi tin nhắn?"),
+          content: const Text("Bạn có chắc chắn muốn thu hồi tin nhăn?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text("Hủy"),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text("Thu hồi"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || shouldRecall != true) return;
+
+    try {
+      await vm.recallMessage(message.id);
+    } catch (_) {
+      if (!mounted) return;
+      final error = vm.errorMessage ?? "Không thể thu hồi tin nhắn.";
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
@@ -136,6 +170,9 @@ class _ChatPageState extends State<ChatPage> {
                         message: message,
                         isMine: isMine,
                         isRead: isRead,
+                        onRecall: isMine && !message.isRecalled
+                            ? () => _confirmRecall(vm, message)
+                            : null,
                       );
                     },
                   ),
@@ -248,11 +285,13 @@ class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMine;
   final bool isRead;
+  final VoidCallback? onRecall;
 
   const _ChatBubble({
     required this.message,
     required this.isMine,
     required this.isRead,
+    this.onRecall,
   });
 
   bool get _isImageOnly =>
@@ -271,77 +310,108 @@ class _ChatBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.74,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: bubbleColor,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: align,
-            children: [
-              if (message.mediaItems.isNotEmpty)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: message.mediaItems.map((item) {
-                    if (_isImageOnly) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: item.path,
-                          width: 150,
-                          height: 150,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => Container(
-                            width: 150,
-                            height: 150,
-                            color: Colors.black12,
-                            alignment: Alignment.center,
-                            child: const Icon(Icons.broken_image_outlined),
+        GestureDetector(
+          onLongPress: onRecall,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.74,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: align,
+              children: [
+                if (message.isRecalled)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.undo,
+                        size: 18,
+                        color: textColor.withOpacity(0.9),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          message.content ?? "Tin nhắn đã được thu hồi",
+                          style: TextStyle(
+                            color: textColor.withOpacity(0.92),
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
-                      );
-                    }
-                    return Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.attach_file, size: 18),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              item.path.split("/").last,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: textColor),
+                    ],
+                  )
+                else if (message.mediaItems.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: message.mediaItems.map((item) {
+                      if (_isImageOnly) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedNetworkImage(
+                            imageUrl: item.path,
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              width: 150,
+                              height: 150,
+                              color: Colors.black12,
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.broken_image_outlined),
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              if (message.mediaItems.isNotEmpty &&
-                  (message.content?.isNotEmpty ?? false))
-                const SizedBox(height: 8),
-              if (message.content != null && message.content!.trim().isNotEmpty)
-                Text(message.content!, style: TextStyle(color: textColor)),
-            ],
+                        );
+                      }
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.attach_file, size: 18),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                item.path.split("/").last,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: textColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                if (!message.isRecalled &&
+                    message.mediaItems.isNotEmpty &&
+                    (message.content?.isNotEmpty ?? false))
+                  const SizedBox(height: 8),
+                if (!message.isRecalled &&
+                    message.content != null &&
+                    message.content!.trim().isNotEmpty)
+                  Text(message.content!, style: TextStyle(color: textColor)),
+              ],
+            ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.only(left: 6, right: 6, bottom: 8),
           child: Text(
-            isRead ? "Đã xem" : _formatTime(message.createdAt),
+            message.isRecalled
+                ? "Đã thu hồi"
+                : isRead
+                ? "Đã xem"
+                : _formatTime(message.createdAt),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),

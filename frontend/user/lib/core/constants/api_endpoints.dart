@@ -75,6 +75,8 @@ class ApiEndpoints {
   static const chatConversations = "/chat/conversations";
   static String chatMessages(int conversationId) =>
       "/chat/conversations/$conversationId/messages";
+  static String chatRecallMessage(int conversationId, int messageId) =>
+      "/chat/conversations/$conversationId/messages/$messageId/recall";
   static String chatRead(int conversationId) =>
       "/chat/conversations/$conversationId/read";
 

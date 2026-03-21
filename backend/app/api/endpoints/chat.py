@@ -59,6 +59,14 @@ def _message_new_payload(conversation_id: int, message_out: MessageOut) -> Dict[
     }
 
 
+def _message_recalled_payload(conversation_id: int, message_out: MessageOut) -> Dict[str, Any]:
+    return {
+        "event": "message:recalled",
+        "conversation_id": conversation_id,
+        "data": jsonable_encoder(message_out),
+    }
+
+
 def _message_read_payload(
     conversation_id: int,
     user_id: int,
@@ -70,6 +78,10 @@ def _message_read_payload(
         "user_id": user_id,
         "data": jsonable_encoder(read_out),
     }
+
+
+def _build_message_out(message) -> MessageOut:
+    return MessageOut.model_validate(ChatService.serialize_message(message))
 
 
 def _create_message(
@@ -93,7 +105,29 @@ def _create_message(
             content=content,
             client_msg_id=client_msg_id,
         )
-        return MessageOut.model_validate(message)
+        return _build_message_out(message)
+    finally:
+        db.close()
+
+
+def _recall_message(
+    conversation_id: int,
+    message_id: int,
+    user_id: int,
+) -> MessageOut:
+    db = SessionLocal()
+    try:
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid user")
+
+        message = ChatService.recall_message(
+            db=db,
+            conversation_id=conversation_id,
+            message_id=message_id,
+            current_user=current_user,
+        )
+        return _build_message_out(message)
     finally:
         db.close()
 
@@ -158,6 +192,23 @@ def _build_admin_message_new_payload(
     }
 
 
+def _build_admin_message_recalled_payload(
+    conversation_id: int,
+    message_out: MessageOut,
+) -> Optional[Tuple[int, Dict[str, Any]]]:
+    snapshot = _build_admin_conversation_snapshot(conversation_id)
+    if not snapshot:
+        return None
+
+    admin_id, conversation_payload = snapshot
+    return admin_id, {
+        "event": "message:recalled",
+        "conversation_id": conversation_id,
+        "data": jsonable_encoder(message_out),
+        "conversation": conversation_payload,
+    }
+
+
 def _build_admin_message_read_payload(
     conversation_id: int,
     user_id: int,
@@ -180,6 +231,22 @@ def _build_admin_message_read_payload(
 async def _broadcast_admin_message_new(conversation_id: int, message_out: MessageOut) -> None:
     payload = await run_in_threadpool(
         _build_admin_message_new_payload,
+        conversation_id,
+        message_out,
+    )
+    if not payload:
+        return
+
+    admin_id, event_payload = payload
+    await chat_ws_manager.broadcast_admin(admin_id=admin_id, payload=event_payload)
+
+
+async def _broadcast_admin_message_recalled(
+    conversation_id: int,
+    message_out: MessageOut,
+) -> None:
+    payload = await run_in_threadpool(
+        _build_admin_message_recalled_payload,
         conversation_id,
         message_out,
     )
@@ -246,7 +313,10 @@ def get_messages(
         cursor=cursor,
         limit=limit,
     )
-    return MessageListOut(items=items, next_cursor=next_cursor)
+    return MessageListOut(
+        items=[_build_message_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
 
 
 @router.post("/conversations/{conversation_id}/messages", response_model=MessageOut)
@@ -270,6 +340,32 @@ async def send_message_with_uploads(
         payload=_message_new_payload(conversation_id=conversation_id, message_out=message_out),
     )
     await _broadcast_admin_message_new(conversation_id=conversation_id, message_out=message_out)
+    return message_out
+
+
+@router.post("/conversations/{conversation_id}/messages/{message_id}/recall", response_model=MessageOut)
+async def recall_message(
+    conversation_id: int,
+    message_id: int,
+    current_user: User = Depends(require_user),
+):
+    message_out = await run_in_threadpool(
+        _recall_message,
+        conversation_id,
+        message_id,
+        current_user.id,
+    )
+    await chat_ws_manager.broadcast(
+        conversation_id=conversation_id,
+        payload=_message_recalled_payload(
+            conversation_id=conversation_id,
+            message_out=message_out,
+        ),
+    )
+    await _broadcast_admin_message_recalled(
+        conversation_id=conversation_id,
+        message_out=message_out,
+    )
     return message_out
 
 

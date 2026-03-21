@@ -79,6 +79,8 @@ class MessageOut(BaseModel):
     content: Optional[str] = None
     created_at: datetime
     media_items: List[MessageMediaOut] = Field(default_factory=list)
+    is_recalled: bool = False
+    recalled_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

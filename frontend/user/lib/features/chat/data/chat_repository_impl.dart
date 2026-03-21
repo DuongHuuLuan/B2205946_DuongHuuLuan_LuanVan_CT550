@@ -102,6 +102,18 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<ChatMessage> recallMessage(int conversationId, int messageId) async {
+    try {
+      final response = await _api.recallMessage(conversationId, messageId);
+      return ChatMessage.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
   Future<ChatReadResult> markConversationRead(
     int conversationId, {
     int? messageId,
