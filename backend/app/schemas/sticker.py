@@ -69,6 +69,10 @@ class AiStickerGenerateIn(BaseModel):
     remove_background: bool = True
 
 
+class AiStickerTranscriptionOut(BaseModel):
+    prompt: str
+
+
 class RemoveBackgroundIn(BaseModel):
     image_url: str
 

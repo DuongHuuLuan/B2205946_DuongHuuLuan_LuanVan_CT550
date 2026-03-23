@@ -38,6 +38,24 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
   }
 
   @override
+  Future<String> transcribeAiStickerVoice(String audioPath) async {
+    if (useMockData) {
+      return MockHelmetDesignerData.transcribeAiStickerVoice(audioPath);
+    }
+
+    final response = await _api.transcribeAiStickerVoice(audioPath);
+    final data = _extractMap(response.data);
+    final prompt =
+        data["prompt"]?.toString().trim() ??
+        data["transcript"]?.toString().trim() ??
+        "";
+    if (prompt.isEmpty) {
+      throw StateError("Backend khong tra ve prompt hop le.");
+    }
+    return prompt;
+  }
+
+  @override
   Future<String> removeBackground(String imageUrl) async {
     if (useMockData) {
       return MockHelmetDesignerData.removeBackground(imageUrl);

@@ -131,6 +131,14 @@ class MockHelmetDesignerData {
     return sticker;
   }
 
+  static String transcribeAiStickerVoice(String audioPath) {
+    final name = audioPath.split(RegExp(r"[\\\\/]")).last.toLowerCase();
+    if (name.contains("fire")) {
+      return "rong lua phong cach the thao";
+    }
+    return "sticker rong lua phong cach the thao";
+  }
+
   static String removeBackground(String imageUrl) {
     return imageUrl;
   }

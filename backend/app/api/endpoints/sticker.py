@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user_optional, require_admin, require_user
@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.sticker import (
     AiStickerGenerateIn,
+    AiStickerTranscriptionOut,
     RemoveBackgroundIn,
     RemoveBackgroundOut,
     StickerAdminOut,
@@ -115,6 +116,20 @@ def generate_ai_sticker(
         user_id=current_user.id,
         sticker_in=sticker_in,
     )
+
+
+@router.post("/transcribe-voice", response_model=AiStickerTranscriptionOut, status_code=status.HTTP_200_OK)
+async def transcribe_ai_sticker_voice(
+    audio: UploadFile = File(...),
+    current_user: User = Depends(require_user),
+):
+    audio_bytes = await audio.read()
+    prompt = StickerService.transcribe_voice_prompt(
+        filename=audio.filename or "ai-sticker-voice.m4a",
+        content_type=audio.content_type,
+        audio_bytes=audio_bytes,
+    )
+    return {"prompt": prompt}
 
 
 @router.post("/remove-background", response_model=RemoveBackgroundOut, status_code=status.HTTP_501_NOT_IMPLEMENTED)

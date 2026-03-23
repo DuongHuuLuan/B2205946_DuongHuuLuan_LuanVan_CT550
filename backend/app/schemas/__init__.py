@@ -58,6 +58,7 @@ from app.schemas.sticker import (
     StickerPaginationMeta,
     StickerAdminPaginationOut,
     AiStickerGenerateIn,
+    AiStickerTranscriptionOut,
     RemoveBackgroundIn,
     RemoveBackgroundOut,
 )

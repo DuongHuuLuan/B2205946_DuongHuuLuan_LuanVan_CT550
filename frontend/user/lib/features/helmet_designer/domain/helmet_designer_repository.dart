@@ -5,6 +5,8 @@ import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/st
 abstract class HelmetDesignerRepository {
   Future<List<StickerTemplate>> getStickerCatalog();
 
+  Future<String> transcribeAiStickerVoice(String audioPath);
+
   Future<StickerTemplate> generateAiSticker(AiStickerRequest request);
 
   Future<String> removeBackground(String imageUrl);

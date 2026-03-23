@@ -33,6 +33,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
   bool isLoadingCatalog = false;
   bool isLoadingDesign = false;
+  bool isTranscribingSticker = false;
   bool isGeneratingSticker = false;
   bool isSavingDesign = false;
   bool isSharingDesign = false;
@@ -222,6 +223,24 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       return null;
     } finally {
       isGeneratingSticker = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> transcribeAiStickerVoice(String audioPath) async {
+    if (isTranscribingSticker) return null;
+    isTranscribingSticker = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _repository.transcribeAiStickerVoice(audioPath);
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+      return null;
+    } finally {
+      isTranscribingSticker = false;
       notifyListeners();
     }
   }

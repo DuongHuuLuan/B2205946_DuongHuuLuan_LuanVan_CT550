@@ -90,5 +90,6 @@ class ApiEndpoints {
   static String helmetDesignOrder(int id) => "/designs/$id/order";
   static const helmetStickerCatalog = "/stickers/";
   static const helmetStickerGenerate = "/stickers/generate";
+  static const helmetStickerTranscribeVoice = "/stickers/transcribe-voice";
   static const helmetStickerRemoveBg = "/stickers/remove-background";
 }

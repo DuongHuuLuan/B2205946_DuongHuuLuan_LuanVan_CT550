@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/api_endpoints.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/network/dio_client.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/network/error_handler.dart';
@@ -19,6 +21,24 @@ class HelmetDesignerApi {
         data: body,
         options: Options(
           sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 120),
+        ),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  Future<Response> transcribeAiStickerVoice(String audioPath) async {
+    try {
+      final fileName = audioPath.split(Platform.pathSeparator).last;
+      return await DioClient.instance.post(
+        ApiEndpoints.helmetStickerTranscribeVoice,
+        data: FormData.fromMap({
+          "audio": await MultipartFile.fromFile(audioPath, filename: fileName),
+        }),
+        options: Options(
+          sendTimeout: const Duration(seconds: 60),
           receiveTimeout: const Duration(seconds: 120),
         ),
       );

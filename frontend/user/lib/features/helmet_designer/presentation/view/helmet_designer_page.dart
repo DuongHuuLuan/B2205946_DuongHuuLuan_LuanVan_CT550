@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/ai_sticker_request.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_preview_canvas.dart';
@@ -13,7 +16,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_im
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
 
 class HelmetDesignerPage extends StatefulWidget {
   final int? designId;
@@ -63,9 +68,30 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
   ];
 
   final TextEditingController _aiPromptController = TextEditingController();
+  final AudioRecorder _audioRecorder = AudioRecorder();
   String _selectedAiStyle = _aiStyles.first;
   Color? _selectedAiColor;
   bool _removeAiBackground = true;
+  bool _isPreparingVoice = false;
+  bool _isRecordingVoice = false;
+  bool _isProcessingVoice = false;
+  bool _hasDetectedSpeech = false;
+  String? _voiceStatusText;
+  DateTime? _voiceRecordingStartedAt;
+  StreamSubscription<Amplitude>? _voiceAmplitudeSubscription;
+  Timer? _voiceSilenceTimer;
+  Timer? _voiceMaxDurationTimer;
+  final List<double> _voiceWaveLevels = List<double>.filled(7, 0.18);
+
+  static const double _voiceActivityThresholdDbfs = -40;
+  static const Duration _voiceSilenceDuration = Duration(milliseconds: 1600);
+  static const Duration _voiceMaxRecordingDuration = Duration(seconds: 20);
+  static const Duration _voiceMinRecordingDuration = Duration(
+    milliseconds: 700,
+  );
+  static const int _voiceWaveBarCount = 7;
+  static const double _voiceWaveMinLevel = 0.18;
+  static const double _voiceWaveMaxLevel = 1.0;
 
   @override
   void initState() {
@@ -115,6 +141,9 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
 
   @override
   void dispose() {
+    _cancelVoiceTimers();
+    unawaited(_voiceAmplitudeSubscription?.cancel() ?? Future<void>.value());
+    unawaited(_audioRecorder.dispose());
     _aiPromptController.dispose();
     super.dispose();
   }
@@ -326,6 +355,14 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
             styles: _aiStyles,
             palette: _pickerColors,
             isGenerating: vm.isGeneratingSticker,
+            isVoiceRecording: _isRecordingVoice,
+            isVoiceBusy:
+                _isPreparingVoice ||
+                _isProcessingVoice ||
+                vm.isTranscribingSticker ||
+                vm.isGeneratingSticker,
+            voiceStatusText: _voiceStatusText,
+            voiceWaveLevels: _voiceWaveLevels,
             onStyleChanged: (value) {
               setState(() {
                 _selectedAiStyle = value;
@@ -342,6 +379,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
               });
             },
             onGenerate: () => _generateAiSticker(context),
+            onToggleVoice: () => _toggleVoiceRecording(context),
           ),
           const SizedBox(height: 20),
           Row(
@@ -493,7 +531,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                       },
                       child: Text(
                         "Thiết kế ngay",
-                        style: TextStyle(color: AppColors.secondary),
+                        style: TextStyle(color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -507,8 +545,274 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
     );
   }
 
+  void _setPromptText(String text) {
+    _aiPromptController
+      ..text = text
+      ..selection = TextSelection.collapsed(offset: text.length);
+  }
+
+  void _showPageSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _toggleVoiceRecording(BuildContext context) async {
+    final vm = context.read<HelmetDesignerViewModel>();
+    if (vm.isGeneratingSticker ||
+        vm.isTranscribingSticker ||
+        _isPreparingVoice ||
+        _isProcessingVoice) {
+      return;
+    }
+
+    if (_isRecordingVoice) {
+      await _stopVoiceRecordingAndProcess(context);
+      return;
+    }
+
+    await _startVoiceRecording(context);
+  }
+
+  Future<void> _startVoiceRecording(BuildContext context) async {
+    setState(() {
+      _isPreparingVoice = true;
+      _voiceStatusText = 'Đang mở microphone...';
+    });
+
+    try {
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (!hasPermission) {
+        _resetVoiceState();
+        _showPageSnackBar(
+          context,
+          'Bạn cần cấp quyền microphone để ghi âm mô tả sticker.',
+        );
+        return;
+      }
+
+      final encoder = await _pickVoiceEncoder();
+      final tempDir = await getTemporaryDirectory();
+      final extension = encoder == AudioEncoder.wav ? 'wav' : 'm4a';
+      final filePath =
+          '${tempDir.path}${Platform.pathSeparator}ai_sticker_${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+      await _audioRecorder.start(
+        RecordConfig(
+          encoder: encoder,
+          numChannels: 1,
+          sampleRate: 16000,
+          bitRate: encoder == AudioEncoder.wav ? 128000 : 64000,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+        path: filePath,
+      );
+
+      _hasDetectedSpeech = false;
+      _voiceRecordingStartedAt = DateTime.now();
+      _resetVoiceWaveLevels();
+      _cancelVoiceTimers();
+      await _voiceAmplitudeSubscription?.cancel();
+      _voiceAmplitudeSubscription = _audioRecorder
+          .onAmplitudeChanged(const Duration(milliseconds: 250))
+          .listen(_handleVoiceAmplitude);
+      _voiceMaxDurationTimer = Timer(_voiceMaxRecordingDuration, () {
+        unawaited(_stopVoiceRecordingAndProcess(context));
+      });
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isPreparingVoice = false;
+        _isRecordingVoice = true;
+        _voiceStatusText = 'Đang nghe...';
+      });
+    } catch (_) {
+      await _audioRecorder.cancel();
+      if (!mounted) {
+        return;
+      }
+      _resetVoiceState();
+      _showPageSnackBar(context, 'Không thể bật ghi âm giọng nói lúc này.');
+    }
+  }
+
+  Future<AudioEncoder> _pickVoiceEncoder() async {
+    final supportsAac = await _audioRecorder.isEncoderSupported(
+      AudioEncoder.aacLc,
+    );
+    return supportsAac ? AudioEncoder.aacLc : AudioEncoder.wav;
+  }
+
+  void _handleVoiceAmplitude(Amplitude amplitude) {
+    if (!_isRecordingVoice) {
+      return;
+    }
+
+    _pushVoiceWaveLevel(_normalizeVoiceLevel(amplitude.current));
+
+    if (amplitude.current > _voiceActivityThresholdDbfs) {
+      _hasDetectedSpeech = true;
+      _voiceSilenceTimer?.cancel();
+      _voiceSilenceTimer = null;
+      return;
+    }
+
+    if (!_hasDetectedSpeech || _voiceSilenceTimer != null) {
+      return;
+    }
+
+    _voiceSilenceTimer = Timer(_voiceSilenceDuration, () {
+      unawaited(_stopVoiceRecordingAndProcess(context));
+    });
+  }
+
+  Future<void> _stopVoiceRecordingAndProcess(BuildContext context) async {
+    if (!_isRecordingVoice) {
+      return;
+    }
+
+    _cancelVoiceTimers();
+    await _voiceAmplitudeSubscription?.cancel();
+    _voiceAmplitudeSubscription = null;
+
+    final startedAt = _voiceRecordingStartedAt;
+    _voiceRecordingStartedAt = null;
+    final audioPath = await _audioRecorder.stop();
+    if (!mounted) {
+      await _deleteTempAudioFile(audioPath);
+      return;
+    }
+
+    final recordedMs = startedAt == null
+        ? 0
+        : DateTime.now().difference(startedAt).inMilliseconds;
+    if (audioPath == null || audioPath.isEmpty) {
+      _resetVoiceState();
+      _showPageSnackBar(
+        context,
+        'Không tạo được file ghi âm. Bạn hãy thử lại.',
+      );
+      return;
+    }
+
+    if (recordedMs < _voiceMinRecordingDuration.inMilliseconds) {
+      await _deleteTempAudioFile(audioPath);
+      _resetVoiceState();
+      _showPageSnackBar(
+        context,
+        'Đoạn ghi âm quá ngắn. Bạn hãy nói lại mô tả sticker.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isRecordingVoice = false;
+      _isProcessingVoice = true;
+      _voiceStatusText = 'Đang xử lý giọng nói...';
+    });
+
+    final vm = context.read<HelmetDesignerViewModel>();
+    final prompt = await vm.transcribeAiStickerVoice(audioPath);
+    await _deleteTempAudioFile(audioPath);
+    if (!mounted) {
+      return;
+    }
+
+    if (prompt == null || prompt.trim().isEmpty) {
+      _resetVoiceState();
+      if ((vm.errorMessage ?? '').trim().isNotEmpty) {
+        _showPageSnackBar(context, vm.errorMessage!);
+      }
+      return;
+    }
+
+    _setPromptText(prompt.trim());
+    setState(() {
+      _isProcessingVoice = false;
+      _voiceStatusText = 'Đang tạo sticker...';
+    });
+
+    await _generateAiSticker(context);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _voiceStatusText = null;
+    });
+  }
+
+  Future<void> _deleteTempAudioFile(String? audioPath) async {
+    final normalizedPath = (audioPath ?? '').trim();
+    if (normalizedPath.isEmpty) {
+      return;
+    }
+
+    final file = File(normalizedPath);
+    if (!await file.exists()) {
+      return;
+    }
+
+    try {
+      await file.delete();
+    } catch (_) {}
+  }
+
+  void _resetVoiceState() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isPreparingVoice = false;
+      _isRecordingVoice = false;
+      _isProcessingVoice = false;
+      _hasDetectedSpeech = false;
+      _voiceStatusText = null;
+      _resetVoiceWaveLevels();
+    });
+  }
+
+  void _cancelVoiceTimers() {
+    _voiceSilenceTimer?.cancel();
+    _voiceSilenceTimer = null;
+    _voiceMaxDurationTimer?.cancel();
+    _voiceMaxDurationTimer = null;
+  }
+
   String _colorToHex(Color color) {
     final value = color.value.toRadixString(16).padLeft(8, '0');
     return "#${value.substring(2).toUpperCase()}";
+  }
+
+  double _normalizeVoiceLevel(double currentDbfs) {
+    const minDbfs = -55.0;
+    const maxDbfs = -5.0;
+    final clamped = currentDbfs.clamp(minDbfs, maxDbfs).toDouble();
+    final normalized = (clamped - minDbfs) / (maxDbfs - minDbfs);
+    return (_voiceWaveMinLevel +
+            ((_voiceWaveMaxLevel - _voiceWaveMinLevel) * normalized))
+        .clamp(_voiceWaveMinLevel, _voiceWaveMaxLevel)
+        .toDouble();
+  }
+
+  void _pushVoiceWaveLevel(double level) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _voiceWaveLevels
+        ..removeAt(0)
+        ..add(
+          level.clamp(_voiceWaveMinLevel, _voiceWaveMaxLevel).toDouble(),
+        );
+    });
+  }
+
+  void _resetVoiceWaveLevels() {
+    _voiceWaveLevels
+      ..clear()
+      ..addAll(List<double>.filled(_voiceWaveBarCount, _voiceWaveMinLevel));
   }
 }
