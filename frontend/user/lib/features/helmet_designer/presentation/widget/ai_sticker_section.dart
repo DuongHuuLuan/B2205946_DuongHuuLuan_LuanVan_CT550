@@ -10,10 +10,7 @@ class AiStickerSection extends StatelessWidget {
   final List<String> styles;
   final List<Color> palette;
   final bool isGenerating;
-  final bool isVoiceRecording;
   final bool isVoiceBusy;
-  final String? voiceStatusText;
-  final List<double> voiceWaveLevels;
   final ValueChanged<String> onStyleChanged;
   final ValueChanged<Color?> onColorChanged;
   final ValueChanged<bool> onBackgroundChanged;
@@ -29,10 +26,7 @@ class AiStickerSection extends StatelessWidget {
     required this.styles,
     required this.palette,
     required this.isGenerating,
-    required this.isVoiceRecording,
     required this.isVoiceBusy,
-    required this.voiceStatusText,
-    required this.voiceWaveLevels,
     required this.onStyleChanged,
     required this.onColorChanged,
     required this.onBackgroundChanged,
@@ -43,12 +37,7 @@ class AiStickerSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final hasVoiceStatus = (voiceStatusText ?? '').trim().isNotEmpty;
-    final voiceButtonLabel = isVoiceRecording
-        ? 'Dừng ghi âm'
-        : isVoiceBusy
-        ? 'Đang xử lý...'
-        : 'Nhấn để nói';
+    final voiceButtonLabel = isVoiceBusy ? 'Đang xử lý...' : 'Nhấn để nói';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -73,7 +62,7 @@ class AiStickerSection extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Khi bạn im lặng, ứng dụng sẽ tự dừng ghi âm, xử lý giọng nói và tạo sticker.',
+            'Khi bạn nhấn nút mic, ứng dụng sẽ mở màn hình lắng nghe riêng rồi tự xử lý và tạo sticker.',
             style: textTheme.bodySmall?.copyWith(
               color: AppColors.light.textSecondary,
             ),
@@ -133,9 +122,7 @@ class AiStickerSection extends StatelessWidget {
             runSpacing: 12,
             children: [
               FilledButton.icon(
-                onPressed: isGenerating || isVoiceRecording || isVoiceBusy
-                    ? null
-                    : onGenerate,
+                onPressed: isGenerating || isVoiceBusy ? null : onGenerate,
                 icon: isGenerating
                     ? const SizedBox(
                         width: 18,
@@ -147,85 +134,13 @@ class AiStickerSection extends StatelessWidget {
               ),
               OutlinedButton.icon(
                 onPressed: isGenerating || isVoiceBusy ? null : onToggleVoice,
-                icon: Icon(
-                  isVoiceRecording
-                      ? Icons.stop_circle_outlined
-                      : Icons.mic_none_outlined,
-                ),
+                icon: const Icon(Icons.mic_none_outlined),
                 label: Text(voiceButtonLabel),
               ),
             ],
           ),
-          if (hasVoiceStatus) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (isVoiceRecording || isVoiceBusy) ...[
-                  _VoiceWaveBars(
-                    levels: voiceWaveLevels,
-                    color: isVoiceRecording
-                        ? AppColors.primary
-                        : AppColors.light.textSecondary,
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  child: Text(
-                    voiceStatusText!,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: isVoiceRecording
-                          ? AppColors.primary
-                          : AppColors.light.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
-    );
-  }
-}
-
-class _VoiceWaveBars extends StatelessWidget {
-  static const List<double> _fallbackLevels = [
-    0.18,
-    0.24,
-    0.32,
-    0.42,
-    0.32,
-    0.24,
-    0.18,
-  ];
-
-  final List<double> levels;
-  final Color color;
-
-  const _VoiceWaveBars({required this.levels, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final bars = levels.length >= 5 ? levels : _fallbackLevels;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(bars.length, (index) {
-        final level = bars[index].clamp(0.18, 1.0).toDouble();
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          margin: EdgeInsets.only(right: index == bars.length - 1 ? 0 : 3),
-          width: 4,
-          height: 8 + (18 * level),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.25 + (0.75 * level)),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        );
-      }),
     );
   }
 }
