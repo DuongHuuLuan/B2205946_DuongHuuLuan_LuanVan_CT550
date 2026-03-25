@@ -91,6 +91,8 @@
                       <th style="min-width: 200px">Màu</th>
                       <th style="min-width: 160px">Kích thước</th>
                       <th style="width: 140px">Số lượng</th>
+                      <th style="width: 140px">Trạng thái</th>
+                      <th style="width: 180px">Thao tác</th>
                     </tr>
                   </thead>
 
@@ -98,7 +100,8 @@
                     <tr v-for="(it, idx) in items" :key="it.id || idx">
                       <!-- Product -->
                       <td>
-                        <div class="d-flex align-items-center gap-2">
+                        <RouterLink :to="{ name: 'products.edit', params: { id: it.product?.id || it.product_id } }"
+                          class="product-link d-flex align-items-center gap-2 text-decoration-none">
                           <div class="thumb">
                             <img v-if="getProductThumb(it.product, it?.color?.id || it?.color_id)"
                               :src="getProductThumb(it.product, it?.color?.id || it?.color_id)" alt="thumb" />
@@ -108,25 +111,23 @@
                           </div>
 
                           <div class="flex-grow-1">
-                            <div class="fw-semibold">
+                            <div class="fw-semibold product-name">
                               {{ it?.product?.name || "—" }}
                             </div>
                             <div class="small opacity-75">
-                              ID: P{{
-                                it?.product?.id || it?.product_id || "—"
-                              }}
+                              ID: P{{ it?.product?.id || it?.product_id || "—" }}
                             </div>
                             <div class="small opacity-75">
                               Danh mục: {{ it?.product?.category?.name || "—" }}
                             </div>
                           </div>
-                        </div>
+                        </RouterLink>
                       </td>
 
                       <!-- Color -->
                       <td>
                         <div class="form-control bg-transparent">
-                          {{ it?.color?.name || "Khong co mau" }}
+                          {{ it?.color?.name || "Không có màu" }}
                         </div>
                       </td>
 
@@ -143,10 +144,34 @@
                           {{ it?.quantity ?? 0 }}
                         </div>
                       </td>
+
+                      <!-- Status -->
+                      <td>
+                        <span class="badge" :class="it._isActive ? 'badge-completed' : 'badge-canceled'">
+                          {{ it._isActive ? "Đang bán" : "Ngừng bán" }}
+                        </span>
+                      </td>
+
+                      <!-- Actions -->
+                      <td>
+                        <div class="d-flex gap-2">
+                          <button v-if="it._isActive" class="btn btn-reject-warning" type="button"
+                            @click="onToggleSelling(it, false)">
+                            <i class="fa-solid fa-ban me-1"></i>
+                            Ngừng bán
+                          </button>
+
+                          <button v-else class="btn btn-approve-warning me-2" type="button"
+                            @click="onToggleSelling(it, true)">
+                            <i class="fa-solid fa-rotate-left me-1"></i>
+                            Bán lại
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <tr v-if="!items.length">
-                      <td colspan="4" class="text-center opacity-75 py-4">
+                      <td colspan="6" class="text-center opacity-75 py-4">
                         Không có dữ liệu.
                       </td>
                     </tr>
@@ -205,6 +230,7 @@ import Swal from "sweetalert2";
 
 import WarehouseService from "@/services/warehouse.service";
 import CategoryService from "@/services/category.service";
+import ProductDetailService from "@/services/product-detail.service";
 import { formatDateTimeVN, getProductThumb as resolveProductThumb } from "@/utils/utils";
 
 const route = useRoute();
@@ -239,28 +265,84 @@ async function fetchData() {
       category_id: categoryId.value || undefined,
     });
 
+    console.log("warehouse details response:", res);
+
     const data = res ?? {};
-    console.log(data);
+    console.log("data.items:", data?.items);
+
     warehouse.value = data?.warehouse || null;
-    items.value = data?.items || [];
+
+    items.value = (data?.items || []).map((it) => ({
+      ...it,
+      _detailId: Number(it?.product_detail_id ?? 0),
+      _isActive: Boolean(it?.is_active),
+    }));
+
     meta.value = data?.meta ?? {
       current_page: 1,
       per_page: perPage,
       total: 0,
       last_page: 1,
     };
-
-    console.log(meta.value)
   } catch (e) {
-    console.log(e);
+
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
+      e?.response?.data?.detail ||
       "Không thể tải dữ liệu kho.";
+
     await Swal.fire("Lỗi", msg, "error");
     router.push({ name: "warehouses.list" });
   } finally {
     loading.value = false;
+  }
+}
+
+
+async function onToggleSelling(item, isActive) {
+  const detailId = item?._detailId;
+
+  if (!detailId) {
+    console.log("item lỗi:", item);
+    await Swal.fire("Lỗi", "Không tìm thấy ID biến thể sản phẩm.", "error");
+    return;
+  }
+
+  const title = isActive ? "Mở bán lại biến thể này?" : "Ngừng bán biến thể này?";
+  const text = isActive
+    ? "Biến thể sẽ được bán lại trên hệ thống."
+    : "Biến thể sẽ không thể mua nữa trên hệ thống.";
+
+  const confirm = await Swal.fire({
+    title,
+    text,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Xác nhận",
+    cancelButtonText: "Hủy",
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  try {
+    await ProductDetailService.update(detailId, {
+      is_active: isActive,
+    });
+
+    await Swal.fire(
+      "Thành công",
+      isActive ? "Đã mở bán lại biến thể." : "Đã ngừng bán biến thể.",
+      "success"
+    );
+
+    await fetchData();
+  } catch (e) {
+    const msg =
+      e?.response?.data?.detail ||
+      e?.response?.data?.message ||
+      "Không thể cập nhật trạng thái bán.";
+    await Swal.fire("Lỗi", msg, "error");
   }
 }
 
@@ -348,18 +430,54 @@ onMounted(async () => {
 .badge-pending {
   background: var(--status-warning-bg);
   border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
-  color: var(--status-warning);
+  color: var(--font-color);
 }
 
 .badge-completed {
   background: var(--status-success-bg);
   border: 1px solid color-mix(in srgb, var(--status-success) 55%, transparent);
-  color: var(--status-success);
+  color: var(--font-color);
 }
 
 .badge-canceled {
   background: var(--status-danger-bg);
   border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
+  color: var(--font-color);
+}
+
+.btn-approve-warning {
+  border: 1px solid color-mix(in srgb, var(--status-warning) 55%, transparent);
+  color: #8a6700;
+  background: transparent;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-approve-warning:hover,
+.btn-approve-warning:focus-visible,
+.btn-approve-warning:active {
+  background: var(--status-warning-bg);
+  color: #8a6700;
+}
+
+
+.btn-reject-warning {
+  border: 1px solid color-mix(in srgb, var(--status-danger) 55%, transparent);
   color: var(--status-danger);
+  background: transparent;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-reject-warning:hover,
+.btn-reject-warning:focus-visible,
+.btn-reject-warning:active {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+}
+
+.btn-reject-warning:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
 }
 </style>

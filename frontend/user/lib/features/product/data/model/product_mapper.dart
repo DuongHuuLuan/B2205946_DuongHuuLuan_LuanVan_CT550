@@ -38,8 +38,7 @@ class ProductMapper extends Product {
       unit: json["unit"] ?? "",
       categoryId: toInt(json["category_id"]),
       model3dUrl:
-          json["model_3d_url"]?.toString() ??
-          json["model3dUrl"]?.toString(),
+          json["model_3d_url"]?.toString() ?? json["model3dUrl"]?.toString(),
       model3dIosUrl:
           json["model_3d_ios_url"]?.toString() ??
           json["model3dIosUrl"]?.toString(),

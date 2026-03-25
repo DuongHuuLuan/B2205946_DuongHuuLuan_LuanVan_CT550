@@ -102,12 +102,12 @@ class _DesignStickerInfoState extends State<DesignStickerInfo> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
+                    horizontal: 4,
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     widget.label,

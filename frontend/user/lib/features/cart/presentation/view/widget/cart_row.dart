@@ -12,7 +12,8 @@ class CartRow extends StatelessWidget {
   final VoidCallback onRemove;
   final void Function(int quantity) onUpdateQuantity;
   final bool isSelected;
-  final ValueChanged<bool?> onSelectedChanged;
+  final ValueChanged<bool?>? onSelectedChanged;
+
   const CartRow({
     super.key,
     required this.cartDetail,
@@ -31,7 +32,7 @@ class CartRow extends StatelessWidget {
     final imageUrl = product?.pickPrimaryImageUrl(detailProduct.colorId) ?? "";
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -41,7 +42,7 @@ class CartRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Checkbox(
-                  value: isSelected,
+                  value: cartDetail.canCheckout ? isSelected : false,
                   onChanged: onSelectedChanged,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
@@ -51,7 +52,6 @@ class CartRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 _ProductImage(url: imageUrl),
-
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -61,12 +61,26 @@ class CartRow extends StatelessWidget {
                         product?.name ??
                             "Sản phẩm #${cartDetail.productDetailId}",
                         maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
+
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _StatusBadge(cartDetail: cartDetail),
+                          if (cartDetail.statusMessage != null &&
+                              cartDetail.statusMessage!.trim().isNotEmpty)
+                            _StatusMessage(message: cartDetail.statusMessage!),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
                       Text(
                         "Màu sắc: ${detailProduct.colorName}",
                         style: TextStyle(color: color.secondary),
@@ -84,12 +98,14 @@ class CartRow extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       if (cartDetail.hasDesign) ...[
                         const SizedBox(height: 10),
                         DesignStickerInfo(
                           designId: cartDetail.designId,
                           designName: cartDetail.designName,
-                          designPreviewImageUrl: cartDetail.designPreviewImageUrl,
+                          designPreviewImageUrl:
+                              cartDetail.designPreviewImageUrl,
                         ),
                       ],
                     ],
@@ -98,19 +114,86 @@ class CartRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: 3),
 
           Expanded(
             flex: 3,
             child: _QuantityControl(
               onChanged: onUpdateQuantity,
               quantity: cartDetail.quantity,
+              locked: cartDetail.isLocked,
             ),
           ),
+
           const SizedBox(width: 5),
           _RemoveButton(onPressed: onRemove),
           const SizedBox(width: 3),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final CartDetail cartDetail;
+
+  const _StatusBadge({required this.cartDetail});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!cartDetail.isInactive &&
+        !cartDetail.isOutOfStock &&
+        !cartDetail.isInsufficientStock) {
+      return const SizedBox.shrink();
+    }
+
+    late final String text;
+    late final Color bg;
+    late final Color fg;
+
+    if (cartDetail.isInactive) {
+      text = "Ngừng bán";
+      bg = Colors.grey.shade300;
+      fg = Colors.grey.shade900;
+    } else if (cartDetail.isOutOfStock) {
+      text = "Hết hàng";
+      bg = Colors.orange.shade100;
+      fg = Colors.orange.shade900;
+    } else if (cartDetail.isInsufficientStock) {
+      text = "Vượt tồn";
+      bg = Colors.amber.shade100;
+      fg = Colors.amber.shade900;
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+}
+
+class _StatusMessage extends StatelessWidget {
+  final String message;
+
+  const _StatusMessage({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.error,
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
       ),
     );
   }
@@ -182,21 +265,32 @@ class _ImagePlaceholder extends StatelessWidget {
 
 class _QuantityControl extends StatelessWidget {
   final int quantity;
+  final bool locked;
   final void Function(int quantity) onChanged;
-  const _QuantityControl({required this.onChanged, required this.quantity});
+
+  const _QuantityControl({
+    required this.onChanged,
+    required this.quantity,
+    required this.locked,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _QuantityButton(
           icon: Icons.remove,
-          onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
+          onPressed: locked
+              ? null
+              : quantity > 1
+              ? () => onChanged(quantity - 1)
+              : null,
         ),
         Container(
-          width: 32,
+          width: 28,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: BoxDecoration(
@@ -214,7 +308,7 @@ class _QuantityControl extends StatelessWidget {
         ),
         _QuantityButton(
           icon: Icons.add,
-          onPressed: () => onChanged(quantity + 1),
+          onPressed: locked ? null : () => onChanged(quantity + 1),
         ),
       ],
     );
@@ -224,11 +318,13 @@ class _QuantityControl extends StatelessWidget {
 class _QuantityButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
+
   const _QuantityButton({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final disabled = onPressed == null;
 
     return InkWell(
       onTap: onPressed,
@@ -236,13 +332,18 @@ class _QuantityButton extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline),
+          border: Border.all(
+            color: disabled ? colorScheme.outlineVariant : colorScheme.outline,
+          ),
+          color: disabled
+              ? colorScheme.surfaceContainerHighest.withOpacity(0.6)
+              : null,
         ),
         child: Icon(
           icon,
           size: 16,
-          color: onPressed == null
-              ? colorScheme.onSurface
+          color: disabled
+              ? colorScheme.onSurfaceVariant
               : colorScheme.onSurface,
         ),
       ),

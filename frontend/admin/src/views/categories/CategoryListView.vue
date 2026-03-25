@@ -70,7 +70,12 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(c.id)">
+                      <button
+                        class="icon-btn icon-delete"
+                        :disabled="(c.products_count ?? 0) > 0"
+                        :title="(c.products_count ?? 0) > 0 ? 'Khong the xoa: con san pham' : 'Xoa'"
+                        @click="onDeleteClick(c)"
+                      >
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -177,7 +182,12 @@ watch(page, async () => {
   await fetchCategories();
 });
 
-async function onDeleteClick(categoryId) {
+async function onDeleteClick(category) {
+  if ((category?.products_count ?? 0) > 0) {
+    await Swal.fire("Khong the xoa", "Danh muc nay van con san pham.", "warning",);
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa danh mục này?",
     text: "Không thể hoàn tác!",
@@ -189,7 +199,7 @@ async function onDeleteClick(categoryId) {
 
   if (result.isConfirmed) {
     try {
-      await CategoryService.delete(categoryId);
+      await CategoryService.delete(category?.id);
       await fetchCategories();
       Swal.fire({
         title: "Xóa thành công",
@@ -249,6 +259,11 @@ async function onDeleteClick(categoryId) {
   border-color: var(--hover-border-color);
 }
 
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .icon-add {
   color: #16a34a;
 }
@@ -272,3 +287,9 @@ async function onDeleteClick(categoryId) {
   border-radius: 1rem;
 }
 </style>
+
+
+
+
+
+

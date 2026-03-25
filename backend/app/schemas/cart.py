@@ -27,6 +27,12 @@ class CartDetailOut(BaseModel):
     design_name: Optional[str] = None
     design_preview_image_url: Optional[str] = None
 
+    is_active: bool = True
+    available_stock: int = 0
+    cart_status: str = "ok"
+    status_message: Optional[str] = None
+    can_checkout: bool = True
+
     class Config: 
         from_attributes = True
 
@@ -36,6 +42,7 @@ class CartOut(BaseModel):
     user_id: int
     cart_details: List[CartDetailOut]
     total_price: float = 0
+    can_checkout: bool = True
 
     class Config:
         from_attributes = True

@@ -19,7 +19,6 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   final Set<int> _lastDiscountCategoryIds = {};
   final Set<int> _selectedDiscountIds = {};
-
   final Set<int> _selectedCartDetailIds = {};
   bool _selectionTouched = false;
 
@@ -35,55 +34,103 @@ class _CartPageState extends State<CartPage> {
     final cartDetails = vm.cartDetails;
     _ensureSelection(cartDetails);
 
-    final selectedTotal = cartDetails
+    final selectedItems = cartDetails
         .where((detail) => _selectedCartDetailIds.contains(detail.id))
-        .fold<double>(0, (sum, detail) => sum + detail.lineTotal);
-    final hasSelection = _selectedCartDetailIds.isNotEmpty;
+        .toList();
+
+    final validSelectedItems = selectedItems
+        .where((detail) => detail.canCheckout)
+        .toList();
+
+    final hasSelection = selectedItems.isNotEmpty;
+    final hasInvalidSelection = selectedItems.any((e) => !e.canCheckout);
+
+    final selectedTotal = validSelectedItems.fold<double>(
+      0,
+      (sum, detail) => sum + detail.lineTotal,
+    );
+
+    final selectableItems = cartDetails.where((e) => e.canCheckout).toList();
     final allSelected =
-        cartDetails.isNotEmpty &&
-        _selectedCartDetailIds.length == cartDetails.length;
-    final selectedCategoryIds = cartDetails
-        .where((detail) => _selectedCartDetailIds.contains(detail.id))
+        selectableItems.isNotEmpty &&
+        selectableItems.every(
+          (detail) => _selectedCartDetailIds.contains(detail.id),
+        );
+
+    final selectedCategoryIds = validSelectedItems
         .map((detail) => vm.categoryIdForDetail(detail.productDetailId))
         .whereType<int>()
         .toSet()
         .toList();
+
     _requestDiscounts(vm, selectedCategoryIds);
+
     final availableDiscounts = vm.discounts;
     _syncSelectedDiscounts(availableDiscounts);
+
     final selectedDiscounts = availableDiscounts
         .where((discount) => _selectedDiscountIds.contains(discount.id))
         .toList();
+
     final discountByCategory = <int, double>{
       for (final discount in selectedDiscounts)
         discount.categoryId: discount.percent.toDouble(),
     };
-    final selectedDiscountAmount = cartDetails
-        .where((detail) => _selectedCartDetailIds.contains(detail.id))
-        .fold<double>(0, (sum, detail) {
-          final categoryId = vm.categoryIdForDetail(detail.productDetailId);
-          final percent = categoryId == null
-              ? 0.0
-              : (discountByCategory[categoryId] ?? 0.0);
-          return sum + (detail.lineTotal * (percent / 100));
-        });
 
-    final bool? selectAllValue = cartDetails.isEmpty
+    final selectedDiscountAmount = validSelectedItems.fold<double>(0, (
+      sum,
+      detail,
+    ) {
+      final categoryId = vm.categoryIdForDetail(detail.productDetailId);
+      final percent = categoryId == null
+          ? 0.0
+          : (discountByCategory[categoryId] ?? 0.0);
+      return sum + (detail.lineTotal * (percent / 100));
+    });
+
+    final bool? selectAllValue = selectableItems.isEmpty
         ? false
         : allSelected
         ? true
-        : _selectedCartDetailIds.isEmpty
+        : _selectedCartDetailIds
+              .where((id) => selectableItems.any((e) => e.id == id))
+              .isEmpty
         ? false
         : null;
 
+    final canProceedCheckout =
+        hasSelection && !hasInvalidSelection && validSelectedItems.isNotEmpty;
+
     return Scaffold(
-      appBar: AppBar(title: Text("Giỏ hàng", style: TextStyle(fontSize: 20))),
+      appBar: AppBar(
+        title: const Text("Giỏ hàng", style: TextStyle(fontSize: 20)),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 12),
+
+            if (vm.hasInvalidItems) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: const Text(
+                  "Giỏ hàng có sản phẩm ngừng bán hoặc không đủ điều kiện mua. Vui lòng xóa các sản phẩm đó trước khi thanh toán.",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             _HeaderRow(
               selectAllValue: selectAllValue,
               onSelectAll: (value) => _toggleSelectAll(value, cartDetails),
@@ -101,6 +148,7 @@ class _CartPageState extends State<CartPage> {
               onSelectChanged: _toggleSelectItem,
             ),
             const SizedBox(height: 16),
+
             CartActions(
               onContinue: () {
                 if (context.canPop()) {
@@ -113,31 +161,39 @@ class _CartPageState extends State<CartPage> {
               isLoading: vm.isLoading,
             ),
             const SizedBox(height: 20),
+
             CartSummary(
               total: selectedTotal,
               discountAmount: selectedDiscountAmount,
               appliedDiscountCount: selectedDiscounts.length,
             ),
             const SizedBox(height: 16),
+
             _CheckoutButton(
-              onPressed: hasSelection
+              onPressed: canProceedCheckout
                   ? () {
-                      final selected = cartDetails
-                          .where(
-                            (detail) =>
-                                _selectedCartDetailIds.contains(detail.id),
-                          )
-                          .toList();
                       context.go(
                         "/order",
                         extra: {
-                          "details": selected,
+                          "details": validSelectedItems,
                           "appliedDiscounts": selectedDiscounts,
                         },
                       );
                     }
                   : null,
             ),
+            const SizedBox(height: 8),
+
+            if (hasInvalidSelection)
+              const Text(
+                "Bạn đang chọn sản phẩm không thể thanh toán.",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
             const SizedBox(height: 16),
 
             DiscountDropdown(
@@ -154,14 +210,18 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _toggleSelectAll(bool? value, List<CartDetail> cartDetails) {
+    final selectableItems = cartDetails.where((e) => e.canCheckout).toList();
+
     setState(() {
       _selectionTouched = true;
       if (value == true) {
         _selectedCartDetailIds
           ..clear()
-          ..addAll(cartDetails.map((detail) => detail.id));
+          ..addAll(selectableItems.map((detail) => detail.id));
       } else {
-        _selectedCartDetailIds.clear();
+        _selectedCartDetailIds.removeWhere(
+          (id) => selectableItems.any((detail) => detail.id == id),
+        );
       }
     });
   }
@@ -188,9 +248,7 @@ class _CartPageState extends State<CartPage> {
         return;
       }
 
-      final selectedById = {
-        for (final d in availableDiscounts) d.id: d,
-      };
+      final selectedById = {for (final d in availableDiscounts) d.id: d};
       _selectedDiscountIds.removeWhere((id) {
         final selectedDiscount = selectedById[id];
         if (selectedDiscount == null) return false;
@@ -230,7 +288,9 @@ class _CartPageState extends State<CartPage> {
 
   void _syncSelectedDiscounts(List<Discount> availableDiscounts) {
     final availableIds = availableDiscounts.map((d) => d.id).toSet();
-    final needsCleanup = _selectedDiscountIds.any((id) => !availableIds.contains(id));
+    final needsCleanup = _selectedDiscountIds.any(
+      (id) => !availableIds.contains(id),
+    );
     if (!needsCleanup) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -243,16 +303,23 @@ class _CartPageState extends State<CartPage> {
 
   void _ensureSelection(List<CartDetail> cartDetails) {
     final currentIds = cartDetails.map((detail) => detail.id).toSet();
+    final validIds = cartDetails
+        .where((detail) => detail.canCheckout)
+        .map((detail) => detail.id)
+        .toSet();
+
     final needsCleanup = _selectedCartDetailIds.any(
       (id) => !currentIds.contains(id),
     );
     final shouldAutoSelect =
         !_selectionTouched &&
         _selectedCartDetailIds.isEmpty &&
-        cartDetails.isNotEmpty;
+        validIds.isNotEmpty;
+
     if (!needsCleanup && !shouldAutoSelect) {
       return;
     }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() {
@@ -260,17 +327,17 @@ class _CartPageState extends State<CartPage> {
           _selectedCartDetailIds.removeWhere((id) => !currentIds.contains(id));
         }
         if (shouldAutoSelect) {
-          _selectedCartDetailIds.addAll(currentIds);
+          _selectedCartDetailIds.addAll(validIds);
         }
       });
     });
   }
-
 }
 
 class _HeaderRow extends StatelessWidget {
   final bool? selectAllValue;
   final ValueChanged<bool?> onSelectAll;
+
   const _HeaderRow({required this.selectAllValue, required this.onSelectAll});
 
   @override

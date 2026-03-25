@@ -46,6 +46,9 @@ class WarehouseDetailItemOut(BaseModel):
     size: Optional[SizeOut] = None
     quantity: int
 
+    product_detail_id: Optional[int] = None
+    is_active: bool = False
+
     class Config:
         from_attributes = True
 

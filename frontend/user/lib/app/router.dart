@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:b2205946_duonghuuluan_luanvan/app/navigation/app_route_transitions.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/login_page.dart';
@@ -70,102 +71,142 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: "/login", builder: (context, state) => const LoginPage()),
         GoRoute(
-          path: "/register",
-          builder: (context, state) => const RegisterPage(),
-        ),
-        GoRoute(path: "/", builder: (context, state) => const HomePage()),
-
-        GoRoute(
-          path: "/splash",
-          builder: (context, state) => Scaffold(
-            backgroundColor: AppColors.light.background,
-            body: Center(child: AppLogoLoader(size: 96, strokeWidth: 4.5)),
+          path: "/login",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const LoginPage(),
           ),
         ),
-
+        GoRoute(
+          path: "/register",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const RegisterPage(),
+          ),
+        ),
+        GoRoute(
+          path: "/",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const HomePage(),
+          ),
+        ),
+        GoRoute(
+          path: "/splash",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            style: AppRouteTransitionStyle.fade,
+            child: Scaffold(
+              backgroundColor: AppColors.light.background,
+              body: Center(child: AppLogoLoader(size: 96, strokeWidth: 4.5)),
+            ),
+          ),
+        ),
         GoRoute(
           path: "/products/categories",
-          builder: (context, state) {
-            return ProductCatagoryPage(
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: ProductCatagoryPage(
               initialKeyword: state.uri.queryParameters["q"] ?? "",
-            );
-          },
+            ),
+          ),
         ),
-
         GoRoute(
           path: "/products/categories/:id",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final categoryId = int.parse(state.pathParameters["id"]!);
-            return ProductCatagoryPage(
-              categoryId: categoryId,
-              initialKeyword: state.uri.queryParameters["q"] ?? "",
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: ProductCatagoryPage(
+                categoryId: categoryId,
+                initialKeyword: state.uri.queryParameters["q"] ?? "",
+              ),
             );
           },
         ),
-
         GoRoute(
           path: "/products",
-          builder: (context, state) =>
-              ProductPage(initialKeyword: state.uri.queryParameters["q"] ?? ""),
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: ProductPage(
+              initialKeyword: state.uri.queryParameters["q"] ?? "",
+            ),
+          ),
         ),
         GoRoute(
           path: "/products/:id",
-          builder: (context, state) {
-            return ProductDetailPage(
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: ProductDetailPage(
               productId: int.parse(state.pathParameters["id"]!),
-            );
-          },
+            ),
+          ),
         ),
-
-        GoRoute(path: "/cart", builder: (context, state) => const CartPage()),
-
+        GoRoute(
+          path: "/cart",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const CartPage(),
+          ),
+        ),
         GoRoute(
           path: "/order",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final extra = state.extra;
             if (extra is Map) {
               final details =
                   (extra["details"] as List<CartDetail>?) ?? const [];
               final appliedDiscounts =
                   (extra["appliedDiscounts"] as List<Discount>?) ?? const [];
-              return OrderPage(
-                cartDetails: details,
-                appliedDiscounts: appliedDiscounts,
+              return AppRouteTransitions.buildPage(
+                state: state,
+                child: OrderPage(
+                  cartDetails: details,
+                  appliedDiscounts: appliedDiscounts,
+                ),
               );
             }
             final details = (extra as List<CartDetail>?) ?? const [];
-            return OrderPage(cartDetails: details);
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: OrderPage(cartDetails: details),
+            );
           },
         ),
-
         GoRoute(
           path: "/orders/:orderId",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final orderId =
                 int.tryParse(state.pathParameters["orderId"] ?? "") ?? 0;
-            return OrderDetailPage(orderId: orderId);
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: OrderDetailPage(orderId: orderId),
+            );
           },
         ),
-
         GoRoute(
           path: "/order-success",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final extra = state.extra;
             if (extra is Map) {
               final orderId = extra["orderId"] as int? ?? 0;
-              return OrderSuccessPage(orderId: orderId);
+              return AppRouteTransitions.buildPage(
+                state: state,
+                child: OrderSuccessPage(orderId: orderId),
+              );
             }
             final orderId =
                 int.tryParse(state.uri.queryParameters["orderId"] ?? "") ?? 0;
-            return OrderSuccessPage(orderId: orderId);
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: OrderSuccessPage(orderId: orderId),
+            );
           },
         ),
-
         GoRoute(
           path: "/order-result",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final queryOrderId =
                 int.tryParse(state.uri.queryParameters["orderId"] ?? "") ?? 0;
             final queryPaymentUrl =
@@ -178,18 +219,24 @@ class AppRouter {
               final paymentUrl = extra["paymentUrl"] as String? ?? "";
               final callbackStatus = extra["status"] as String? ?? queryStatus;
               final callbackValid = extra["valid"] as String? ?? queryValid;
-              return OrderResultPage(
-                orderId: orderId,
-                paymentUrl: paymentUrl,
-                callbackStatus: callbackStatus,
-                callbackValid: callbackValid,
+              return AppRouteTransitions.buildPage(
+                state: state,
+                child: OrderResultPage(
+                  orderId: orderId,
+                  paymentUrl: paymentUrl,
+                  callbackStatus: callbackStatus,
+                  callbackValid: callbackValid,
+                ),
               );
             }
-            return OrderResultPage(
-              orderId: queryOrderId,
-              paymentUrl: queryPaymentUrl,
-              callbackStatus: queryStatus,
-              callbackValid: queryValid,
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: OrderResultPage(
+                orderId: queryOrderId,
+                paymentUrl: queryPaymentUrl,
+                callbackStatus: queryStatus,
+                callbackValid: queryValid,
+              ),
             );
           },
         ),
@@ -209,11 +256,17 @@ class AppRouter {
           },
         ),
 
-        GoRoute(path: "/about", builder: (context, state) => const AboutPage()),
+        GoRoute(
+          path: "/about",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const AboutPage(),
+          ),
+        ),
 
         GoRoute(
           path: "/helmet-designer",
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final designId = int.tryParse(
               state.uri.queryParameters["designId"] ?? "",
             );
@@ -227,39 +280,58 @@ class AppRouter {
                 ? rawDesignViews.whereType<ProductImage>().toList()
                 : const <ProductImage>[];
 
-            return HelmetDesignerPage(
-              designId: designId,
-              initialHelmetProductId: helmetProductId is int
-                  ? helmetProductId
-                  : int.tryParse("$helmetProductId"),
-              initialProductDetailId: productDetailId is int
-                  ? productDetailId
-                  : int.tryParse("$productDetailId"),
-              initialQuantity: quantity is int
-                  ? quantity
-                  : int.tryParse("$quantity"),
-              initialHelmetName: payload["helmetName"]?.toString(),
-              initialHelmetBaseImageUrl: payload["helmetBaseImageUrl"]
-                  ?.toString(),
-              initialHelmetModel3dUrl: payload["helmetModel3dUrl"]?.toString(),
-              initialHelmetDesignViews: designViews,
+            return AppRouteTransitions.buildPage(
+              state: state,
+              child: HelmetDesignerPage(
+                designId: designId,
+                initialHelmetProductId: helmetProductId is int
+                    ? helmetProductId
+                    : int.tryParse("$helmetProductId"),
+                initialProductDetailId: productDetailId is int
+                    ? productDetailId
+                    : int.tryParse("$productDetailId"),
+                initialQuantity: quantity is int
+                    ? quantity
+                    : int.tryParse("$quantity"),
+                initialHelmetName: payload["helmetName"]?.toString(),
+                initialHelmetBaseImageUrl: payload["helmetBaseImageUrl"]
+                    ?.toString(),
+                initialHelmetModel3dUrl: payload["helmetModel3dUrl"]
+                    ?.toString(),
+                initialHelmetDesignViews: designViews,
+              ),
             );
           },
         ),
         GoRoute(
           path: "/helmet-3d",
-          builder: (context, state) => const Helmet3dViewPage(),
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const Helmet3dViewPage(),
+          ),
         ),
         GoRoute(
           path: "/helmet-try-on",
-          builder: (context, state) => const HelmetTryOnPage(),
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const HelmetTryOnPage(),
+          ),
         ),
 
         GoRoute(
           path: "/profile",
-          builder: (context, state) => const ProfilePage(),
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ProfilePage(),
+          ),
         ),
-        GoRoute(path: "/chat", builder: (context, state) => const ChatPage()),
+        GoRoute(
+          path: "/chat",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ChatPage(),
+          ),
+        ),
       ],
     );
   }

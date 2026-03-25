@@ -4,72 +4,54 @@ import ChatView from "../views/ChatView.vue";
 import LoginView from "../views/auth/LoginView.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 
-// Category pages
 import CategoryListView from "../views/categories/CategoryListView.vue";
 import CategoryCreateView from "../views/categories/CategoryCreateView.vue";
 import CategoryDetailView from "../views/categories/CategoryDetailView.vue";
 import CategoryEditView from "../views/categories/CategoryEditView.vue";
 
-// Distributor pages
 import DistributorListView from "../views/distributors/DistributorListView.vue";
 import DistributorCreateView from "../views/distributors/DistributorCreateView.vue";
 import DistributorEditView from "../views/distributors/DistributorEditView.vue";
 import DistributorDetailView from "../views/distributors/DistributorDetailView.vue";
 
-// Tier pages
-import TierListView from "../views/tiers/TierListView.vue";
-import TierCreateView from "../views/tiers/TierCreateView.vue";
-import TierEditView from "../views/tiers/TierEditView.vue";
-import TierDetailView from "../views/tiers/TierDetailView.vue";
-
-// Product pages
 import ProductListView from "../views/products/ProductListView.vue";
 import ProductCreateView from "../views/products/ProductCreateView.vue";
 import ProductEditView from "../views/products/ProductEditView.vue";
 import ProductDetailView from "../views/products/ProductDetailView.vue";
 
-// Size pages
 import SizeListView from "../views/sizes/SizeListView.vue";
 import SizeCreateView from "../views/sizes/SizeCreateView.vue";
 import SizeEditView from "../views/sizes/SizeEditView.vue";
 import SizeDetailView from "../views/sizes/SizeDetailView.vue";
 
-// Warehouse pages
 import WarehouseListView from "../views/warehouses/WarehouseListView.vue";
 import WarehouseCreateView from "../views/warehouses/WarehouseCreateView.vue";
 import WarehouseEditView from "../views/warehouses/WarehouseEditView.vue";
 import WarehouseDetailView from "../views/warehouses/WarehouseDetailView.vue";
 
-// Receipt pages
 import ReceiptListView from "../views/receipts/ReceiptListView.vue";
 import ReceiptCreateView from "../views/receipts/ReceiptCreateView.vue";
-import ReceiptEditView from "../views/receipts/ReceiptEditView.vue";
 import ReceiptDetailView from "../views/receipts/ReceiptDetailView.vue";
 
-// Order pages
 import OrderListView from "../views/orders/OrderListView.vue";
 import OrderDetailView from "../views/orders/OrderDetailView.vue";
 import OrderProductionView from "../views/orders/OrderProductionView.vue";
 
-// Sticker pages
 import SystemStickerListView from "../views/stickers/SystemStickerListView.vue";
 import SystemStickerCreateView from "../views/stickers/SystemStickerCreateView.vue";
 import SystemStickerEditView from "../views/stickers/SystemStickerEditView.vue";
 import SystemStickerDetailView from "../views/stickers/SystemStickerDetailView.vue";
 
-// Payment pages
 import PaymentListView from "../views/payments/PaymentListView.vue";
 import PaymentCreateView from "../views/payments/PaymentCreateView.vue";
 import PaymentEditView from "../views/payments/PaymentEditView.vue";
 import PaymentDetailView from "../views/payments/PaymentDetailView.vue";
 
-// Discount pages
 import DiscountListView from "../views/discounts/DiscountListView.vue";
 import DiscountCreateView from "../views/discounts/DiscountCreateView.vue";
 import DiscountEditView from "../views/discounts/DiscountEditView.vue";
 import DiscountDetailView from "../views/discounts/DiscountDetailView.vue";
 
-// User pages
 import UserListView from "../views/users/UserListView.vue";
 import UserDetailView from "../views/users/UserDetailView.vue";
 
@@ -97,7 +79,6 @@ const routes = [
         meta: { title: "Thống kê" },
       },
 
-      // Categories
       {
         path: "/categories",
         name: "categories.list",
@@ -133,7 +114,6 @@ const routes = [
         props: true,
       },
 
-      //  Distributors
       {
         path: "/distributors",
         name: "distributors.list",
@@ -168,36 +148,6 @@ const routes = [
         },
         props: true,
       },
-
-      //   Tiers
-      {
-        path: "/tiers",
-        name: "tiers.list",
-        component: TierListView,
-        meta: { title: "Câp tài khoản" },
-      },
-      {
-        path: "/tiers/create",
-        name: "tiers.create",
-        component: TierCreateView,
-        meta: { title: "Tạo cấp tài khoản" },
-      },
-      {
-        path: "/tiers/:id/edit",
-        name: "tiers.edit",
-        component: TierEditView,
-        meta: { title: "Chỉnh sửa cấp tài khoản" },
-        props: true,
-      },
-      {
-        path: "/tiers/:id",
-        name: "tiers.detail",
-        component: TierDetailView,
-        meta: { title: "Chi tiết cấp tài khoản" },
-        props: true,
-      },
-
-      // Products
       {
         path: "/products",
         name: "products.list",
@@ -224,7 +174,6 @@ const routes = [
         props: true,
       },
 
-      // Sizes
       {
         path: "/sizes",
         name: "sizes.list",
@@ -251,7 +200,6 @@ const routes = [
         props: true,
       },
 
-      // Warehouses
       {
         path: "/warehouses",
         name: "warehouses.list",
@@ -278,7 +226,6 @@ const routes = [
         props: true,
       },
 
-      // Receipts
       {
         path: "/receipts",
         name: "receipts.list",
@@ -292,12 +239,6 @@ const routes = [
         meta: { title: "Tạo phiếu nhập" },
       },
       {
-        path: "/receipts/:id/edit",
-        name: "receipts.edit",
-        component: ReceiptEditView,
-        meta: { title: "Chỉnh sửa phiếu nhập" },
-      },
-      {
         path: "/receipts/:id",
         name: "receipts.detail",
         component: ReceiptDetailView,
@@ -305,7 +246,6 @@ const routes = [
         props: true,
       },
 
-      // Payments
       {
         path: "/payments",
         name: "payments.list",
@@ -332,7 +272,6 @@ const routes = [
         props: true,
       },
 
-      // Discounts
       {
         path: "/discounts",
         name: "discounts.list",
@@ -359,7 +298,6 @@ const routes = [
         props: true,
       },
 
-      // Users
       {
         path: "/users",
         name: "users.list",
@@ -381,7 +319,6 @@ const routes = [
         meta: { title: "Hỗ trợ" },
       },
 
-      // Orders
       {
         path: "/orders",
         name: "orders.list",

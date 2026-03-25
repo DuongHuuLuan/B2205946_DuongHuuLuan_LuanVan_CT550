@@ -37,9 +37,27 @@ class CartViewmodel extends ChangeNotifier {
 
   List<CartDetail> get cartDetails => cart?.cartDetails ?? [];
   double get totalPrice => cart?.totalPrice ?? 0;
+  bool get canCheckoutCart => cart?.canCheckout ?? true;
+  bool get hasInvalidItems =>
+      cartDetails.any((element) => !element.canCheckout);
+
   Product? productForDetail(int detailId) => _productByDetailid[detailId];
   int? categoryIdForDetail(int detailId) =>
       _productByDetailid[detailId]?.categoryId;
+
+  List<CartDetail> validSelectedItems(Iterable<int> selectedIds) {
+    return cartDetails
+        .where(
+          (detail) => selectedIds.contains(detail.id) && detail.canCheckout,
+        )
+        .toList();
+  }
+
+  bool selectionHasInvalidItems(Iterable<int> selectedIds) {
+    return cartDetails
+        .where((detail) => selectedIds.contains(detail.id))
+        .any((detail) => !detail.canCheckout);
+  }
 
   Future<void> _loadProductMap() async {
     if (_productByDetailid.isNotEmpty) return;
@@ -154,6 +172,19 @@ class CartViewmodel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  String statusLabel(CartDetail item) {
+    switch (item.cartStatus) {
+      case "inactive":
+        return "Ngừng bán";
+      case "out_of_stock":
+        return "Hết hàng";
+      case "insufficient_stock":
+        return "Vượt tồn kho";
+      default:
+        return "Còn hàng";
     }
   }
 }

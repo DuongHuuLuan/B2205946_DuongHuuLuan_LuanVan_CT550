@@ -6,6 +6,7 @@ class ProductDetail {
   final int sizeId;
   final String size;
   final double price;
+  final bool isActive;
 
   ProductDetail({
     required this.id,
@@ -15,5 +16,6 @@ class ProductDetail {
     required this.sizeId,
     required this.size,
     required this.price,
+    required this.isActive,
   });
 }

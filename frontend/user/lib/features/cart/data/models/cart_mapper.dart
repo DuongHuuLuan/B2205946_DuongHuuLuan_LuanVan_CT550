@@ -7,6 +7,7 @@ class CartMapper extends Cart {
     required super.userId,
     required super.cartDetails,
     required super.totalPrice,
+    required super.canCheckout,
   });
 
   factory CartMapper.fromJson(Map<String, dynamic> json) {
@@ -16,6 +17,16 @@ class CartMapper extends Cart {
     int toInt(dynamic value) =>
         value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
 
+    bool toBool(dynamic value) {
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        final v = value.trim().toLowerCase();
+        return v == "1" || v == "true";
+      }
+      return false;
+    }
+
     return CartMapper(
       id: toInt(json["id"]),
       userId: toInt(json["user_id"]),
@@ -23,6 +34,7 @@ class CartMapper extends Cart {
           .map<CartDetail>((e) => CartDetailMapper.fromJson(e))
           .toList(),
       totalPrice: double.tryParse(json["total_price"].toString()) ?? 0,
+      canCheckout: toBool(json["can_checkout"]),
     );
   }
 }
@@ -36,6 +48,11 @@ class CartDetailMapper extends CartDetail {
     super.designPreviewImageUrl,
     required super.quantity,
     required super.productDetail,
+    required super.isActive,
+    required super.availableStock,
+    required super.cartStatus,
+    required super.statusMessage,
+    required super.canCheckout,
   });
 
   factory CartDetailMapper.fromJson(Map<String, dynamic> json) {
@@ -45,6 +62,16 @@ class CartDetailMapper extends CartDetail {
     int toInt(dynamic value) =>
         value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
 
+    bool toBool(dynamic value) {
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        final v = value.trim().toLowerCase();
+        return v == "1" || v == "true";
+      }
+      return false;
+    }
+
     return CartDetailMapper(
       id: toInt(json["id"]),
       productDetailId: toInt(json["product_detail_id"]),
@@ -53,6 +80,11 @@ class CartDetailMapper extends CartDetail {
       designPreviewImageUrl: json["design_preview_image_url"]?.toString(),
       quantity: toInt(json["quantity"]),
       productDetail: ProductDetailMapper.fromJson(productDetailJson),
+      isActive: toBool(json["is_active"]),
+      availableStock: toInt(json["available_stock"]),
+      cartStatus: json["cart_status"]?.toString() ?? "ok",
+      statusMessage: json["status_message"]?.toString(),
+      canCheckout: toBool(json["can_checkout"]),
     );
   }
 }

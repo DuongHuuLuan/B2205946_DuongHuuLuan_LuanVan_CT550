@@ -9,6 +9,7 @@ class ProductDetailMapper extends ProductDetail {
     required super.sizeId,
     required super.size,
     required super.price,
+    required super.isActive,
   });
 
   factory ProductDetailMapper.fromJson(Map<String, dynamic> json) {
@@ -16,6 +17,17 @@ class ProductDetailMapper extends ProductDetail {
     final size = (json["size"] ?? {}) as Map<String, dynamic>;
     int toInt(dynamic value) =>
         value is int ? value : int.tryParse(value?.toString() ?? "") ?? 0;
+
+    bool toBool(dynamic value) {
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        final v = value.trim().toLowerCase();
+        return v == "1" || v == "true";
+      }
+      return false;
+    }
+
     return ProductDetailMapper(
       id: toInt(json["id"]),
       colorId: toInt(color["id"]),
@@ -24,6 +36,7 @@ class ProductDetailMapper extends ProductDetail {
       sizeId: toInt(size["id"]),
       size: size["size"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0,
+      isActive: toBool(json["is_active"]),
     );
   }
 }

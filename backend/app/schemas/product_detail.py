@@ -41,10 +41,12 @@ class ProductDetailCreate(BaseModel):
     color_id: int
     size_id: int
     price: int
+    is_active: bool = True
 
 
 class ProductDetailUpdate(BaseModel):
     price: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class ProductDetailOut(BaseModel):
@@ -52,6 +54,7 @@ class ProductDetailOut(BaseModel):
     color: ColorOut
     size: SizeOut
     price: int
+    is_active: bool
 
     class Config:
         from_attributes = True

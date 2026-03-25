@@ -169,11 +169,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         : null;
 
     final priceText = (productDetail?.price ?? 0).toVnd();
-    // final inStock = availableQuantity != null && availableQuantity > 0;
     final hasResolvedStock = availableQuantity != null;
-    final isOutOfStock = hasResolvedStock && availableQuantity <= 0;
+    final isInactive = productDetail != null && !productDetail.isActive;
+    final isOutOfStock =
+        !isInactive && hasResolvedStock && (availableQuantity) <= 0;
     final canAddToCart =
-        productDetail != null && !vm.isStockLoading && !isOutOfStock;
+        productDetail != null &&
+        productDetail.isActive &&
+        !vm.isStockLoading &&
+        !isOutOfStock;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -316,6 +320,33 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             fontWeight: FontWeight.w900,
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        if (isInactive || isOutOfStock)
+                          Align(
+                            alignment:
+                                Alignment.centerLeft, // Căn lề trái cho nhãn
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isInactive
+                                    ? Colors.grey.shade300
+                                    : Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                isInactive ? "Ngừng bán" : "Hết hàng",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isInactive
+                                      ? Colors.grey.shade800
+                                      : Colors.orange.shade900,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -462,7 +493,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: productDetail == null
+                onPressed: productDetail == null || !productDetail.isActive
                     ? null
                     : () => _openHelmetDesigner(
                         p,
@@ -512,7 +543,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       }
                     : null,
                 child: Text(
-                  isOutOfStock ? "TẠM HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG",
+                  isInactive
+                      ? "NGỪNG BÁN"
+                      : isOutOfStock
+                      ? "TẠM HẾT HÀNG"
+                      : "THÊM VÀO GIỎ HÀNG",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

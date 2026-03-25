@@ -67,15 +67,29 @@
                   </td>
 
                   <td class="text-end pe-3">
+
                     <div class="d-flex justify-content-end gap-2">
+
+                      <RouterLink class="icon-btn icon-view" :to="{ name: 'warehouses.detail', params: { id: w.id } }"
+                        title="Xem chi tiết">
+                        <i class="fa-solid fa-eye"></i>
+                      </RouterLink>
+
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'warehouses.edit', params: { id: w.id } }"
-                        title="Chỉnh sửa">
+                        title="Ch?nh s?a">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(w.id)">
+                      <button
+                        class="icon-btn icon-delete"
+                        :disabled="(w.total_quantity ?? 0) > 0"
+                        :title="(w.total_quantity ?? 0) > 0 ? 'Khong the xoa: kho con hang' : 'Xoa'"
+                        @click="onDeleteClick(w)"
+                      >
                         <i class="fa-solid fa-trash"></i>
                       </button>
+
+                      
                     </div>
                   </td>
                 </tr>
@@ -180,30 +194,36 @@ watch(page, async () => {
   await fetchWarehouses();
 });
 
-async function onDeleteClick(warehouseId) {
+async function onDeleteClick(warehouse) {
+  if ((warehouse?.total_quantity ?? 0) > 0) {
+    await Swal.fire("Khong the xoa", "Kho nay van con hang.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
-    title: "Xóa kho này?",
-    text: "Không thể hoàn tác!",
+    title: "Xoa kho nay?",
+    text: "Khong the hoan tac!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Xóa",
-    cancelButtonText: "Hủy",
+    confirmButtonText: "Xoa",
+    cancelButtonText: "Huy",
   });
 
-  if (result.isConfirmed) {
-    try {
-      await WarehouseService.delete(warehouseId);
-      await fetchWarehouses();
-      Swal.fire({ title: "Xóa thành công", icon: "success" });
-    } catch (err) {
-      await Swal.fire({
-        title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
-        icon: "error",
-      });
-    }
+  if (!result.isConfirmed) return;
+
+  try {
+    await WarehouseService.delete(warehouse?.id);
+    await fetchWarehouses();
+    Swal.fire({ title: "Xoa thanh cong", icon: "success" });
+  } catch (err) {
+    await Swal.fire({
+      title: "Loi",
+      text: err?.response?.data?.message || "Khong the xoa",
+      icon: "error",
+    });
   }
 }
+
 </script>
 
 <style scoped>
@@ -220,7 +240,6 @@ async function onDeleteClick(warehouseId) {
   display: inline-block;
 }
 
-/* Badges */
 
 
 .count-badge {
@@ -230,7 +249,6 @@ async function onDeleteClick(warehouseId) {
   font-weight: 600;
 }
 
-/* Icon buttons */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -249,28 +267,38 @@ async function onDeleteClick(warehouseId) {
   border-color: var(--hover-border-color);
 }
 
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-view {
+  color: #3b82f6;
+}
+
 .icon-add {
   color: #16a34a;
 }
 
-/* green */
 .icon-edit {
   color: #f59e0b;
 }
 
-/* amber */
 .icon-delete {
   color: #ef4444;
 }
 
-/* red */
 
-/* Header add button bigger */
+
 .icon-add {
   width: 42px;
   height: 42px;
   border-radius: 1rem;
 }
 </style>
+
+
+
+
 
 

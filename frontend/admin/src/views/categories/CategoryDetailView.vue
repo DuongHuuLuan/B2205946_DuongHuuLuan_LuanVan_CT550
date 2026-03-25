@@ -14,8 +14,8 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'categories.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" @click="onDelete">
-            <i class="fa-solid fa-trash me-1"></i> Xóa
+          <button class="btn btn-outline-danger" type="button" :disabled="!canDelete" :title="!canDelete ? 'Khong the xoa: con san pham' : 'Xoa'" @click="onDelete">
+            <i class="fa-solid fa-trash me-1"></i> Xoa
           </button>
         </div>
       </div>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import CategoryService from "@/services/category.service";
@@ -62,6 +62,8 @@ const router = useRouter();
 
 const loading = ref(true);
 const category = ref(null);
+
+const canDelete = computed(() => (category.value?.products_count ?? 0) === 0);
 
 function formatDate(value) {
   if (!value) return "-";
@@ -88,20 +90,25 @@ async function fetchCategory() {
 }
 
 async function onDelete() {
+  if (!canDelete.value) {
+    await Swal.fire('Khong the xoa', 'Danh muc nay van con san pham.', 'warning');
+    return;
+  }
+
   const result = await Swal.fire({
-    title: "Xóa danh mục này?",
-    text: "Không thể hoàn tác!",
+    title: "Xoa danh muc nay?",
+    text: "Khong the hoan tac!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Xóa",
-    cancelButtonText: "Hủy",
+    confirmButtonText: "Xoa",
+    cancelButtonText: "Huy",
   });
 
   if (!result.isConfirmed) return;
 
   try {
     await CategoryService.delete(props.id);
-    await Swal.fire({ title: "Xóa thành công", icon: "success" });
+    await Swal.fire({ title: "Xoa thanh cong", icon: "success" });
     router.push({ name: "categories.list" });
   } catch (e) {
     await Swal.fire({
@@ -127,3 +134,11 @@ onMounted(fetchCategory);
   font-weight: 600;
 }
 </style>
+
+
+
+
+
+
+
+

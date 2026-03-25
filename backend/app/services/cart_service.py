@@ -89,6 +89,61 @@ class CartService(BaseService):
         )
 
     @staticmethod
+    def _resolve_cart_status(product_detail: ProductDetail, available_stock: int, quantity: int):
+        if not product_detail.is_active:
+            return {
+                "is_active": False,
+                "available_stock": available_stock,
+                "cart_status": "inactive",
+                "status_message": "Sản phẩm đã ngừng bán",
+                "can_checkout": False,
+            }
+
+        if available_stock <= 0:
+            return {
+                "is_active": True,
+                "available_stock": 0,
+                "cart_status": "out_of_stock",
+                "status_message": "Sản phẩm đã hết hàng",
+                "can_checkout": False,
+            }
+
+        if quantity > available_stock:
+            return {
+                "is_active": True,
+                "available_stock": available_stock,
+                "cart_status": "insufficient_stock",
+                "status_message": f"Chỉ còn {available_stock} sản phẩm trong kho",
+                "can_checkout": False,
+            }
+
+        return {
+            "is_active": True,
+            "available_stock": available_stock,
+            "cart_status": "ok",
+            "status_message": None,
+            "can_checkout": True,
+        }
+
+
+    @staticmethod
+    def _attach_cart_detail_status(db: Session, cart_detail: CartDetail):
+        product_detail = cart_detail.product_detail
+        available_quantity = WarehouseService.get_total_stock(db, product_detail)
+
+        status_data = CartService._resolve_cart_status(
+            product_detail=product_detail,
+            available_stock=available_quantity,
+            quantity=cart_detail.quantity,
+        )
+
+        setattr(cart_detail, "is_active", status_data["is_active"])
+        setattr(cart_detail, "available_stock", status_data["available_stock"])
+        setattr(cart_detail, "cart_status", status_data["cart_status"])
+        setattr(cart_detail, "status_message", status_data["status_message"])
+        setattr(cart_detail, "can_checkout", status_data["can_checkout"])    
+
+    @staticmethod
     def get_or_create_cart(db: Session, user_id: int):
         cart = db.query(Cart).filter(Cart.user_id == user_id).first()
         if not cart:
@@ -104,6 +159,13 @@ class CartService(BaseService):
 
         # Kiểm tra sản phẩm có tồn tại không
         product_detail = CartService.get_or_404(db, ProductDetail, cart_detail_in.product_detail_id, "Sản phẩm không tồn tại")
+
+        if not product_detail.is_active:
+            raise HTTPException(
+        status_code=400,
+        detail="Biến thể sản phẩm đã ngừng bán"
+    )
+        
         design = CartService._validate_design(
             db,
             user_id,
@@ -152,10 +214,6 @@ class CartService(BaseService):
 
     @staticmethod
     def get_cart(db: Session, user_id: int):
-        """
-        Lay thong tin gio hang + total_price
-        va gan them product_id/product_name/image_url cho tung CartDetail.
-        """
 
         cart = (
             db.query(Cart)
@@ -172,6 +230,7 @@ class CartService(BaseService):
                     .joinedload(CartDetail.product_detail)
                     .joinedload(ProductDetail.product)
                     .selectinload(Product.product_images),
+
                 selectinload(Cart.cart_details).joinedload(CartDetail.design),
             )
             .filter(Cart.user_id == user_id)
@@ -181,18 +240,28 @@ class CartService(BaseService):
         if not cart:
             cart = CartService.get_or_create_cart(db, user_id)
             setattr(cart, "total_price", 0)
+            setattr(cart, "can_checkout", True)
             return cart
 
         total = 0
+        can_checkout = True
 
         for cart_detail in cart.cart_details:
             product_detail = cart_detail.product_detail
 
             price = product_detail.price or 0
             total += price * cart_detail.quantity
+
+            CartService._attach_cart_detail_metadata(cart_detail)
+            CartService._attach_cart_detail_status(db, cart_detail)
+            
+            if not getattr(cart_detail, "can_checkout", True):
+                can_checkout = False
+
             CartService._attach_cart_detail_metadata(cart_detail)
 
         setattr(cart, "total_price", float(total))
+        setattr(cart, "can_checkout", can_checkout)
         return cart
 
     @staticmethod
@@ -206,6 +275,11 @@ class CartService(BaseService):
             raise HTTPException(status_code=404, detail="Không tìm thấy giỏ hàng")
 
         product_detail = cart_detail.product_detail
+        if not product_detail.is_active:
+            raise HTTPException(
+                status_code=400,
+                detail="Sản phẩm trong giỏ đã ngừng bán, vui lòng xóa khỏi giỏ hàng"
+                )
         available_quantity = WarehouseService.get_total_stock(db, product_detail)
         if available_quantity < new_quantity:
             raise HTTPException(status_code=400, detail=f"Kho chỉ còn {available_quantity} sản phẩm")

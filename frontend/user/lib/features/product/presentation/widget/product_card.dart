@@ -51,10 +51,23 @@ class _ProductCardState extends State<ProductCard>
   Product get _p => widget.product;
 
   // ====== UI data ======
-  List<ProductDetail> get _colors => _p.uniqueColors;
-  List<ProductDetail> get _sizes => _p.getUniqueSizesByColor(_selectedColorId);
-  ProductDetail? get _selectedProductDetail =>
-      _p.findProductDetail(_selectedColorId, _selectedSizeId);
+  List<ProductDetail> get _activeDetails =>
+      _p.productDetails.where((e) => e.isActive).toList();
+
+  List<ProductDetail> get _colors => _p.uniqueColors.where((color) {
+    return _activeDetails.any((d) => d.colorId == color.colorId);
+  }).toList();
+
+  List<ProductDetail> get _sizes => _p
+      .getUniqueSizesByColor(_selectedColorId)
+      .where((e) => e.isActive)
+      .toList();
+
+  ProductDetail? get _selectedProductDetail {
+    final detail = _p.findProductDetail(_selectedColorId, _selectedSizeId);
+    if (detail == null || !detail.isActive) return null;
+    return detail;
+  }
 
   List<_ColorThumb> get _colorThumbs {
     if (_colors.isEmpty) return [];
@@ -130,16 +143,16 @@ class _ProductCardState extends State<ProductCard>
     _selectedColorId = null;
     _selectedSizeId = null;
 
-    if (_p.productDetails.isNotEmpty) {
-      final preferredColors = _p.uniqueColors;
+    if (_activeDetails.isNotEmpty) {
+      final preferredColors = _colors;
       _selectedColorId = preferredColors.isNotEmpty
           ? preferredColors.first.colorId
-          : _p.productDetails.first.colorId;
+          : _activeDetails.first.colorId;
 
-      final preferredSizes = _p.getUniqueSizesByColor(_selectedColorId);
+      final preferredSizes = _sizes;
       _selectedSizeId = preferredSizes.isNotEmpty
           ? preferredSizes.first.sizeId
-          : _p.productDetails.first.sizeId;
+          : _activeDetails.first.sizeId;
     }
 
     _evaluateSummary = _evaluateSummaryCache[_p.id];
@@ -212,7 +225,9 @@ class _ProductCardState extends State<ProductCard>
 
     final mainUrl = _p.pickPrimaryImageUrl(_selectedColorId);
 
-    final inStock = _availableQuantity != null && _availableQuantity! > 0;
+    final isInactive = productDetail == null;
+    final inStock =
+        !isInactive && _availableQuantity != null && _availableQuantity! > 0;
     final priceText = productDetail != null
         ? productDetail.price.toVnd()
         : "Liên hệ";
@@ -269,7 +284,7 @@ class _ProductCardState extends State<ProductCard>
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: (!inStock || productDetail == null)
+                              onTap: (isInactive || !inStock)
                                   ? null
                                   : () => widget.onAddToCart?.call(
                                       _p,
@@ -309,7 +324,8 @@ class _ProductCardState extends State<ProductCard>
                         ),
                 ),
 
-                if (!_isStockLoading && !inStock) _buildOutOfStockOverlay(),
+                if (!_isStockLoading && (isInactive || !inStock))
+                  _buildStatusOverlay(isInactive: isInactive),
               ],
             ),
 
@@ -452,7 +468,7 @@ class _ProductCardState extends State<ProductCard>
     );
   }
 
-  Widget _buildOutOfStockOverlay() {
+  Widget _buildStatusOverlay({required bool isInactive}) {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
@@ -463,9 +479,9 @@ class _ProductCardState extends State<ProductCard>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             color: Colors.black54,
-            child: const Text(
-              "HẾT HÀNG",
-              style: TextStyle(
+            child: Text(
+              isInactive ? "NGỪNG BÁN" : "HẾT HÀNG",
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

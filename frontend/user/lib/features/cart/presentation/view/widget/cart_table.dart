@@ -29,7 +29,6 @@ class CartTable extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      // padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: colorScheme.surface.withOpacity(1),
         borderRadius: BorderRadius.circular(10),
@@ -39,8 +38,8 @@ class CartTable extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (isLoading && cartDetails.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(20),
+            const Padding(
+              padding: EdgeInsets.all(20),
               child: Center(child: AppLogoLoader(size: 64, strokeWidth: 3.5)),
             )
           else if (cartDetails.isEmpty)
@@ -64,6 +63,7 @@ class CartTable extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final cartDetail = cartDetails[index];
+
                 return CartRow(
                   cartDetail: cartDetail,
                   product: resolveProduct(cartDetail.productDetailId),
@@ -71,8 +71,10 @@ class CartTable extends StatelessWidget {
                   onUpdateQuantity: (quantity) =>
                       onUpdateQuantity(cartDetail.id, quantity),
                   isSelected: isSelected(cartDetail.id),
-                  onSelectedChanged: (value) =>
-                      onSelectChanged(cartDetail.id, value ?? false),
+                  onSelectedChanged: cartDetail.canCheckout
+                      ? (value) =>
+                            onSelectChanged(cartDetail.id, value ?? false)
+                      : null,
                 );
               },
             ),

@@ -208,30 +208,6 @@ watch(page, async () => {
   await fetchReceipts();
 });
 
-async function onDeleteClick(receiptId) {
-  const result = await Swal.fire({
-    title: "Xóa phiếu nhập này?",
-    text: "Không thể hoàn tác!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Xóa",
-    cancelButtonText: "Hủy",
-  });
-
-  if (result.isConfirmed) {
-    try {
-      await ReceiptService.delete(receiptId);
-      await fetchReceipts();
-      Swal.fire({ title: "Xóa thành công", icon: "success" });
-    } catch (err) {
-      await Swal.fire({
-        title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
-        icon: "error",
-      });
-    }
-  }
-}
 </script>
 
 <style scoped>
@@ -305,9 +281,6 @@ async function onDeleteClick(receiptId) {
   color: #0ea5e9;
 }
 
-.icon-delete {
-  color: #ef4444;
-}
 
 /* red */
 
@@ -330,3 +303,6 @@ async function onDeleteClick(receiptId) {
   border-radius: 1rem;
 }
 </style>
+
+
+

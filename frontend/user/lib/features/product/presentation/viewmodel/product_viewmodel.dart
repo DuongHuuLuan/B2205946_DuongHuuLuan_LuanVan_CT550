@@ -47,13 +47,49 @@ class ProductViewmodel extends ChangeNotifier {
   String get currentKeyword => _currentKeyword;
   bool get hasActiveKeyword => _currentKeyword.isNotEmpty;
 
-  List<ProductDetail> get colors => product?.uniqueColors ?? [];
-  List<ProductDetail> get sizes =>
-      product?.getUniqueSizesByColor(_selectedColorId) ?? [];
-  ProductDetail? get selectedProductDetail =>
-      product?.findProductDetail(_selectedColorId, _selectedSizeId);
+  List<ProductDetail> get activeProductDetails =>
+      product?.productDetails.where((element) => element.isActive).toList() ??
+      const [];
+  bool get hasAnyActiveDetails => activeProductDetails.isNotEmpty;
+
+  List<ProductDetail> get colors {
+    final p = product;
+    if (p == null) return const [];
+    final unique = p.uniqueColors;
+    return unique.where((color) {
+      return activeProductDetails.any((d) => d.colorId == color.colorId);
+    }).toList();
+  }
+
+  List<ProductDetail> get sizes {
+    final p = product;
+    if (p == null) return const [];
+
+    return p
+        .getUniqueSizesByColor(_selectedColorId)
+        .where((e) => e.isActive)
+        .toList();
+  }
+
+  ProductDetail? get selectedProductDetail {
+    final p = product;
+    if (p == null) return null;
+    final detail = p.findProductDetail(_selectedColorId, _selectedSizeId);
+    if (detail == null || !detail.isActive) return null;
+    return detail;
+  }
+
   List<ProductImage> get displayProductImages =>
       product?.galleryImagesForColor(_selectedColorId) ?? const [];
+
+  bool get isSelectedDetailsInactive {
+    final p = product;
+    if (p == null) return false;
+
+    final detail = p.findProductDetail(_selectedColorId, _selectedSizeId);
+    if (detail == null) return false;
+    return !detail.isActive;
+  }
 
   // góm nhóm sản phẩm theo Category (cho ProductPage)
   Map<int, List<Product>> get productsByCategory {
@@ -62,6 +98,10 @@ class ProductViewmodel extends ChangeNotifier {
       map.putIfAbsent(p.categoryId, () => []).add(p);
     }
     return map;
+  }
+
+  List<Product> _filterProductsForUser(List<Product> input) {
+    return input.where((p) => p.productDetails.any((d) => d.isActive)).toList();
   }
 
   Future<void> getAllProduct({
@@ -121,7 +161,8 @@ class ProductViewmodel extends ChangeNotifier {
         perPage: _perPage,
         keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
-      products = list;
+      products = _filterProductsForUser(list);
+
       if (list.length < _perPage) {
         _hasMore = false;
       }
@@ -148,10 +189,12 @@ class ProductViewmodel extends ChangeNotifier {
         perPage: _perPage,
         keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
+      final filtered = _filterProductsForUser(list);
+
       if (list.isEmpty) {
         _hasMore = false;
       } else {
-        products.addAll(list);
+        products.addAll(filtered);
         _page = nextPage;
         if (list.length < _perPage) {
           _hasMore = false;
@@ -181,20 +224,32 @@ class ProductViewmodel extends ChangeNotifier {
   }
 
   void _resetSelection() {
-    if (product != null && product!.productDetails.isNotEmpty) {
-      final preferredColors = product!.uniqueColors;
+    final activeDetails = activeProductDetails;
+
+    if (product != null && activeDetails.isNotEmpty) {
+      final preferredColors = colors;
+
       _selectedColorId = preferredColors.isNotEmpty
           ? preferredColors.first.colorId
-          : product!.productDetails.first.colorId;
+          : activeDetails.first.colorId;
 
-      final preferredSizes = product!.getUniqueSizesByColor(_selectedColorId);
+      final preferredSizes = sizes;
       _selectedSizeId = preferredSizes.isNotEmpty
           ? preferredSizes.first.sizeId
-          : product!.productDetails.first.sizeId;
+          : activeDetails.first.sizeId;
+
       _imgIndex = 0;
       _quantity = 1;
       _loadSelectedStock();
+      return;
     }
+
+    _selectedColorId = null;
+    _selectedSizeId = null;
+    _imgIndex = 0;
+    _quantity = 1;
+    _availableQuantity = null;
+    _stockLoading = false;
   }
 
   void selectColor(int colorId) {
@@ -233,8 +288,17 @@ class ProductViewmodel extends ChangeNotifier {
   }
 
   void updateQuantity(int delta) {
+    final detail = selectedProductDetail;
+    if (detail == null || !detail.isActive) return;
+
     final maxStock = _availableQuantity ?? 0;
     final newQuantity = _quantity + delta;
+
+    if (maxStock <= 0) {
+      _quantity = 1;
+      notifyListeners();
+      return;
+    }
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       _quantity = newQuantity;
       notifyListeners();
@@ -249,8 +313,17 @@ class ProductViewmodel extends ChangeNotifier {
       return;
     }
 
+    if (!detail.isActive) {
+      _availableQuantity = 0;
+      _stockLoading = false;
+      _quantity = 1;
+      notifyListeners();
+      return;
+    }
+
     _stockLoading = true;
     notifyListeners();
+
     try {
       final quantity = await _warehouseRepository.getTotalStock(
         productId: product!.id,

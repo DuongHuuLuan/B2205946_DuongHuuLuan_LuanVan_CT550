@@ -68,8 +68,10 @@ class ProductDetailService:
             ProductDetail.color_id == product_detail_in.color_id,
             ProductDetail.size_id == product_detail_in.size_id,
         ).first()
+
         if existing_product_detail:
             existing_product_detail.price = product_detail_in.price
+            existing_product_detail.is_active = product_detail_in.is_active
             db.commit()
             db.refresh(existing_product_detail)
             return existing_product_detail
