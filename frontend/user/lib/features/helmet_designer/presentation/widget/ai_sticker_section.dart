@@ -55,14 +55,14 @@ class AiStickerSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Nhập mô tả ngắn, chọn phong cách và màu chủ đạo. Bạn có thể gõ prompt hoặc nhấn nút mic để nói.',
+            'Nhập mô tả ngắn, chọn phong cách và màu chủ đạo. Bạn có thể nhập nội dung hoặc nhấn nút mic để nói.',
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.light.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Khi bạn nhấn nút mic, ứng dụng sẽ mở màn hình lắng nghe riêng rồi tự xử lý và tạo sticker.',
+            'Chọn Nhấn để nói ở dưới nếu bạn muốn tạo sticker bằng giọng nói, ứng dụng sẽ mở màn hình lắng nghe riêng rồi tự xử lý và tạo sticker cho bạn.',
             style: textTheme.bodySmall?.copyWith(
               color: AppColors.light.textSecondary,
             ),

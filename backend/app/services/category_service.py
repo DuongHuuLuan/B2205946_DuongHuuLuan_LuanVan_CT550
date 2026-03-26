@@ -61,7 +61,7 @@ class CategoryService(BaseService):
             query.outerjoin(Product, Product.category_id == Category.id)
             .with_entities(Category, func.count(Product.id).label("products_count"))
             .group_by(Category.id)
-            .order_by(Category.id.desc())
+            .order_by(Category.id.asc())
             .offset(skip)
             .limit(per_page)
         )

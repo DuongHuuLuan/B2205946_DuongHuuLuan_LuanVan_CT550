@@ -23,6 +23,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/o
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_orders_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_reviews_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_vouchers_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
@@ -323,6 +326,29 @@ class AppRouter {
           pageBuilder: (context, state) => AppRouteTransitions.buildPage(
             state: state,
             child: const ProfilePage(),
+          ),
+        ),
+        GoRoute(
+          path: "/profile/orders",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: ProfileOrdersPage(
+              initialFilter: state.uri.queryParameters["tab"] ?? "all",
+            ),
+          ),
+        ),
+        GoRoute(
+          path: "/profile/reviews",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ProfileReviewsPage(),
+          ),
+        ),
+        GoRoute(
+          path: "/profile/vouchers",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ProfileVouchersPage(),
           ),
         ),
         GoRoute(

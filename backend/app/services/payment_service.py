@@ -128,7 +128,7 @@ class PaymentService:
 
     @staticmethod
     def seed_payments(db: Session):
-        """Hàm này tạo dữ liệu mẫu """
+        """Hàm này tạo dữ liệu mẫu"""
         if db.query(PaymentMethod).count() == 0:
             methods = [
                 PaymentMethod(name="Thanh toán khi nhận hàng (COD)"),

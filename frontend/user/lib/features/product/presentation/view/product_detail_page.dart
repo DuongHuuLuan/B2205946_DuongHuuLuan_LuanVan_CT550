@@ -16,7 +16,9 @@ import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.da
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_image.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_repository.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/category_product_section.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
@@ -34,22 +36,63 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  static const int _relatedProductsPerPage = 12;
+  static const int _relatedProductsDisplayLimit = 6;
+
   ProductEvaluatePage? _evaluatePreview;
+  List<Product> _relatedProducts = const [];
+  bool _isPageLoading = true;
   bool _isEvaluateLoading = false;
+  bool _isRelatedProductsLoading = false;
   String? _evaluateError;
+  String? _relatedProductsError;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<ProductViewmodel>().productDetail(widget.productId);
+    Future.microtask(_loadPageData);
+  }
 
-      final cartVm = context.read<CartViewmodel>();
-      if (cartVm.cart == null && !cartVm.isLoading) {
-        cartVm.fetchCart();
-      }
+  @override
+  void didUpdateWidget(covariant ProductDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.productId == widget.productId) return;
+    Future.microtask(_loadPageData);
+  }
 
-      _loadEvaluatePreview();
+  Future<void> _loadPageData() async {
+    if (!mounted) return;
+    setState(() {
+      _isPageLoading = true;
+      _evaluatePreview = null;
+      _evaluateError = null;
+      _isEvaluateLoading = false;
+      _relatedProducts = const [];
+      _relatedProductsError = null;
+      _isRelatedProductsLoading = false;
+    });
+
+    final cartVm = context.read<CartViewmodel>();
+    if (cartVm.cart == null && !cartVm.isLoading) {
+      cartVm.fetchCart();
+    }
+
+    final vm = context.read<ProductViewmodel>();
+    await Future.wait<void>([
+      vm.productDetail(widget.productId),
+      _loadEvaluatePreview(),
+    ]);
+
+    if (!mounted) return;
+
+    final currentProduct = vm.product;
+    if (currentProduct != null && currentProduct.id == widget.productId) {
+      await _loadRelatedProducts(currentProduct);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isPageLoading = false;
     });
   }
 
@@ -66,6 +109,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _loadEvaluatePreview() async {
+    final requestProductId = widget.productId;
     if (!mounted) return;
     final repo = context.read<EvaluateRepository>();
     setState(() {
@@ -75,23 +119,65 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     try {
       final result = await repo.getProductEvaluates(
-        productId: widget.productId,
+        productId: requestProductId,
         perPage: 3,
       );
-      if (!mounted) return;
+      if (!mounted || widget.productId != requestProductId) return;
       setState(() {
         _evaluatePreview = result;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || widget.productId != requestProductId) return;
       setState(() {
         _evaluateError = e.toString();
       });
     }
-    if (!mounted) return;
+    if (!mounted || widget.productId != requestProductId) return;
     setState(() {
       _isEvaluateLoading = false;
     });
+  }
+
+  Future<void> _loadRelatedProducts(Product product) async {
+    final requestProductId = product.id;
+    setState(() {
+      _isRelatedProductsLoading = true;
+      _relatedProductsError = null;
+    });
+
+    try {
+      final items = await context.read<ProductRepository>().getAllProduct(
+        categoryId: product.categoryId,
+        page: 1,
+        perPage: _relatedProductsPerPage,
+      );
+      if (!mounted || widget.productId != requestProductId) return;
+
+      final related = items
+          .where(
+            (item) =>
+                item.id != requestProductId &&
+                item.categoryId == product.categoryId &&
+                item.productDetails.any((detail) => detail.isActive),
+          )
+          .take(_relatedProductsDisplayLimit)
+          .toList(growable: false);
+
+      setState(() {
+        _relatedProducts = related;
+      });
+    } catch (e) {
+      if (!mounted || widget.productId != requestProductId) return;
+      setState(() {
+        _relatedProducts = const [];
+        _relatedProductsError = e.toString();
+      });
+    } finally {
+      if (!mounted || widget.productId != requestProductId) return;
+      setState(() {
+        _isRelatedProductsLoading = false;
+      });
+    }
   }
 
   void _openHelmetDesigner(
@@ -121,9 +207,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final vm = context.watch<ProductViewmodel>();
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final hasCurrentProduct = vm.product?.id == widget.productId;
 
     // Trạng thái Loading
-    if (vm.isLoading && vm.product == null) {
+    if ((_isPageLoading || vm.isLoading) && !hasCurrentProduct) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Center(child: AppLogoLoader(size: 80, strokeWidth: 4)),
@@ -131,7 +218,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     // Trạng thái Lỗi
-    if (vm.errorMessage != null && vm.product == null) {
+    if (vm.errorMessage != null && !hasCurrentProduct) {
       return Scaffold(
         appBar: AppBar(title: const Text("Chi tiết sản phẩm")),
         body: Center(
@@ -145,9 +232,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 Text(vm.errorMessage!, textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: () => context
-                      .read<ProductViewmodel>()
-                      .productDetail(widget.productId),
+                  onPressed: _loadPageData,
                   icon: const Icon(Icons.refresh),
                   label: const Text("Thử lại"),
                 ),
@@ -155,6 +240,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           ),
         ),
+      );
+    }
+
+    if (!hasCurrentProduct || vm.product == null) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(child: AppLogoLoader(size: 80, strokeWidth: 4)),
       );
     }
 
@@ -464,6 +556,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     colorScheme: colorScheme,
                   ),
 
+                  _buildRelatedProductsSection(
+                    context: context,
+                    product: p,
+                    textTheme: textTheme,
+                    colorScheme: colorScheme,
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ),
@@ -574,6 +673,103 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           color: colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildRelatedProductsSection({
+    required BuildContext context,
+    required Product product,
+    required TextTheme textTheme,
+    required ColorScheme colorScheme,
+  }) {
+    if (_isRelatedProductsLoading) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: const Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: AppLogoLoader(size: 16, strokeWidth: 1.8),
+              ),
+              SizedBox(width: 12),
+              Expanded(child: Text("Đang tải sản phẩm tương tự...")),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_relatedProductsError != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.error.withOpacity(0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Không tải được sản phẩm tương tự",
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _relatedProductsError!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _loadRelatedProducts(product),
+                icon: const Icon(Icons.refresh),
+                label: const Text("Thử lại"),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_relatedProducts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
+      child: CategoryProductSection(
+        title: "Sản phẩm tương tự",
+        products: _relatedProducts,
+        onSeeMore: () =>
+            context.go('/products/categories/${product.categoryId}'),
+        onProductTap: (relatedProduct) async {
+          await context.push('/products/${relatedProduct.id}');
+          if (!mounted) return;
+          await _loadPageData();
+        },
+        onAddToCart:
+            (Product relatedProduct, ProductDetail detail, int quantity) async {
+              await context.read<CartViewmodel>().addToCart(
+                productDetailId: detail.id,
+                quantity: quantity,
+              );
+              await CartDrawer.show(context, productDetailId: detail.id);
+            },
       ),
     );
   }

@@ -2,11 +2,11 @@ import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_detail.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_card.dart';
 
 class CategoryProductSection extends StatefulWidget {
   final String title;
+  final String? bannerPath;
   final List<Product> products;
 
   final VoidCallback onSeeMore;
@@ -21,6 +21,7 @@ class CategoryProductSection extends StatefulWidget {
   const CategoryProductSection({
     super.key,
     required this.title,
+    this.bannerPath,
     required this.products,
     required this.onAddToCart,
     required this.onProductTap,
@@ -55,19 +56,19 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
     }
   }
 
-  void _scrollBy(double dx) {
-    if (!_controller.hasClients) return;
+  // void _scrollBy(double dx) {
+  //   if (!_controller.hasClients) return;
 
-    final minE = _controller.position.minScrollExtent;
-    final maxE = _controller.position.maxScrollExtent;
+  //   final minE = _controller.position.minScrollExtent;
+  //   final maxE = _controller.position.maxScrollExtent;
 
-    final target = (_controller.offset + dx).clamp(minE, maxE);
-    _controller.animateTo(
-      target,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
-  }
+  //   final target = (_controller.offset + dx).clamp(minE, maxE);
+  //   _controller.animateTo(
+  //     target,
+  //     duration: const Duration(milliseconds: 250),
+  //     curve: Curves.easeOut,
+  //   );
+  // }
 
   @override
   void initState() {
@@ -110,107 +111,144 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Expanded(
-                  child: Divider(
-                    thickness: 1, // Độ dày của đường kẻ
-                    color: Color(0xFFE0E0E0),
-                    endIndent: 16, // Khoảng cách từ đường kẻ đến chữ
-                  ),
-                ),
+                Expanded(
+                  child: widget.bannerPath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(
+                            widget.bannerPath!,
+                            height: 80,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            const Expanded(
+                              child: Divider(
+                                thickness: 1,
+                                color: Color(0xFFE0E0E0),
+                                endIndent: 16, // Khoảng cách giữa gạch và chữ
+                              ),
+                            ),
 
-                // Tiêu đề ở giữa
-                Text(
-                  widget.title
-                      .toUpperCase(), // Chuyển sang chữ in hoa nếu muốn giống ảnh
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSecondary,
-                    fontSize: 18,
-                    letterSpacing: 1, // Khoảng cách giữa các chữ cái
-                  ),
-                ),
+                            Text(
+                              widget.title.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.onSecondary,
+                                letterSpacing: 1,
+                              ),
+                            ),
 
-                // Đường gạch bên phải
-                const Expanded(
-                  child: Divider(
-                    thickness: 1,
-                    color: Color(0xFFE0E0E0),
-                    indent: 16, // Khoảng cách từ chữ đến đường kẻ
-                  ),
+                            const Expanded(
+                              child: Divider(
+                                thickness: 1,
+                                color: Color(0xFFE0E0E0),
+                                indent: 16, // Khoảng cách giữa chữ và gạch
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-
-          SizedBox(
-            height: 390,
-            child: Stack(
-              children: [
-                ListView.separated(
-                  controller: _controller,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: widget.products.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
-                  itemBuilder: (context, index) {
-                    final product = widget.products[index];
-                    return SizedBox(
-                      width: 220,
-                      child: ProductCard(
-                        product: product,
-                        onTap: () => widget.onProductTap(product),
-                        onAddToCart: (p, v, quantity) =>
-                            widget.onAddToCart(p, v, quantity),
-                      ),
-                    );
-                  },
-                ),
-
-                // Left arrow (fade)
-                Positioned(
-                  left: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IgnorePointer(
-                      ignoring: !_showLeft,
-                      child: AnimatedOpacity(
-                        opacity: _showLeft ? 1 : 0,
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        child: ArrowButton(
-                          icon: Icons.chevron_left,
-                          onTap: () => _scrollBy(-260),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Right arrow (fade)
-                Positioned(
-                  right: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IgnorePointer(
-                      ignoring: !_showRight,
-                      child: AnimatedOpacity(
-                        opacity: _showRight ? 1 : 0,
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        child: ArrowButton(
-                          icon: Icons.chevron_right,
-                          onTap: () => _scrollBy(260),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: widget.products.length > 4 ? 4 : widget.products.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.52,
             ),
+            itemBuilder: (context, index) {
+              final product = widget.products[index];
+              return ProductCard(
+                product: product,
+                onTap: () => widget.onProductTap(product),
+                onAddToCart: (p, v, quantity) =>
+                    widget.onAddToCart(p, v, quantity),
+              );
+            },
           ),
+
+          // SizedBox(
+          //   height: 380,
+          //   child: Stack(
+          //     children: [
+
+          //       // ListView.separated(
+          //       //   controller: _controller,
+          //       //   scrollDirection: Axis.horizontal,
+          //       //   padding: const EdgeInsets.symmetric(horizontal: 16),
+          //       //   itemCount: widget.products.length,
+          //       //   separatorBuilder: (_, __) => const SizedBox(width: 14),
+          //       //   itemBuilder: (context, index) {
+          //       //     final product = widget.products[index];
+          //       //     return SizedBox(
+          //       //       width: 220,
+          //       //       child: ProductCard(
+          //       //         product: product,
+          //       //         onTap: () => widget.onProductTap(product),
+          //       //         onAddToCart: (p, v, quantity) =>
+          //       //             widget.onAddToCart(p, v, quantity),
+          //       //       ),
+          //       //     );
+          //       //   },
+          //       // ),
+
+          //       // Left arrow (fade)
+          //       // Positioned(
+          //       //   left: 6,
+          //       //   top: 0,
+          //       //   bottom: 0,
+          //       //   child: Center(
+          //       //     child: IgnorePointer(
+          //       //       ignoring: !_showLeft,
+          //       //       child: AnimatedOpacity(
+          //       //         opacity: _showLeft ? 1 : 0,
+          //       //         duration: const Duration(milliseconds: 180),
+          //       //         curve: Curves.easeOut,
+          //       //         child: ArrowButton(
+          //       //           icon: Icons.chevron_left,
+          //       //           onTap: () => _scrollBy(-260),
+          //       //         ),
+          //       //       ),
+          //       //     ),
+          //       //   ),
+          //       // ),
+
+          //       // // Right arrow (fade)
+          //       // Positioned(
+          //       //   right: 6,
+          //       //   top: 0,
+          //       //   bottom: 0,
+          //       //   child: Center(
+          //       //     child: IgnorePointer(
+          //       //       ignoring: !_showRight,
+          //       //       child: AnimatedOpacity(
+          //       //         opacity: _showRight ? 1 : 0,
+          //       //         duration: const Duration(milliseconds: 180),
+          //       //         curve: Curves.easeOut,
+          //       //         child: ArrowButton(
+          //       //           icon: Icons.chevron_right,
+          //       //           onTap: () => _scrollBy(260),
+          //       //         ),
+          //       //       ),
+          //       //     ),
+          //       //   ),
+          //       // ),
+          //     ],
+          //   ),
+          // ),
           const SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.only(right: 10),

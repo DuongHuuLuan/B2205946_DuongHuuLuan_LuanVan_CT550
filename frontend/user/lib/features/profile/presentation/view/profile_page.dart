@@ -1,18 +1,15 @@
+import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/domain/evaluate.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/view/evaluate_create_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/widget/evaluate_history_section.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_edit_dialog.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/order_history_list.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_header.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_utility_grid.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_edit_dialog.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/quick_order_grid.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/voucher_section.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +23,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _selectedStatus = "pending";
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
@@ -44,29 +40,62 @@ class _ProfilePageState extends State<ProfilePage> {
     final evaluateVm = context.watch<EvaluateViewmodel>();
     final chatVm = context.watch<ChatViewmodel>();
     final profile = vm.profile;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final filteredOrders = vm.ordersByStatus(_selectedStatus);
     final completedOrders = vm.completedOrders;
+
     _scheduleEvaluateStatusSync(completedOrders, evaluateVm);
-    final vouchers = vm.availableDiscounts
-        .map(
-          (discount) => VoucherItemData(
-            code: discount.name,
-            description: discount.description.trim().isNotEmpty
-                ? discount.description.trim()
-                : "Giảm ${_formatPercent(discount.percent)}% cho đơn hàng phù hợp",
-            expiry: "HSD: ${_formatDate(discount.endAt)}",
-            longDescription:
-                "Sử dụng mã này để được giảm ngay ${_formatPercent(discount.percent)}% tổng giá trị đơn hàng. Áp dụng đến hết ngày ${_formatDate(discount.endAt)}.",
-          ),
-        )
-        .toList();
+
+    final pendingReviewCount = completedOrders
+        .where((order) => !evaluateVm.reviewedOrderIds.contains(order.id))
+        .length;
+
+    final utilities = [
+      ProfileUtilityItem(
+        icon: Icons.rate_review_outlined,
+        accentColor: Colors.black54,
+        title: "Lịch sử đánh giá",
+        subtitle: evaluateVm.total > 0
+            ? "${evaluateVm.total} đánh giá đã gửi"
+            : "Xem các nhận xét bạn đã tạo",
+        onTap: () => context.push("/profile/reviews"),
+      ),
+      ProfileUtilityItem(
+        icon: Icons.confirmation_number_outlined,
+        accentColor: Colors.black45,
+        title: "Kho voucher",
+        subtitle: vm.availableDiscounts.isEmpty
+            ? "Chưa có mã khả dụng"
+            : "${vm.availableDiscounts.length} mã đang dùng được",
+        onTap: () => context.push("/profile/vouchers"),
+      ),
+      ProfileUtilityItem(
+        icon: Icons.badge_outlined,
+        accentColor: Colors.black54,
+        title: "Chỉnh sửa hồ sơ",
+        subtitle: "Cập nhật tên, ảnh đại diện và thông tin liên hệ",
+        onTap: vm.isUpdatingProfile ? null : () => _openEditProfileDialog(auth),
+      ),
+      ProfileUtilityItem(
+        icon: Icons.chat_bubble_outline,
+        accentColor: Colors.black54,
+        title: "Trò chuyện",
+        subtitle: chatVm.unreadTotal > 0
+            ? "Bạn có tin nhắn chưa đọc từ shop"
+            : "Liên hệ shop khi cần hỗ trợ",
+        badgeText: chatVm.unreadTotal > 0
+            ? (chatVm.unreadTotal > 99 ? "99+" : "${chatVm.unreadTotal}")
+            : null,
+        onTap: () => context.push("/chat"),
+      ),
+    ];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
       appBar: AppBar(
-        title: Text("Hồ sơ cá nhân", style: TextStyle(fontSize: 20)),
+        // backgroundColor: const Color(0xFFF2593A),
+        backgroundColor: AppColors.secondary,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        title: const Text("Tài khoản"),
         leading: IconButton(
           onPressed: () {
             if (context.canPop()) {
@@ -79,13 +108,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         actions: [
           IconButton(
-            tooltip: "Liên hệ",
+            tooltip: "Trò chuyện",
             onPressed: () async {
+              final chatViewmodel = context.read<ChatViewmodel>();
               await context.push("/chat");
               if (!mounted) return;
-              await context.read<ChatViewmodel>().loadConversations(
-                silent: true,
-              );
+              await chatViewmodel.loadConversations(silent: true);
             },
             icon: Stack(
               clipBehavior: Clip.none,
@@ -105,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: colorScheme.error,
+                        color: Theme.of(context).colorScheme.error,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -113,8 +141,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ? "99+"
                             : "${chatVm.unreadTotal}",
                         textAlign: TextAlign.center,
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onError,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -124,17 +152,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           IconButton(
-            tooltip: "Tải lại",
-            onPressed: vm.isLoading
-                ? null
-                : () async {
-                    await vm.refresh();
-                    if (!mounted) return;
-                    await context.read<EvaluateViewmodel>().refresh();
-                    await context.read<ChatViewmodel>().loadConversations(
-                      silent: true,
-                    );
-                  },
+            tooltip: "Làm mới",
+            onPressed: vm.isLoading ? null : _refreshAll,
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
@@ -146,146 +165,109 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: vm.isLoading && profile == null && vm.orders.isEmpty
           ? const Center(child: AppLogoLoader(size: 80, strokeWidth: 4))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ProfileHeader(
-                    name: _pickName(vm.profile?.name, auth.user?.username),
-                    email: auth.user?.email ?? "Chưa có email",
-                    avatarUrl: _resolveAvatar(vm.profile?.avatar),
-                    onEditPressed: vm.isUpdatingProfile
-                        ? null
-                        : () => _openEditProfileDialog(auth),
-                  ),
-                  const SizedBox(height: 14),
-                  const _SectionHeader(title: "Đơn hàng của tôi"),
-                  QuickOrderGrid(
-                    items: [
-                      QuickOrderItem(
-                        icon: Icons.pending_actions,
-                        label: "Chờ xác nhận",
-                        count: vm.pendingCount,
-                        color: Colors.orange,
-                        isSelected: _selectedStatus == "pending",
-                        onTap: () => _setStatus("pending"),
-                      ),
-                      QuickOrderItem(
-                        icon: Icons.local_shipping,
-                        label: "Đang giao",
-                        count: vm.shippingCount,
-                        color: Colors.blue,
-                        isSelected: _selectedStatus == "shipping",
-                        onTap: () => _setStatus("shipping"),
-                      ),
-                      QuickOrderItem(
-                        icon: Icons.check_circle_outlined,
-                        label: "Đã giao",
-                        count: vm.completedCount,
-                        color: Colors.green,
-                        isSelected: _selectedStatus == "completed",
-                        onTap: () => _setStatus("completed"),
-                      ),
-                      QuickOrderItem(
-                        icon: Icons.cancel,
-                        label: "Đã hủy",
-                        count: vm.cancelledCount,
-                        color: Colors.red,
-                        isSelected: _selectedStatus == "cancelled",
-                        onTap: () => _setStatus("cancelled"),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  _SectionHeader(
-                    title: "Đơn hàng: ${_statusLabel(_selectedStatus)}",
-                  ),
-                  OrderHistoryList(
-                    orders: filteredOrders,
-                    onConfirmReceived: _confirmOrderReceived,
-                    confirmingOrderIds: vm.confirmingOrderIds,
-                    onCancelOrder: _cancelOrder,
-                    cancellingOrderIds: vm.cancellingOrderIds,
-                    evaluatedOrderIds: evaluateVm.reviewedOrderIds,
-                    evaluatingOrderIds: evaluateVm.creatingOrderIds,
-                    onCreateEvaluate: _openCreateEvaluate,
-                    onViewEvaluate: _openEvaluateDetail,
-                    emptyMessage:
-                        "Không có đơn hàng nào ở trạng thái ${_statusLabel(_selectedStatus).toLowerCase()}.",
-                  ),
-                  const SizedBox(height: 18),
-                  const _SectionHeader(title: "Lịch sử đơn hàng"),
-                  OrderHistoryList(
-                    orders: completedOrders,
-                    onConfirmReceived: _confirmOrderReceived,
-                    confirmingOrderIds: vm.confirmingOrderIds,
-                    onCancelOrder: _cancelOrder,
-                    cancellingOrderIds: vm.cancellingOrderIds,
-                    evaluatedOrderIds: evaluateVm.reviewedOrderIds,
-                    evaluatingOrderIds: evaluateVm.creatingOrderIds,
-                    onCreateEvaluate: _openCreateEvaluate,
-                    onViewEvaluate: _openEvaluateDetail,
-                    emptyMessage: "Bạn chưa có đơn hàng giao thành công.",
-                  ),
-                  const SizedBox(height: 18),
-                  const _SectionHeader(title: "Lịch sử đánh giá"),
-                  EvaluateHistorySection(),
-                  if (vm.errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        vm.errorMessage!,
-                        style: TextStyle(color: colorScheme.error),
+          : RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ProfileHeader(
+                      name: _pickName(vm.profile?.name, auth.user?.username),
+                      email: auth.user?.email ?? "Chưa có email",
+                      avatarUrl: _resolveAvatar(vm.profile?.avatar),
+                      supportingText: _supportingText(vm),
+                      stats: [
+                        ProfileHeaderStat(
+                          label: "Đơn đã mua",
+                          value: "${vm.orders.length}",
+                        ),
+                        ProfileHeaderStat(
+                          label: "Chờ đánh giá",
+                          value: "$pendingReviewCount",
+                        ),
+                        ProfileHeaderStat(
+                          label: "Voucher",
+                          value: "${vm.availableDiscounts.length}",
+                        ),
+                      ],
+                      onEditPressed: vm.isUpdatingProfile
+                          ? null
+                          : () => _openEditProfileDialog(auth),
+                    ),
+                    const SizedBox(height: 18),
+                    _SectionShell(
+                      title: "Đơn mua",
+                      actionLabel: "Xem lịch sử mua hàng",
+                      onActionTap: () => context.push("/profile/orders"),
+                      child: QuickOrderGrid(
+                        items: [
+                          QuickOrderItem(
+                            icon: Icons.pending_actions_outlined,
+                            label: "Chờ xác nhận",
+                            count: vm.pendingCount,
+                            color: Colors.black54,
+                            onTap: () =>
+                                context.push("/profile/orders?tab=pending"),
+                          ),
+                          QuickOrderItem(
+                            icon: Icons.local_shipping_outlined,
+                            label: "Đang giao",
+                            count: vm.shippingCount,
+                            color: Colors.black54,
+                            onTap: () =>
+                                context.push("/profile/orders?tab=shipping"),
+                          ),
+                          QuickOrderItem(
+                            icon: Icons.inventory_2_outlined,
+                            label: "Đã giao",
+                            count: vm.completedCount,
+                            color: Colors.black54,
+                            onTap: () =>
+                                context.push("/profile/orders?tab=completed"),
+                          ),
+                          QuickOrderItem(
+                            icon: Icons.star_outline_rounded,
+                            label: "Đánh giá",
+                            count: pendingReviewCount,
+                            color: Colors.black54,
+                            onTap: () =>
+                                context.push("/profile/orders?tab=review"),
+                          ),
+                        ],
                       ),
                     ),
-                  const SizedBox(height: 18),
-                  const _SectionHeader(title: "Kho mã giảm giá"),
-                  VoucherSection(items: vouchers),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Hiển thị các mã giảm giá đang còn hiệu lực để bạn áp dụng khi mua hàng.",
-                    style: textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    _SectionShell(
+                      title: "Tiện ích của tôi",
+                      child: ProfileUtilityGrid(items: utilities),
+                    ),
+                    if (vm.errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          vm.errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
     );
   }
 
-  Future<void> _confirmOrderReceived(OrderOut order) async {
-    final vm = context.read<ProfileViewmodel>();
-    try {
-      await vm.confirmOrderReceived(order.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Xác nhận nhận hàng thành công.")),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      final message = vm.errorMessage ?? "Xác nhận nhận hàng thất bại.";
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    }
-  }
-
-  Future<void> _cancelOrder(OrderOut order) async {
-    final vm = context.read<ProfileViewmodel>();
-    try {
-      await vm.cancelOrder(order.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Hủy đơn hàng thành công.")));
-    } catch (_) {
-      if (!mounted) return;
-      final message = vm.errorMessage ?? "Hủy đơn hàng thất bại.";
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    }
+  Future<void> _refreshAll() async {
+    final profileVm = context.read<ProfileViewmodel>();
+    final evaluateVm = context.read<EvaluateViewmodel>();
+    final chatVm = context.read<ChatViewmodel>();
+    await profileVm.refresh();
+    if (!mounted) return;
+    await evaluateVm.refresh();
+    await chatVm.loadConversations(silent: true);
   }
 
   void _scheduleEvaluateStatusSync(
@@ -294,141 +276,15 @@ class _ProfilePageState extends State<ProfilePage> {
   ) {
     final orderIds = completedOrders.map((e) => e.id).toList(growable: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || orderIds.isEmpty) return;
       evaluateVm.syncEvaluateStatusForOrders(orderIds);
     });
   }
 
-  Future<void> _openCreateEvaluate(OrderOut order) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => EvaluateCreatePage(orderId: order.id)),
-    );
-
-    if (result == true && mounted) {
-      await context.read<EvaluateViewmodel>().refresh();
-    }
-  }
-
-  Future<void> _openEvaluateDetail(OrderOut order) async {
-    final evaluateVm = context.read<EvaluateViewmodel>();
-    await evaluateVm.syncEvaluateStatusForOrders([order.id]);
-    final evaluateId = evaluateVm.evaluateIdForOrder(order.id);
-    if (evaluateId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Chưa tìm thấy đánh giá cho đơn hàng này."),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final evaluate = await evaluateVm.getEvaluateDetail(evaluateId);
-      if (!mounted) return;
-      await _showEvaluateDetailDialog(evaluate);
-    } catch (_) {
-      if (!mounted) return;
-      final msg = evaluateVm.errorMessage ?? "Không thể tải chi tiết đánh giá.";
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    }
-  }
-
-  Future<void> _showEvaluateDetailDialog(EvaluateItem evaluate) async {
-    final content = (evaluate.content ?? "").trim();
-    final reply = (evaluate.adminReply ?? "").trim();
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Đánh giá #EV-${evaluate.id}"),
-          content: SizedBox(
-            width: 420,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Đơn hàng #DH-${evaluate.orderId}"),
-                  const SizedBox(height: 8),
-                  Text("Số sao: ${evaluate.rate}/5"),
-                  const SizedBox(height: 8),
-                  Text(content.isEmpty ? "(Không có nội dung)" : content),
-                  if (evaluate.images.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: evaluate.images
-                          .map(
-                            (img) => ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                _resolveAvatar(img.imageUrl) ?? "",
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  width: 72,
-                                  height: 72,
-                                  color: Colors.grey.shade200,
-                                  alignment: Alignment.center,
-                                  child: const Icon(
-                                    Icons.broken_image_outlined,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (reply.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Phản hồi từ người bán",
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(reply),
-                        ],
-                      ),
-                    )
-                  else
-                    Text(
-                      "Chưa có phản hồi từ người bán.",
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                "Đóng",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  String _supportingText(ProfileViewmodel vm) {
+    final phone = (vm.profile?.phone ?? "").trim();
+    if (phone.isNotEmpty) return phone;
+    return "Cập nhật hồ sơ để nhận hỗ trợ nhanh hơn";
   }
 
   Future<void> _openEditProfileDialog(AuthViewmodel auth) async {
@@ -495,10 +351,9 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     } catch (_) {
       if (!mounted) return null;
-      const message = "Không thể chọn/chụp ảnh .";
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Không thể chọn hoặc chụp ảnh.")),
+      );
       return null;
     }
   }
@@ -528,43 +383,11 @@ class _ProfilePageState extends State<ProfilePage> {
     await auth.logout();
   }
 
-  void _setStatus(String status) {
-    if (_selectedStatus == status) return;
-    setState(() => _selectedStatus = status);
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case "pending":
-        return "Chờ xác nhận";
-      case "shipping":
-        return "Đang giao";
-      case "completed":
-        return "Đã giao";
-      case "cancelled":
-        return "Đã hủy";
-      default:
-        return status;
-    }
-  }
-
   String _pickName(String? profileName, String? username) {
     final name = (profileName ?? "").trim();
     if (name.isNotEmpty) return name;
     final fallback = (username ?? "Khách hàng").trim();
     return fallback.isEmpty ? "Khách hàng" : fallback;
-  }
-
-  String _formatPercent(double value) {
-    if (value % 1 == 0) return value.toInt().toString();
-    return value.toStringAsFixed(1);
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, "0");
-    final month = date.month.toString().padLeft(2, "0");
-    final year = date.year.toString();
-    return "$day/$month/$year";
   }
 
   String? _resolveAvatar(String? avatar) {
@@ -580,22 +403,59 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
+class _SectionShell extends StatelessWidget {
   final String title;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
+  final Widget child;
 
-  const _SectionHeader({required this.title});
+  const _SectionShell({
+    required this.title,
+    required this.child,
+    this.actionLabel,
+    this.onActionTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(
-      context,
-    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(title, style: titleStyle)],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 18,
+            color: Colors.black.withValues(alpha: 0.04),
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF253041),
+                  ),
+                ),
+              ),
+              if ((actionLabel ?? "").trim().isNotEmpty)
+                TextButton(
+                  onPressed: onActionTap,
+                  style: TextButton.styleFrom(foregroundColor: Colors.black54),
+                  child: Text(actionLabel!),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }

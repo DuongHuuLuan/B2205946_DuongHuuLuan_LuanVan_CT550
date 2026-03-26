@@ -117,16 +117,17 @@ class ProductViewmodel extends ChangeNotifier {
     _currentKeyword = keyword?.trim() ?? '';
     notifyListeners();
     try {
-      products = await _repository.getAllProduct(
+      final list = await _repository.getAllProduct(
         categoryId: categoryId,
         page: page,
         perPage: perPage,
         keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
       );
+      products = _filterProductsForUser(list);
       if (page != null || perPage != null) {
         _page = page ?? 1;
         _perPage = perPage ?? _perPage;
-        _hasMore = products.length >= _perPage;
+        _hasMore = list.length >= _perPage;
       } else {
         _page = 1;
         _hasMore = false;

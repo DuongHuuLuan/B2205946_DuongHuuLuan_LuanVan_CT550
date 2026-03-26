@@ -1,16 +1,16 @@
 ﻿import 'dart:ui';
 import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_category_image_grid.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/product_promo_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/viewmodel/cart_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/category/presentation/viewmodel/category_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/category_strip.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/circle_icon_button.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/hero_carousel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/widget/home_drawer.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product_extension.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/viewmodel/product_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/product_sections.dart';
 
@@ -22,20 +22,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final ScrollController _scrollController = ScrollController();
-  static const double _loadMoreThreshold = 300;
-  static const int _perPage = 8;
-
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     Future.microtask(() async {
-      await context.read<ProductViewmodel>().loadInitialPaged(
-        perPage: _perPage,
-      );
+      await context.read<ProductViewmodel>().getAllProduct();
       await context.read<CategoryViewModel>().load();
       final cartVm = context.read<CartViewmodel>();
       if (cartVm.cart == null && !cartVm.isLoading) {
@@ -44,18 +37,8 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
-      context.read<ProductViewmodel>().loadMoreProducts();
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  void _openCategory(BuildContext context, int categoryId) {
+    context.go('/products/categories/$categoryId');
   }
 
   @override
@@ -66,19 +49,11 @@ class _HomePageState extends State<HomePage> {
 
     final colorScheme = theme.colorScheme;
 
-    final Map<int, String> categoryThumbs = {};
-    for (final p in productVm.products) {
-      final primaryUrl = p.pickPrimaryImageUrl();
-      if (primaryUrl == null || primaryUrl.isEmpty) continue;
-      categoryThumbs.putIfAbsent(p.categoryId, () => primaryUrl);
-    }
-
     return Scaffold(
       key: _scaffoldKey,
       drawer: const HomeDrawer(),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
-        controller: _scrollController,
         slivers: [
           _HomeSliverAppBar(
             onCart: () => context.go("/cart"),
@@ -95,15 +70,60 @@ class _HomePageState extends State<HomePage> {
                 "assets/images/banner3.webp",
                 "assets/images/banner4.webp",
               ],
-              height: 220,
+              height: 300,
+            ),
+          ),
+
+          // SliverToBoxAdapter(
+          //   child: CategoryStrip(
+          //     categories: categoryVm.categories,
+          //     thumbnails: categoryThumbs,
+          //     onTap: (c) => context.go("/products/categories/${c.id}"),
+          //   ),
+          // ),
+          SliverToBoxAdapter(
+            child: ProductPromoCarousel(
+              height: 170,
+              onCategoryTap: (categoryId) => _openCategory(context, categoryId),
+              items: [
+                CategoryPromoItem(
+                  imagePath: 'assets/images/M139h.webp',
+                  categoryId: 1,
+                ),
+                CategoryPromoItem(
+                  imagePath: 'assets/images/M239-1.webp',
+                  categoryId: 2,
+                ),
+              ],
             ),
           ),
 
           SliverToBoxAdapter(
-            child: CategoryStrip(
-              categories: categoryVm.categories,
-              thumbnails: categoryThumbs,
-              onTap: (c) => context.go("/products/categories/${c.id}"),
+            child: HomeCategoryImageGrid(
+              backgroundImage: 'assets/images/bg.webp',
+              onCategoryTap: (categoryId) => _openCategory(context, categoryId),
+              items: [
+                HomeCategoryImageItem(
+                  title: 'MŨ BẢO HIỂM 1/2',
+                  image: 'assets/images/MBH_1_2.webp',
+                  categoryId: 1,
+                ),
+                HomeCategoryImageItem(
+                  title: 'MŨ BẢO HIỂM 3/4',
+                  image: 'assets/images/MBH_3_4.webp',
+                  categoryId: 2,
+                ),
+                HomeCategoryImageItem(
+                  title: 'MŨ BẢO HIỂM FULLFACE',
+                  image: 'assets/images/MBH_fullface.webp',
+                  categoryId: 3,
+                ),
+                HomeCategoryImageItem(
+                  title: 'MŨ BẢO HIỂM TRẺ EM',
+                  image: 'assets/images/MBH_KID.webp',
+                  categoryId: 5,
+                ),
+              ],
             ),
           ),
 
@@ -129,29 +149,6 @@ class _HomePageState extends State<HomePage> {
               child: ProductSections(
                 categories: categoryVm.categories,
                 products: productVm.products,
-              ),
-            ),
-          if (productVm.isLoadingMore)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppLogoLoader(size: 36, strokeWidth: 2.5),
-                      SizedBox(height: 8),
-                      Text("Đang tải"),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else if (!productVm.hasMore && productVm.products.isNotEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: Text("Đã tải hết sản phẩm")),
               ),
             ),
         ],
@@ -224,7 +221,6 @@ class _HomeSliverAppBar extends StatelessWidget {
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          // image: AssetImage("assets/images/logo.webp"),
                           image: AssetImage(
                             "assets/images/logo_royalStore2.png",
                           ),

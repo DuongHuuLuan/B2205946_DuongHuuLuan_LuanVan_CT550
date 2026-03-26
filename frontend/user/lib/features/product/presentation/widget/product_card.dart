@@ -35,12 +35,14 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard>
     with SingleTickerProviderStateMixin {
+  static const int _maxColorThumbs = 3;
   static final Map<int, ProductEvaluateSummary> _evaluateSummaryCache = {};
   static final Map<int, Future<ProductEvaluateSummary?>> _evaluateRequests = {};
 
   // Animation variables cho hiệu ứng Pulse (Phóng to/thu nhỏ)
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
+  late Animation<Offset> _floatAnimation;
 
   int? _selectedColorId;
   int? _selectedSizeId;
@@ -97,6 +99,15 @@ class _ProductCardState extends State<ProductCard>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
+    // Hiệu ứng nhấp nhô lên xuống cho icon "nhiều màu"
+    _floatAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: const Offset(0, -0.12),
+        ).animate(
+          CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+        );
+
     // Chạy lặp lại liên tục và đảo chiều (reverse) để tạo hiệu ứng nhịp tim
     _pulseController.repeat(reverse: true);
 
@@ -111,6 +122,20 @@ class _ProductCardState extends State<ProductCard>
   void dispose() {
     _pulseController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.product.id == widget.product.id) return;
+
+    _syncProductState();
+    final productId = widget.product.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.product.id != productId) return;
+      _loadStock();
+      _loadEvaluateSummary();
+    });
   }
 
   // Hàm reset lại hiệu ứng khi tương tác nếu cần
@@ -333,26 +358,33 @@ class _ProductCardState extends State<ProductCard>
             if (_colorThumbs.isNotEmpty)
               _buildSectionPadding(
                 child: SizedBox(
-                  height: 45,
+                  height: 33,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _colorThumbs.length,
+                    itemCount: _colorThumbs.length > _maxColorThumbs
+                        ? _maxColorThumbs + 1
+                        : _colorThumbs.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, i) {
+                      final hasMore = _colorThumbs.length > _maxColorThumbs;
+                      if (hasMore && i == _maxColorThumbs) {
+                        return _buildMoreColorsIndicator(colorScheme);
+                      }
+
                       final t = _colorThumbs[i];
                       final active = t.colorId == _selectedColorId;
                       return InkWell(
                         onTap: () => _selectColor(t.colorId),
                         child: Container(
-                          width: 45,
-                          height: 45,
+                          width: 33,
+                          height: 33,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: active
                                   ? colorScheme.secondary
                                   : colorScheme.outline,
-                              width: active ? 2 : 1,
+                              width: active ? 1.5 : 0.5,
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
@@ -372,15 +404,15 @@ class _ProductCardState extends State<ProductCard>
               _buildSectionPadding(
                 child: Wrap(
                   spacing: 8,
-                  runSpacing: 8,
+                  runSpacing: 4,
                   children: _sizes.map((v) {
                     final selected = v.sizeId == _selectedSizeId;
                     return InkWell(
                       onTap: () => _selectSize(v.sizeId),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
@@ -388,7 +420,7 @@ class _ProductCardState extends State<ProductCard>
                             color: selected
                                 ? colorScheme.secondary
                                 : colorScheme.outline,
-                            width: selected ? 2 : 1,
+                            width: selected ? 1.5 : 0.5,
                           ),
                         ),
                         child: Text(
@@ -485,6 +517,33 @@ class _ProductCardState extends State<ProductCard>
                 color: Colors.white,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreColorsIndicator(ColorScheme colorScheme) {
+    return SlideTransition(
+      position: _floatAnimation,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 33,
+            height: 33,
+            child: Center(
+              child: RotatedBox(
+                quarterTurns: 2, // xoay 2 lần 90 độ
+                child: Icon(
+                  Icons.change_history,
+                  size: 25,
+                  color: colorScheme.onSecondary.withOpacity(0.75),
+                ),
               ),
             ),
           ),

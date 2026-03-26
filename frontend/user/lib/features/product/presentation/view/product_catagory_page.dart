@@ -215,7 +215,7 @@ class _ProductCatagoryPageState extends State<ProductCatagoryPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 14,
-                  mainAxisExtent: 350,
+                  mainAxisExtent: 340,
                 ),
                 itemBuilder: (context, index) {
                   final product = productVm.products[index];

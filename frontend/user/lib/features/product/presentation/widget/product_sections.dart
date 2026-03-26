@@ -21,6 +21,25 @@ class ProductSections extends StatelessWidget {
     required this.products,
   });
 
+  String? _getBannerPath(Category category) {
+    switch (category.name.trim().toLowerCase()) {
+      case 'mũ bảo hiểm 1/2':
+        return 'assets/images/1-2.webp';
+      case 'mũ bảo hiểm 3/4':
+        return 'assets/images/3-4.webp';
+      case 'mũ fullface':
+        return 'assets/images/fullface.webp';
+      case 'mũ lật hàm':
+        return 'assets/images/lat_ham.png';
+      case 'mũ trẻ em':
+        return 'assets/images/tre-em.png';
+      case 'mũ xe đạp':
+        return 'assets/images/xe-dap.png';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Map<int, List<Product>> byCategory = HashMap();
@@ -35,6 +54,7 @@ class ProductSections extends StatelessWidget {
 
         return CategoryProductSection(
           title: c.name.toUpperCase(),
+          bannerPath: _getBannerPath(c),
           products: items,
           onSeeMore: () => context.go('/products/categories/${c.id}'),
           onProductTap: (p) => context.go('/products/${p.id}'),

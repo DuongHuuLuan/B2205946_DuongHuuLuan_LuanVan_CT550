@@ -46,6 +46,19 @@ flutter:
     - assets/images/banner4.webp
     - assets/images/logo_royalStore.png
     - assets/images/logo_royalStore2.png
+    - assets/images/1-2.webp
+    - assets/images/3-4.webp
+    - assets/images/fullface.webp
+    - assets/images/lat_ham.png
+    - assets/images/tre-em.png
+    - assets/images/xe-dap.png
+    - assets/images/bg.webp
+    - assets/images/MBH_1_2.webp
+    - assets/images/MBH_3_4.webp
+    - assets/images/MBH_fullface.webp
+    - assets/images/MBH_KID.webp
+    - assets/images/M139h.webp
+    - assets/images/M239-1.webp
 
 flutter_launcher_icons:
   android: "ic_launcher"
