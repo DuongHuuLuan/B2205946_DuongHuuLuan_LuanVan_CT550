@@ -158,7 +158,7 @@
                                   {{ c.name }}
                                 </option>
 
-                                <!-- Khong co mau -->
+                                <!-- Không có màu -->
                                 <option v-if="!getColorsForRow(f.value).length" value="">
                                   Không có màu
                                 </option>
@@ -185,7 +185,7 @@
                                   {{ s.size }}
                                 </option>
 
-                                <!-- Khong co size -->
+                                <!-- Không có kích thước -->
                                 <option v-if="!getSizesForRow(f.value).length" value="">
                                   Không có kích thước
                                 </option>

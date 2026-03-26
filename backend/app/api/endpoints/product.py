@@ -204,7 +204,7 @@ async def create_product(
     current_admin: User = Depends(require_admin),
 ):
     """
-    API tao san pham moi
+    API tạo sản phẩm mới
     """
     content_type = request.headers.get("content-type", "")
     if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:

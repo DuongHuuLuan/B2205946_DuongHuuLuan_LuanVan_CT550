@@ -21,7 +21,7 @@ class OpenAIImageService:
         if not settings.OPENAI_API_KEY:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="OPENAI_API_KEY chua duoc cau hinh",
+                detail="OPENAI_API_KEY chưa được cấu hình",
             )
         return {
             "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
@@ -34,7 +34,7 @@ class OpenAIImageService:
         if not model_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="OPENAI_IMAGE_MODEL chua duoc cau hinh",
+                detail="OPENAI_IMAGE_MODEL chưa được cấu hình",
             )
         return model_name
 
@@ -103,7 +103,7 @@ class OpenAIImageService:
         except httpx.HTTPError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Khong the ket noi OpenAI: {exc}",
+                detail=f"Không thể kết nối OpenAI: {exc}",
             ) from exc
 
         if response.status_code >= 400:
@@ -117,7 +117,7 @@ class OpenAIImageService:
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenAI tra ve du lieu khong hop le",
+                detail="OpenAI trả về dữ liệu không hợp lệ",
             ) from exc
 
         image_items = data.get("data") or []
@@ -125,14 +125,14 @@ class OpenAIImageService:
         if not first_image:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenAI khong tra ve anh nao",
+                detail="OpenAI không trả về ảnh nào",
             )
 
         image_base64 = first_image.get("b64_json")
         if not image_base64:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenAI khong tra ve du lieu anh hop le",
+                detail="OpenAI không trả về dữ liệu hợp lệ",
             )
 
         try:
@@ -140,7 +140,7 @@ class OpenAIImageService:
         except (binascii.Error, ValueError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Khong giai ma duoc anh tu OpenAI",
+                detail="Không giải mã được ảnh từ OpenAI",
             ) from exc
 
         background_mode = data.get("background") or first_image.get("background")

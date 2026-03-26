@@ -1,10 +1,43 @@
 import math
-from typing import Optional
+from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.payment import PaymentMethod
+from app.models.order import Order
 
 class PaymentService:
+    @staticmethod
+    def _get_blocked_payment_ids(db: Session, payment_ids: List[int]) -> set[int]:
+        if not payment_ids:
+            return set()
+
+        rows = (
+            db.query(Order.payment_method_id)
+            .filter(Order.payment_method_id.in_(payment_ids))
+            .distinct()
+            .all()
+        )
+        return {row[0] for row in rows if row[0] is not None}
+
+    @staticmethod
+    def _attach_delete_permissions(db: Session, payments: List[PaymentMethod]) -> None:
+        payment_ids = [item.id for item in payments if getattr(item, "id", None) is not None]
+        blocked_ids = PaymentService._get_blocked_payment_ids(db, payment_ids)
+
+        for payment in payments:
+            setattr(payment, "can_delete", payment.id not in blocked_ids)
+
+    @staticmethod
+    def ensure_payment_can_delete(db: Session, payment_id: int) -> PaymentMethod:
+        payment = PaymentService.get_id(db, payment_id)
+        blocked_ids = PaymentService._get_blocked_payment_ids(db, [payment_id])
+
+        if payment_id in blocked_ids:
+            raise HTTPException(status_code=400, detail="Không thể xóa phương thức thanh toán đã dùng trong đơn hàng.")
+
+        setattr(payment, "can_delete", True)
+        return payment
+
     @staticmethod
     def get_active_payments(db: Session):
         return db.query(PaymentMethod).all()
@@ -47,6 +80,7 @@ class PaymentService:
         items = (
             query.order_by(PaymentMethod.id.desc()).offset(skip).limit(per_page).all()
         )
+        PaymentService._attach_delete_permissions(db, items)
         last_page = math.ceil(total_count / per_page)
 
         return {
@@ -63,7 +97,8 @@ class PaymentService:
     def get_id(db: Session, payment_id: int):
         payment = db.query(PaymentMethod).filter(PaymentMethod.id == payment_id).first()
         if not payment:
-            raise HTTPException(status_code=404, detail="Khong tim thay phuong thuc thanh toan")
+            raise HTTPException(status_code=404, detail="Không tìm thấy phương thức thanh toán")
+        PaymentService._attach_delete_permissions(db, [payment])
         return payment
 
     @staticmethod
@@ -86,18 +121,18 @@ class PaymentService:
 
     @staticmethod
     def delete(db: Session, payment_id: int):
-        payment = PaymentService.get_id(db, payment_id)
+        payment = PaymentService.ensure_payment_can_delete(db, payment_id)
         db.delete(payment)
         db.commit()
-        return {"message": "Xoa phuong thuc thanh toan thanh cong"}
+        return {"message": "Xóa phương thức thanh toán thành công"}
 
     @staticmethod
     def seed_payments(db: Session):
-        """Ham tao du lieu mau neu chua co"""
+        """Hàm này tạo dữ liệu mẫu """
         if db.query(PaymentMethod).count() == 0:
             methods = [
-                PaymentMethod(name="Thanh toan khi nhan hang (COD)"),
-                PaymentMethod(name="Chuyen khoan VNPAY"),
+                PaymentMethod(name="Thanh toán khi nhận hàng (COD)"),
+                PaymentMethod(name="Chuyển khoản VNPAY"),
             ]
             db.add_all(methods)
             db.commit()

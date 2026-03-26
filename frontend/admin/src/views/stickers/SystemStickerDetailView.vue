@@ -64,7 +64,7 @@
                   <div class="value">{{ ownerLabel }}</div>
                 </div>
                 <div class="info-item">
-                  <div class="label">Danh mục (Category)</div>
+                  <div class="label">Danh mục</div>
                   <div class="value">{{ sticker.category || "-" }}</div>
                 </div>
                 <div class="info-item">

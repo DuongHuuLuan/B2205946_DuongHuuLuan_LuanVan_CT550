@@ -186,7 +186,7 @@ class StatisticsService:
         rows = (
             StatisticsService._apply_order_filters(
                 db.query(
-                    func.coalesce(PaymentMethod.name, "Chua chon").label("method_name"),
+                    func.coalesce(PaymentMethod.name, "Chưa chọn").label("method_name"),
                     func.count(func.distinct(Order.id)).label("count"),
                     revenue_expr.label("revenue"),
                 )
@@ -204,7 +204,7 @@ class StatisticsService:
         total_orders = sum(int(row.count or 0) for row in rows) or 1
         items = []
         for row in rows:
-            label = row.method_name or "Chua chon"
+            label = row.method_name or "Chưa chọn"
             count = int(row.count or 0)
             items.append(
                 {

@@ -14,7 +14,13 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'discounts.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" @click="onDelete">
+          <button
+            class="btn btn-outline-danger"
+            type="button"
+            :disabled="!canDelete"
+            :title="canDelete ? 'Xóa' : 'Không thể xóa'"
+            @click="onDelete"
+          >
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
@@ -62,7 +68,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import DiscountService from "@/services/discount.service";
@@ -72,6 +78,7 @@ const router = useRouter();
 
 const loading = ref(true);
 const discount = ref(null);
+const canDelete = computed(() => discount.value?.can_delete !== false);
 
 function formatDate(value) {
   if (!value) return "-";
@@ -111,6 +118,11 @@ async function fetchDiscount() {
 }
 
 async function onDelete() {
+  if (!canDelete.value) {
+    await Swal.fire("Không thể xóa", "Khuyến mãi này đang được sử dụng.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa khuyến mãi này?",
     text: "Không thể hoàn tác!",
@@ -129,7 +141,7 @@ async function onDelete() {
   } catch (e) {
     await Swal.fire({
       title: "Lỗi",
-      text: e?.response?.data?.message || "Không thể xóa",
+      text: e?.response?.data?.message || e?.response?.data?.detail || "Không thể xóa",
       icon: "error",
     });
   }

@@ -179,7 +179,7 @@ class _ProductPageState extends State<ProductPage> {
             else if (!productVm.isLoading && products.isEmpty)
               _buildEmptyState(
                 message: isSearching
-                    ? "Không tìm thấy sản phẩm phù hơp"
+                    ? "Không tìm thấy sản phẩm phù hợp"
                     : "Chưa có sản phẩm nào",
                 color: colorScheme.onSurfaceVariant,
               )

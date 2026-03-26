@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import List, Optional
 from sqlalchemy.orm import Session  
 from app.models import *
 from fastapi import HTTPException, status
@@ -8,6 +8,41 @@ from app.services.base import BaseService
 
 
 class DistributorService(BaseService):
+    @staticmethod
+    def _get_blocked_distributor_ids(db: Session, distributor_ids: List[int]) -> set[int]:
+        if not distributor_ids:
+            return set()
+
+        rows = (
+            db.query(Receipt.distributor_id)
+            .filter(Receipt.distributor_id.in_(distributor_ids))
+            .distinct()
+            .all()
+        )
+        return {row[0] for row in rows if row[0] is not None}
+
+    @staticmethod
+    def _attach_delete_permissions(db: Session, distributors: List[Distributor]) -> None:
+        distributor_ids = [item.id for item in distributors if getattr(item, "id", None) is not None]
+        blocked_ids = DistributorService._get_blocked_distributor_ids(db, distributor_ids)
+
+        for distributor in distributors:
+            setattr(distributor, "can_delete", distributor.id not in blocked_ids)
+
+    @staticmethod
+    def ensure_distributor_can_delete(db: Session, distributor_id: int) -> Distributor:
+        distributor = DistributorService.get_or_404(db, Distributor, distributor_id, "Nhà cung cấp không tồn tại")
+        blocked_ids = DistributorService._get_blocked_distributor_ids(db, [distributor_id])
+
+        if distributor_id in blocked_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Không thể xóa nhà cung cấp đã có phiếu nhập.",
+            )
+
+        setattr(distributor, "can_delete", True)
+        return distributor
+
     @staticmethod
     def create_distributor(db: Session, distributor_in: DistributorCreate):
         db_distributor = Distributor (**distributor_in.model_dump())
@@ -55,6 +90,7 @@ class DistributorService(BaseService):
         items = (
             query.order_by(Distributor.id.desc()).offset(skip).limit(per_page).all()
         )
+        DistributorService._attach_delete_permissions(db, items)
         last_page = math.ceil(total_count / per_page)
 
         return {
@@ -70,8 +106,7 @@ class DistributorService(BaseService):
     @staticmethod
     def get_id(db: Session, distributor_id: int):
         distributor = DistributorService.get_or_404(db, Distributor, distributor_id, "Nhà cung cấp không tồn tại")
-        db.commit()
-        db.refresh(distributor)
+        DistributorService._attach_delete_permissions(db, [distributor])
         return distributor
     
     @staticmethod
@@ -90,7 +125,7 @@ class DistributorService(BaseService):
 
     @staticmethod
     def delete_distributor(db: Session, distributor_id: int):
-        distributor = DistributorService.get_id(db, distributor_id)
+        distributor = DistributorService.ensure_distributor_can_delete(db, distributor_id)
 
         db.delete(distributor)
         db.commit()

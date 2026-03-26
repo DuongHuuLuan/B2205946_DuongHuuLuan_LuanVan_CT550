@@ -7,7 +7,7 @@
           <div class="small opacity-75">Quản lý danh sách phương thức</div>
         </div>
 
-        <RouterLink class="icon-btn icon-add" :to="{ name: 'payments.create' }" title="Them phuong thuc">
+        <RouterLink class="icon-btn icon-add" :to="{ name: 'payments.create' }" title="Thêm phương thức">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
@@ -63,7 +63,8 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoa" @click="onDeleteClick(p.id)">
+                      <button class="icon-btn icon-delete" :disabled="!canDelete(p)"
+                        :title="canDelete(p) ? 'Xóa' : 'Không thể xóa'" @click="onDeleteClick(p)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -127,6 +128,10 @@ const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
 
+function canDelete(payment) {
+  return payment?.can_delete !== false;
+}
+
 async function fetchPayments() {
   loading.value = true;
   try {
@@ -169,7 +174,12 @@ watch(page, async () => {
   await fetchPayments();
 });
 
-async function onDeleteClick(id) {
+async function onDeleteClick(payment) {
+  if (!canDelete(payment)) {
+    await Swal.fire("Không thể xóa", "Phương thức thanh toán này đang được sử dụng.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa phương thức thanh toán này?",
     text: "Không thể hoàn tác!",
@@ -181,13 +191,13 @@ async function onDeleteClick(id) {
 
   if (result.isConfirmed) {
     try {
-      await PaymentService.delete(id);
+      await PaymentService.delete(payment.id);
       await fetchPayments();
       Swal.fire({ title: "Xóa thành công", icon: "success" });
     } catch (err) {
       await Swal.fire({
         title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
+        text: err?.response?.data?.message || err?.response?.data?.detail || "Không thể xóa",
         icon: "error",
       });
     }
@@ -250,6 +260,11 @@ async function onDeleteClick(id) {
 
 .icon-delete {
   color: #ef4444;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .icon-add {

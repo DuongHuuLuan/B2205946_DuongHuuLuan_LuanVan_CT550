@@ -2,12 +2,46 @@ import math
 from fastapi import HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from app.models.discount import Discount, DiscountStatus
+from app.models.discount import Discount, DiscountStatus, OrderDiscount
 from typing import Dict, Iterable, List, Optional
 from datetime import datetime
 from app.services.base import BaseService
 
 class DiscountService(BaseService):
+    @staticmethod
+    def _get_blocked_discount_ids(db: Session, discount_ids: List[int]) -> set[int]:
+        if not discount_ids:
+            return set()
+
+        rows = (
+            db.query(OrderDiscount.discount_id)
+            .filter(OrderDiscount.discount_id.in_(discount_ids))
+            .distinct()
+            .all()
+        )
+        return {row[0] for row in rows if row[0] is not None}
+
+    @staticmethod
+    def _attach_delete_permissions(db: Session, discounts: List[Discount]) -> None:
+        discount_ids = [item.id for item in discounts if getattr(item, "id", None) is not None]
+        blocked_ids = DiscountService._get_blocked_discount_ids(db, discount_ids)
+
+        for discount in discounts:
+            setattr(discount, "can_delete", discount.id not in blocked_ids)
+
+    @staticmethod
+    def ensure_discount_can_delete(db: Session, discount_id: int) -> Discount:
+        discount = DiscountService.get_or_404(db, Discount, discount_id, "Không tìm thấy khuyến mãi")
+        blocked_ids = DiscountService._get_blocked_discount_ids(db, [discount_id])
+
+        if discount_id in blocked_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Không thể xóa khuyến mãi đã áp dụng cho đơn hàng.",
+            )
+
+        setattr(discount, "can_delete", True)
+        return discount
 
     @staticmethod
     def get_all(
@@ -48,6 +82,7 @@ class DiscountService(BaseService):
         items = (
             query.order_by(Discount.id.desc()).offset(skip).limit(per_page).all()
         )
+        DiscountService._attach_delete_permissions(db, items)
         last_page = math.ceil(total_count / per_page)
 
         return {
@@ -63,6 +98,7 @@ class DiscountService(BaseService):
     @staticmethod
     def get_id(db: Session, discount_id: int):
         discount = DiscountService.get_or_404(db, Discount, discount_id, "Không tìm thấy khuyến mãi")
+        DiscountService._attach_delete_permissions(db, [discount])
         return discount
 
     @staticmethod
@@ -103,7 +139,7 @@ class DiscountService(BaseService):
 
     @staticmethod
     def delete(db: Session, discount_id: int):
-        discount = DiscountService.get_id(db, discount_id)
+        discount = DiscountService.ensure_discount_can_delete(db, discount_id)
         db.delete(discount)
         db.commit()
         return {"message": "Xóa khuyến mãi thành công"}

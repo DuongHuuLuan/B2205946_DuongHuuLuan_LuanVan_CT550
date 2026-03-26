@@ -31,6 +31,7 @@ class DeliveryInfoOut(DeliveryInfoBase):
 class PaymentMethodOut(BaseModel):
     id: int
     name: str
+    can_delete: bool = True
 
     class Config:
         from_attributes = True

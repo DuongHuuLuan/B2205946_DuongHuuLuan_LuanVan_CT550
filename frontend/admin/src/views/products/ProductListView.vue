@@ -89,8 +89,12 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button v-if="p.can_delete !== false" class="icon-btn icon-delete" title="Xoá"
-                        @click="onDeleteClick(p.id)">
+                      <button
+                        class="icon-btn icon-delete"
+                        :disabled="!canDelete(p)"
+                        :title="canDelete(p) ? 'Xoá' : 'Không thể xóa'"
+                        @click="onDeleteClick(p)"
+                      >
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -156,6 +160,10 @@ const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
 
+function canDelete(product) {
+  return product?.can_delete !== false;
+}
+
 async function fetchProducts() {
   loading.value = true;
   try {
@@ -198,7 +206,16 @@ watch(page, async () => {
   await fetchProducts();
 });
 
-async function onDeleteClick(productId) {
+async function onDeleteClick(product) {
+  if (!canDelete(product)) {
+    await Swal.fire(
+      "Không thể xóa",
+      product?.delete_block_reason || "Sản phẩm này không được phép xóa.",
+      "warning"
+    );
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa sản phẩm này?",
     text: "Không thể hoàn tác!",
@@ -210,7 +227,7 @@ async function onDeleteClick(productId) {
 
   if (result.isConfirmed) {
     try {
-      await ProductService.delete(productId);
+      await ProductService.delete(product.id);
       await fetchProducts();
       Swal.fire({ title: "Xóa thành công", icon: "success" });
     } catch (err) {
@@ -300,6 +317,11 @@ async function onDeleteClick(productId) {
 /* amber */
 .icon-delete {
   color: #ef4444;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* red */

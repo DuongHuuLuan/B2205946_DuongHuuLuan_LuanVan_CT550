@@ -45,19 +45,19 @@ class DesignService(BaseService):
         if not design:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Khong tim thay thiet ke",
+                detail="Không tìm thấy thiết kế",
             )
         return design
 
     @staticmethod
     def _get_owned_design(db: Session, design_id: int, user_id: int) -> Design:
         design = DesignService._get_design_or_404(db, design_id)
-        DesignService.assert_owner(user_id, design.user_id, "Ban khong co quyen truy cap thiet ke nay")
+        DesignService.assert_owner(user_id, design.user_id, "Bạn không có quyền truy cập thiết kế này")
         return design
 
     @staticmethod
     def _ensure_product_exists(db: Session, product_id: int) -> Product:
-        return DesignService.get_or_404(db, Product, product_id, "Khong tim thay san pham")
+        return DesignService.get_or_404(db, Product, product_id, "Không tìm thấy sản phẩm")
 
     @staticmethod
     def _normalize_layers(layers: Iterable[DesignLayerIn]) -> list[tuple[int, DesignLayerIn]]:
@@ -125,7 +125,7 @@ class DesignService(BaseService):
         if design_in.id != design_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ID trong path khong khop voi ID trong body",
+                detail="ID trong path không khớp với ID trong body",
             )
 
         DesignService._ensure_product_exists(db, design_in.product_id)
@@ -184,13 +184,13 @@ class DesignService(BaseService):
             db,
             ProductDetail,
             order_in.product_detail_id,
-            "Khong tim thay bien the san pham",
+            "Không tìm thấy biến thể sản phẩm",
         )
 
         if product_detail.product_id != design.product_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Bien the san pham khong thuoc mau non cua thiet ke nay",
+                detail="Biến thế sản phẩm không thuộc mẫu nón của thiết kế này",
             )
 
         cart = CartService.add_to_cart(
@@ -214,11 +214,11 @@ class DesignService(BaseService):
         if cart_detail is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Khong the dua thiet ke vao gio hang",
+                detail="Không thể đưa thiết kế nào giỏ hàng",
             )
 
         return {
-            "message": "Da dua thiet ke vao gio hang",
+            "message": "Đã đưa thiết kế vào giỏ hàng",
             "cart_id": cart.id,
             "cart_detail_id": cart_detail.id,
             "design_id": design.id,

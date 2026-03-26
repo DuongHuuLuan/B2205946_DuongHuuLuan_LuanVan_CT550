@@ -1,6 +1,5 @@
 <template>
   <div class="row g-3">
-    <!-- Header -->
     <div class="col-12">
       <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
@@ -14,7 +13,6 @@
       </div>
     </div>
 
-    <!-- Toolbar -->
     <div class="col-12">
       <div class="card card-soft">
         <div class="card-body">
@@ -33,7 +31,6 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="col-12">
       <div class="card card-soft">
         <div class="card-body p-0">
@@ -70,12 +67,9 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button
-                        class="icon-btn icon-delete"
-                        :disabled="(c.products_count ?? 0) > 0"
-                        :title="(c.products_count ?? 0) > 0 ? 'Khong the xoa: con san pham' : 'Xoa'"
-                        @click="onDeleteClick(c)"
-                      >
+                      <button class="icon-btn icon-delete" :disabled="(c.products_count ?? 0) > 0"
+                        :title="(c.products_count ?? 0) > 0 ? 'Không thể xóa: còn sản phẩm' : 'Xóa'"
+                        @click="onDeleteClick(c)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -96,7 +90,6 @@
             </table>
           </div>
 
-          <!-- Pagination  -->
           <div class="d-flex justify-content-between align-items-center p-3 border-top" v-if="meta.total">
             <div class="small opacity-75">
               Hiển thị
@@ -184,7 +177,7 @@ watch(page, async () => {
 
 async function onDeleteClick(category) {
   if ((category?.products_count ?? 0) > 0) {
-    await Swal.fire("Khong the xoa", "Danh muc nay van con san pham.", "warning",);
+    await Swal.fire("Không thể xóa", "Danh mục này vẫn còn hàng.", "warning",);
     return;
   }
 
@@ -240,7 +233,6 @@ async function onDeleteClick(category) {
   font-weight: 600;
 }
 
-/* Icon buttons (only icons with color) */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -268,28 +260,18 @@ async function onDeleteClick(category) {
   color: #16a34a;
 }
 
-/* green */
 .icon-edit {
   color: #f59e0b;
 }
 
-/* amber */
 .icon-delete {
   color: #ef4444;
 }
 
-/* red */
 
-/* cho icon add ở header to hơn chút */
 .icon-add {
   width: 42px;
   height: 42px;
   border-radius: 1rem;
 }
 </style>
-
-
-
-
-
-

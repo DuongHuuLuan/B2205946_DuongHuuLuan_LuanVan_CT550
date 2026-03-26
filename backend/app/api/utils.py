@@ -168,10 +168,10 @@ def get_status_tone(status: str) -> str:
 
 def get_status_tag(status: str) -> str:
     status_map = {
-        OrderStatus.PENDING: "Cho xu ly",
-        ReceiptStatus.PENDING: "Cho xu ly",
-        OrderStatus.CANCELLED: "Da huy",
-        ReceiptStatus.CANCELLED: "Da huy",
-        OrderStatus.SHIPPING: "Dang giao",
+        OrderStatus.PENDING: "Chờ xử lý",
+        ReceiptStatus.PENDING: "Chờ xử lý",
+        OrderStatus.CANCELLED: "Đã hủy",
+        ReceiptStatus.CANCELLED: "Đã hủy",
+        OrderStatus.SHIPPING: "Đang giao",
     }
-    return status_map.get(status, "Hoan tat")
+    return status_map.get(status, "Hoàn tất")

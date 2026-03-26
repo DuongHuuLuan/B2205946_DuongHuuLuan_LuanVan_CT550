@@ -215,7 +215,7 @@ class StickerService(BaseService):
                 cloudinary.uploader.destroy(public_id)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Khong the luu sticker AI vao he thong",
+                detail="Không thể lưu sticker AI vào hệ thống",
             ) from exc
 
         db.refresh(sticker)

@@ -21,8 +21,8 @@ def get_discount_by_cart(
     db: Session = Depends(get_db)
 ):
     """
-    Lay danh sach cac ma giam gia goi y dua tren cac san pham trong gio hang.
-    Frontend se lay category_id tu cac item trong gio gui len.
+    Lấy danh sách các mã giảm giá gợi ý dựa trên các sản phẩm trong giỏ hàng.
+    Frontend sẽ lấy category_id từ các sản phẩm trong giỏ gửi lên.
     """
     discounts = DiscountService.get_available_discouts_for_cart(db, category_ids=category_ids)
     return discounts
@@ -30,12 +30,12 @@ def get_discount_by_cart(
 
 @router.get("/check/{code_name}", response_model=DiscountOut)
 def check_discount_code(code_name: str, db: Session = Depends(get_db)):
-    """Kiem tra ma giam gia co hop le va con han khong."""
+    """Kiểm tra mã giảm giá có hợp lệ và còn hạn không."""
     discount = DiscountService.get_valid_discount(db, code_name=code_name)
     if not discount:
         raise HTTPException(
             status_code=404,
-            detail="Ma giam gia khong ton tai, da het han hoac chua den thoi gian ap dung",
+            detail="Mã giảm giá không tồn tại, đã hết hạn hoặc chưa đến thời gian áp dụng",
         )
     return discount
 
@@ -45,7 +45,7 @@ def get_discounts_by_categories(
     category_ids: List[int] = Query(...),
     db: Session = Depends(get_db)
 ):
-    """Lay danh sach giam gia dang ap dung cho nhieu danh muc."""
+    """Lấy danh sách giảm giá đang áp dụng cho nhiều danh mục."""
     return DiscountService.get_valid_discounts_by_category_ids(db, category_ids)
 
 
@@ -59,7 +59,7 @@ def get_all_discounts(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API lấy tất cả mã giảm giá"""
+    """API lấy tất cả mã giảm giá (Yêu cầu quyền Admin)"""
     return DiscountService.get_all(db, page=page, per_page=per_page, keyword=q)
 
 
@@ -69,7 +69,7 @@ def get_discount_id(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API lấy mã giảm giá theo ID"""
+    """API lấy thông tin chi tiết mã giảm giá theo ID"""
     return DiscountService.get_id(db, discount_id)
 
 
@@ -79,7 +79,7 @@ def create_discount(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API Tạo một mã giảm giá mới"""
+    """API tạo một mã giảm giá mới"""
     return DiscountService.create(db, discount_in)
 
 
@@ -90,7 +90,7 @@ def update_discount(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API chỉnh sửa mã giảm giá"""
+    """API chỉnh sửa thông tin mã giảm giá"""
     return DiscountService.update(db, discount_id, discount_in)
 
 
@@ -100,5 +100,5 @@ def delete_discount(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API xóa mọt mã giảm giá"""
+    """API xóa một mã giảm giá"""
     return DiscountService.delete(db, discount_id)

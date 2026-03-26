@@ -30,6 +30,7 @@ class DiscountUpdate(BaseModel):
 class DiscountOut(DiscountBase):
     id: int
     status: str
+    can_delete: bool = True
     class Config: from_attributes = True
 
 class PaginationMeta(BaseModel):

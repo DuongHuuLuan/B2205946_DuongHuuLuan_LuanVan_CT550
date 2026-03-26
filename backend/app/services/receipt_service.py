@@ -108,17 +108,17 @@ class ReceiptService:
             .first()
         )
         if not receipt:
-            raise HTTPException(status_code=404, detail="Khong tim thay phieu nhap")
+            raise HTTPException(status_code=404, detail="Không tìm thấy phiếu nhập")
         return receipt
 
     @staticmethod
     def create_receipt(db: Session, receipt_in: ReceiptCreate):
         if not receipt_in.details:
-            raise HTTPException(status_code=400, detail="Chi tiet phieu nhap trong")
+            raise HTTPException(status_code=400, detail="Chi tiết phiếu nhập trống")
 
         for item in receipt_in.details:
             if item.size_id is None:
-                raise HTTPException(status_code=400, detail="Vui long chon size")
+                raise HTTPException(status_code=400, detail="Vui lòng chọn kích thước")
 
         db_receipt = Receipt(
             warehouse_id=receipt_in.warehouse_id,

@@ -14,7 +14,13 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'products.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button v-if="canDelete" class="btn btn-outline-danger" type="button" @click="onDelete">
+          <button
+            class="btn btn-outline-danger"
+            type="button"
+            :disabled="!canDelete"
+            :title="canDelete ? 'Xóa' : 'Không thể xóa'"
+            @click="onDelete"
+          >
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>

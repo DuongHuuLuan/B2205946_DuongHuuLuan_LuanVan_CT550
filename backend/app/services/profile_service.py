@@ -18,7 +18,7 @@ class ProfileService:
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Khong tim thay nguoi dung",
+                detail="Không tìm thấy người dùng",
             )
 
         profile = Profile(user_id=user.id, name=user.username)
@@ -47,7 +47,7 @@ class ProfileService:
             if not new_name:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Ten khong duoc de trong",
+                    detail="Tên không được để trống",
                 )
 
             exists = (
@@ -58,7 +58,7 @@ class ProfileService:
             if exists:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Username da ton tai",
+                    detail="Username đã tồn tại",
                 )
 
             update_data["name"] = new_name
@@ -76,7 +76,7 @@ class ProfileService:
         if not (file.content_type or "").startswith("image/"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File phai la anh",
+                detail="File phải là ảnh",
             )
 
         profile = ProfileService._get_or_create_profile(db, user_id)

@@ -140,5 +140,5 @@ def remove_sticker_background(
 ):
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Chuc nang tach nen sticker se duoc trien khai o buoc background removal service",
+        detail="Chức năng tách nền sticker sẽ được triển khai ở bước background removal service",
     )

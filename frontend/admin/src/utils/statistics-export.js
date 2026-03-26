@@ -27,7 +27,7 @@ function buildTable(section) {
           <tr>${head}</tr>
         </thead>
         <tbody>
-          ${rows || '<tr><td colspan="8">Khong co du lieu</td></tr>'}
+          ${rows || '<tr><td colspan="8">Không có dữ liệu</td></tr>'}
         </tbody>
       </table>
     </section>
@@ -104,10 +104,10 @@ function buildDocument(snapshot, title) {
         <header class="report-header">
           <h1 class="report-title">${escapeHtml(snapshot.title)}</h1>
           <p class="report-meta">Scope: ${escapeHtml(snapshot.scopeLabel)}</p>
-          <p class="report-meta">Khoang thoi gian: ${escapeHtml(snapshot.rangeLabel)}</p>
-          <p class="report-meta">Bo loc: ${escapeHtml(snapshot.subtitle)}</p>
-          <p class="report-meta">Nguon du lieu: ${escapeHtml(snapshot.dataSourceLabel)}</p>
-          <p class="report-meta">Tao luc: ${escapeHtml(snapshot.generatedAt)}</p>
+          <p class="report-meta">Khoảng thời gian: ${escapeHtml(snapshot.rangeLabel)}</p>
+          <p class="report-meta">Bộ lọc: ${escapeHtml(snapshot.subtitle)}</p>
+          <p class="report-meta">Nguồn dữ liệu: ${escapeHtml(snapshot.dataSourceLabel)}</p>
+          <p class="report-meta">Tạo lúc: ${escapeHtml(snapshot.generatedAt)}</p>
         </header>
 
         ${sections}

@@ -14,7 +14,8 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'payments.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" @click="onDelete">
+          <button class="btn btn-outline-danger" type="button" :disabled="!canDelete"
+            :title="canDelete ? 'Xóa' : 'Không thể xóa'" @click="onDelete">
             <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
@@ -44,7 +45,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import PaymentService from "@/services/payment.service";
@@ -54,6 +55,7 @@ const router = useRouter();
 
 const loading = ref(true);
 const payment = ref(null);
+const canDelete = computed(() => payment.value?.can_delete !== false);
 
 async function fetchPayment() {
   loading.value = true;
@@ -73,6 +75,11 @@ async function fetchPayment() {
 }
 
 async function onDelete() {
+  if (!canDelete.value) {
+    await Swal.fire("Không thể xóa", "Phương thức thanh toán này đang được sử dụng.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa phương thức thanh toán này?",
     text: "Không thể hoàn tác!",
@@ -91,7 +98,7 @@ async function onDelete() {
   } catch (e) {
     await Swal.fire({
       title: "Lỗi",
-      text: e?.response?.data?.message || "Không thể xóa",
+      text: e?.response?.data?.message || e?.response?.data?.detail || "Không thể xóa",
       icon: "error",
     });
   }

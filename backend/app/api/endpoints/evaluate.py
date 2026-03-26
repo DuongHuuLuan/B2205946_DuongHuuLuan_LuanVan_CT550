@@ -38,7 +38,7 @@ def _upload_evaluate_images_to_cloudinary(files: List[UploadFile]) -> List[dict]
             if not image_url:
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="Cloudinary khÃ´ng tráº£ vá» URL áº£nh há»£p lá»‡",
+                    detail="Cloudinary không trả về ảnh hợp lệ",
                 )
             uploaded_images.append({"url": image_url, "public_id": public_id})
             if public_id:
@@ -58,7 +58,7 @@ def _upload_evaluate_images_to_cloudinary(files: List[UploadFile]) -> List[dict]
                 pass
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"KhÃ´ng thá»ƒ táº£i áº£nh Ä‘Ã¡nh giÃ¡ lÃªn Cloudinary: {exc}",
+            detail=f"Không thể tải ảnh đánh giá lên Cloudinary: {exc}",
         ) from exc
 
     return uploaded_images

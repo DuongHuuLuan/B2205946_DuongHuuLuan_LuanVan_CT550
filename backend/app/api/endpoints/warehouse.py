@@ -24,20 +24,20 @@ def get_all(
     db: Session = Depends(get_db),
 ):
     """
-    API lay danh sach kho hang
+    API lấy danh sách kho hàng
     """
     return WarehouseService.get_all(db, page=page, per_page=per_page, keyword=q)
 
 
 @router.get("/product-quantity", response_model=ProductQuantityOut)
 def get_product_quantity(
-    product_id: int = Query(..., description="ID cua san pham"),
-    size_id: int = Query(..., description="ID cua kich thuoc"),
-    color_id: int = Query(..., description="ID cua mau sac"),
+    product_id: int = Query(..., description="ID của sản phẩm"),
+    size_id: int = Query(..., description="ID của kích thước"),
+    color_id: int = Query(..., description="ID của màu sắc"),
     db: Session = Depends(get_db),
 ):
     """
-    API lay tong so luong ton kho cua mot bien the san pham
+    API lấy tổng số lượng tồn kho của một biến thể sản phẩm
     """
     quantity = WarehouseService.get_quantity_product_detail_id(
         db, product_id=product_id, size_id=size_id, color_id=color_id
@@ -56,7 +56,7 @@ def get_warehouse(
     db: Session = Depends(get_db),
 ):
     """
-    API lay thong tin mot kho
+    API lấy thông tin một kho hàng
     """
     return WarehouseService.get_id(db, warehouse_id=warehouse_id)
 
@@ -71,7 +71,7 @@ def get_warehouse_detail(
     db: Session = Depends(get_db),
 ):
     """
-    API lay danh sach ton kho theo kho
+    API lấy danh sách tồn kho chi tiết theo từng kho
     """
     return WarehouseService.get_warehouse_detail(
         db,
@@ -89,7 +89,7 @@ def create_warehouse(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API tao mot kho moi"""
+    """API tạo một kho mới (Yêu cầu quyền Admin)"""
     return WarehouseService.create_warehouse(db, warehouse_in)
 
 
@@ -100,7 +100,7 @@ def update_warehouse(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API cap nhat thong tin kho"""
+    """API cập nhật thông tin kho hàng"""
     return WarehouseService.update_warehouse(db, warehouse_id, warehouse_in)
 
 
@@ -110,5 +110,5 @@ def delete_warehouse(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    """API xoa kho (chi xoa kho rong)"""
+    """API xóa kho hàng (chỉ xóa được nếu kho đang trống)"""
     return WarehouseService.delete_warehouse(db, warehouse_id)

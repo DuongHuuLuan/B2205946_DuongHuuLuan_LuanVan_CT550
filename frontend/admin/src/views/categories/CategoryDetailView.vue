@@ -14,8 +14,9 @@
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'categories.edit', params: { id } }">
             <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
-          <button class="btn btn-outline-danger" type="button" :disabled="!canDelete" :title="!canDelete ? 'Khong the xoa: con san pham' : 'Xoa'" @click="onDelete">
-            <i class="fa-solid fa-trash me-1"></i> Xoa
+          <button class="btn btn-outline-danger" type="button" :disabled="!canDelete"
+            :title="!canDelete ? 'Không thể xóa: còn sản phẩm' : 'Xóa'" @click="onDelete">
+            <i class="fa-solid fa-trash me-1"></i> Xóa
           </button>
         </div>
       </div>
@@ -91,24 +92,24 @@ async function fetchCategory() {
 
 async function onDelete() {
   if (!canDelete.value) {
-    await Swal.fire('Khong the xoa', 'Danh muc nay van con san pham.', 'warning');
+    await Swal.fire('Không thể xóa', 'Danh mục này vẫn còn sản phẩm.', 'warning');
     return;
   }
 
   const result = await Swal.fire({
-    title: "Xoa danh muc nay?",
-    text: "Khong the hoan tac!",
+    title: "Xóa danh mục này?",
+    text: "Không thể hoàn tác!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Xoa",
-    cancelButtonText: "Huy",
+    confirmButtonText: "Xóa",
+    cancelButtonText: "Hủy",
   });
 
   if (!result.isConfirmed) return;
 
   try {
     await CategoryService.delete(props.id);
-    await Swal.fire({ title: "Xoa thanh cong", icon: "success" });
+    await Swal.fire({ title: "Xóa thành công", icon: "success" });
     router.push({ name: "categories.list" });
   } catch (e) {
     await Swal.fire({
@@ -134,11 +135,3 @@ onMounted(fetchCategory);
   font-weight: 600;
 }
 </style>
-
-
-
-
-
-
-
-

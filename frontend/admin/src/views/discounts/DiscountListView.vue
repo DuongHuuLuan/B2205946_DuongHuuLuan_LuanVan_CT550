@@ -92,7 +92,8 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(d.id)">
+                      <button class="icon-btn icon-delete" :disabled="!canDelete(d)"
+                        :title="canDelete(d) ? 'Xoá' : 'Không thể xóa'" @click="onDeleteClick(d)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -156,6 +157,10 @@ const perPage = 8;
 const items = ref([]);
 const meta = ref({ current_page: 1, per_page: perPage, total: 0, last_page: 1 });
 const loading = ref(false);
+
+function canDelete(discount) {
+  return discount?.can_delete !== false;
+}
 
 function statusLabel(status) {
   switch (status) {
@@ -233,7 +238,12 @@ watch(page, async () => {
   await fetchDiscounts();
 });
 
-async function onDeleteClick(id) {
+async function onDeleteClick(discount) {
+  if (!canDelete(discount)) {
+    await Swal.fire("Không thể xóa", "Khuyến mãi này đang được sử dụng.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa khuyến mãi này?",
     text: "Không thể hoàn tác!",
@@ -245,13 +255,13 @@ async function onDeleteClick(id) {
 
   if (result.isConfirmed) {
     try {
-      await DiscountService.delete(id);
+      await DiscountService.delete(discount.id);
       await fetchDiscounts();
       Swal.fire({ title: "Xóa thành công", icon: "success" });
     } catch (err) {
       await Swal.fire({
         title: "Lỗi",
-        text: err?.response?.data?.message || "Không thể xóa",
+        text: err?.response?.data?.message || err?.response?.data?.detail || "Không thể xóa",
         icon: "error",
       });
     }
@@ -333,11 +343,14 @@ async function onDeleteClick(id) {
   color: #ef4444;
 }
 
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .icon-add {
   width: 42px;
   height: 42px;
   border-radius: 1rem;
 }
 </style>
-
-

@@ -78,7 +78,8 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoá" @click="onDeleteClick(s.id)">
+                      <button class="icon-btn icon-delete" :disabled="!canDelete(s)"
+                        :title="canDelete(s) ? 'Xoá' : 'Không thể xóa'" @click="onDeleteClick(s)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -142,6 +143,10 @@ const meta = ref({ current_page: 1, per_page: 10, total: 0, last_page: 1 });
 const items = ref([]);
 const loading = ref(false);
 
+function canDelete(distributor) {
+  return distributor?.can_delete !== false;
+}
+
 async function fetchDistributors() {
   loading.value = true;
   try {
@@ -186,7 +191,12 @@ watch(page, async () => {
   await fetchDistributors();
 });
 
-async function onDeleteClick(id) {
+async function onDeleteClick(distributor) {
+  if (!canDelete(distributor)) {
+    await Swal.fire("Không thể xóa", "Nhà cung cấp này đang được sử dụng.", "warning");
+    return;
+  }
+
   const result = await Swal.fire({
     title: "Xóa nhà cung cấp này?",
     text: "Không thể hoàn tác!",
@@ -199,13 +209,13 @@ async function onDeleteClick(id) {
   if (!result.isConfirmed) return;
 
   try {
-    await DistributorService.delete(id);
+    await DistributorService.delete(distributor.id);
     await fetchDistributors();
     Swal.fire({ title: "Xóa thành công", icon: "success" });
   } catch (e) {
     await Swal.fire({
       title: "Lỗi",
-      text: e?.response?.data?.message || "Không thể xóa",
+      text: e?.response?.data?.message || e?.response?.data?.detail || "Không thể xóa",
       icon: "error",
     });
   }
@@ -265,5 +275,10 @@ async function onDeleteClick(id) {
 
 .icon-delete {
   color: #ef4444;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

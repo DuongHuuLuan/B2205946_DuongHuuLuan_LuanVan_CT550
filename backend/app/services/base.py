@@ -2,7 +2,6 @@ from typing import Type, TypeVar, Any
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-# Định nghĩa TypeVar để hàm có thể nhận diện bất kỳ Model nào (Conversation, Message, User...)
 ModelType = TypeVar("ModelType")
 
 class BaseService:

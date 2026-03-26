@@ -86,7 +86,7 @@ class WarehouseService:
     def get_id(db: Session, warehouse_id: int):
         warehouse = db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
         if not warehouse:
-            raise HTTPException(status_code=404, detail="Kho khong ton tai")
+            raise HTTPException(status_code=404, detail="Kho không tồn tại")
 
         summary = db.query(
             func.count(func.distinct(WarehouseDetail.product_id)).label("products_count"),
@@ -98,77 +98,7 @@ class WarehouseService:
         setattr(warehouse, "pending_quantity", 0)
         return warehouse
 
-    # @staticmethod
-    # def get_warehouse_detail(
-    #     db: Session,
-    #     warehouse_id: int,
-    #     page: int = 1,
-    #     per_page: Optional[int] = None,
-    #     keyword: str = None,
-    #     category_id: Optional[int] = None,
-    # ):
-    #     warehouse = WarehouseService.get_id(db, warehouse_id)
-
-    #     detail_query = db.query(WarehouseDetail).filter(
-    #         WarehouseDetail.warehouse_id == warehouse_id
-    #     )
-    #     if keyword or category_id is not None:
-    #         detail_query = detail_query.join(
-    #             Product, WarehouseDetail.product_id == Product.id
-    #         )
-    #     if keyword:
-    #         detail_query = detail_query.filter(Product.name.ilike(f"%{keyword}%"))
-    #     if category_id is not None:
-    #         detail_query = detail_query.filter(Product.category_id == category_id)
-
-    #     total_count = detail_query.count()
-    #     if total_count == 0:
-    #         return {
-    #             "warehouse": warehouse,
-    #             "items": [],
-    #             "meta": {
-    #                 "total": 0,
-    #                 "current_page": 1,
-    #                 "per_page": per_page or 0,
-    #                 "last_page": 1,
-    #             },
-    #         }
-
-    #     if per_page is None:
-    #         per_page = total_count
-    #         page = 1
-    #     else:
-    #         if per_page < 1:
-    #             per_page = 1
-    #         if page < 1:
-    #             page = 1
-
-    #     skip = (page - 1) * per_page
-    #     items = (
-    #         detail_query.options(
-    #             joinedload(WarehouseDetail.product).joinedload(Product.category),
-    #             joinedload(WarehouseDetail.product).joinedload(Product.product_images),
-    #             joinedload(WarehouseDetail.product).joinedload(Product.product_details),
-    #             joinedload(WarehouseDetail.color),
-    #             joinedload(WarehouseDetail.size),
-    #         )
-    #         .order_by(WarehouseDetail.id.desc())
-    #         .offset(skip)
-    #         .limit(per_page)
-    #         .all()
-    #     )
-
-    #     last_page = math.ceil(total_count / per_page)
-    #     return {
-    #         "warehouse": warehouse,
-    #         "items": items,
-    #         "meta": {
-    #             "total": total_count,
-    #             "current_page": page,
-    #             "per_page": per_page,
-    #             "last_page": last_page,
-    #         },
-    #     }
+    
     @staticmethod
     def get_warehouse_detail(
         db: Session,
@@ -284,11 +214,11 @@ class WarehouseService:
             .first()
         )
         if has_stock:
-            raise HTTPException(status_code=400, detail="Khong the xoa kho dang con hang")
+            raise HTTPException(status_code=400, detail="Không thể xóa kho đang còn hàng")
 
         db.delete(warehouse)
         db.commit()
-        return {"message": "Da xoa kho thanh cong"}
+        return {"message": "Đã xóa kho thành công"}
 
     @staticmethod
     def get_quantity_product_detail_id(
@@ -344,7 +274,7 @@ class WarehouseService:
                 stock.quantity = 0
 
         if remaining > 0:
-            raise HTTPException(status_code=400, detail="Khong du hang trong kho")
+            raise HTTPException(status_code=400, detail="Không đủ hàng trong kho")
 
     @staticmethod
     def increase_stock(db: Session, product_detail: ProductDetail, quantity: int):
@@ -367,7 +297,7 @@ class WarehouseService:
 
         warehouse = db.query(Warehouse).order_by(Warehouse.id.asc()).first()
         if not warehouse:
-            raise HTTPException(status_code=400, detail="Khong co kho de hoan hang")
+            raise HTTPException(status_code=400, detail="Không còn kho để hoàn hàng")
 
         new_stock = WarehouseDetail(
             warehouse_id=warehouse.id,

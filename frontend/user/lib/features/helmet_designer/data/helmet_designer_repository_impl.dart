@@ -50,7 +50,7 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
         data["transcript"]?.toString().trim() ??
         "";
     if (prompt.isEmpty) {
-      throw StateError("Backend khong tra ve prompt hop le.");
+      throw StateError("Backend không trả về prompt hợp lệ.");
     }
     return prompt;
   }
@@ -96,7 +96,7 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
     final data = _extractMap(response.data);
     final shareUrl = data["share_url"]?.toString() ?? data["url"]?.toString();
     if (shareUrl == null || shareUrl.isEmpty) {
-      throw StateError("Backend khong tra ve share_url hop le.");
+      throw StateError("Backend không trả về share_url hợp lệ.");
     }
     return shareUrl;
   }
@@ -155,7 +155,9 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
   List<Map<String, dynamic>> _toMapList(List items) {
     return items
         .whereType<Map>()
-        .map((item) => item.map((key, value) => MapEntry(key.toString(), value)))
+        .map(
+          (item) => item.map((key, value) => MapEntry(key.toString(), value)),
+        )
         .toList();
   }
 }

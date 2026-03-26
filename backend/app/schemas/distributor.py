@@ -12,6 +12,7 @@ class DistributorCreate(DistributorBase):
 
 class DistributorOut(DistributorBase):
     id: int
+    can_delete: bool = True
 
     class Config:
         from_attributes = True

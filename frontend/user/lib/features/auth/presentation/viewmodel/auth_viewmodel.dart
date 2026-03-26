@@ -15,11 +15,11 @@ class AuthViewmodel extends ChangeNotifier {
   }
 
   User? get user => _user;
-  // kiểm tra xem người dùng đã đăn nhập chưa
+  // kiểm tra xem người dùng đã đăng nhập chưa
   bool get isAuthenticated => _user != null;
   bool get isInitialized => _isInitialized;
 
-  // hàm khởi tạo kiểm tra trạng thía đăng nhập từ ổ cứng
+  // hàm khởi tạo kiểm tra trạng thái đăng nhập từ ổ cứng
   Future<void> _initAuth() async {
     try {
       debugPrint("AuthViewModel: bắt đầu khởi động");

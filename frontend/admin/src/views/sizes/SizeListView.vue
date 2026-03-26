@@ -1,19 +1,13 @@
 <template>
   <div class="row g-3">
     <div class="col-12">
-      <div
-        class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
-      >
+      <div class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row">
         <div>
-          <h4 class="mb-1">Kich thuoc</h4>
-          <div class="small opacity-75">Quan ly danh sach kich thuoc</div>
+          <h4 class="mb-1">Kích thước</h4>
+          <div class="small opacity-75">Quản lý danh sách kích thước</div>
         </div>
 
-        <RouterLink
-          class="icon-btn icon-add"
-          :to="{ name: 'sizes.create' }"
-          title="Them kich thuoc"
-        >
+        <RouterLink class="icon-btn icon-add" :to="{ name: 'sizes.create' }" title="Thêm kích thước">
           <i class="fa-solid fa-circle-plus"></i>
         </RouterLink>
       </div>
@@ -24,12 +18,12 @@
         <div class="card-body">
           <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-5">
-              <SearchToggle v-model="keyword" placeholder="Tim theo kich thuoc..." />
+              <SearchToggle v-model="keyword" placeholder="Tìm theo kích thước..." />
             </div>
 
             <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2">
               <span class="badge bg-secondary-subtle text-secondary align-self-center">
-                Tong: {{ filteredItems.length }}
+                Tổng: {{ filteredItems.length }}
               </span>
             </div>
           </div>
@@ -44,9 +38,9 @@
             <table class="table table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th class="ps-3" style="width: 140px">Ma size</th>
+                  <th class="ps-3" style="width: 140px">Mã kích thước</th>
                   <th>Gia tri</th>
-                  <th class="text-end pe-3" style="width: 160px">Thao tac</th>
+                  <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
 
@@ -56,28 +50,18 @@
                     <span class="code-pill">S{{ s.id }}</span>
                   </td>
                   <td class="ps-3">
-                    <RouterLink
-                      class="name-link"
-                      :to="{ name: 'sizes.detail', params: { id: s.id } }"
-                    >
+                    <RouterLink class="name-link" :to="{ name: 'sizes.detail', params: { id: s.id } }">
                       <div class="fw-semibold">{{ s.size }}</div>
                     </RouterLink>
                   </td>
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
-                      <RouterLink
-                        class="icon-btn icon-edit"
-                        :to="{ name: 'sizes.edit', params: { id: s.id } }"
-                        title="Chinh sua"
-                      >
+                      <RouterLink class="icon-btn icon-edit" :to="{ name: 'sizes.edit', params: { id: s.id } }"
+                        title="Chinh sua">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button
-                        class="icon-btn icon-delete"
-                        title="Xoa"
-                        @click="onDeleteClick(s.id)"
-                      >
+                      <button class="icon-btn icon-delete" title="Xoa" @click="onDeleteClick(s.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -215,5 +199,3 @@ onMounted(fetchSizes);
   border-radius: 1rem;
 }
 </style>
-
-

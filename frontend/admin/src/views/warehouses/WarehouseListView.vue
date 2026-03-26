@@ -76,20 +76,17 @@
                       </RouterLink>
 
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'warehouses.edit', params: { id: w.id } }"
-                        title="Ch?nh s?a">
+                        title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button
-                        class="icon-btn icon-delete"
-                        :disabled="(w.total_quantity ?? 0) > 0"
-                        :title="(w.total_quantity ?? 0) > 0 ? 'Khong the xoa: kho con hang' : 'Xoa'"
-                        @click="onDeleteClick(w)"
-                      >
+                      <button class="icon-btn icon-delete" :disabled="(w.total_quantity ?? 0) > 0"
+                        :title="(w.total_quantity ?? 0) > 0 ? 'Không thể xóa: kho còn hàng' : 'Xóa'"
+                        @click="onDeleteClick(w)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
 
-                      
+
                     </div>
                   </td>
                 </tr>
@@ -196,17 +193,17 @@ watch(page, async () => {
 
 async function onDeleteClick(warehouse) {
   if ((warehouse?.total_quantity ?? 0) > 0) {
-    await Swal.fire("Khong the xoa", "Kho nay van con hang.", "warning");
+    await Swal.fire("Không thể xóa", "Kho này vẫn còn hàng.", "warning");
     return;
   }
 
   const result = await Swal.fire({
-    title: "Xoa kho nay?",
-    text: "Khong the hoan tac!",
+    title: "Xóa kho này?",
+    text: "Không thể hoàn tác!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Xoa",
-    cancelButtonText: "Huy",
+    confirmButtonText: "Xóa",
+    cancelButtonText: "Hủy",
   });
 
   if (!result.isConfirmed) return;
@@ -214,11 +211,11 @@ async function onDeleteClick(warehouse) {
   try {
     await WarehouseService.delete(warehouse?.id);
     await fetchWarehouses();
-    Swal.fire({ title: "Xoa thanh cong", icon: "success" });
+    Swal.fire({ title: "Xóa thành công", icon: "success" });
   } catch (err) {
     await Swal.fire({
-      title: "Loi",
-      text: err?.response?.data?.message || "Khong the xoa",
+      title: "Lỗi",
+      text: err?.response?.data?.message || "Không thể xóa",
       icon: "error",
     });
   }
@@ -296,9 +293,3 @@ async function onDeleteClick(warehouse) {
   border-radius: 1rem;
 }
 </style>
-
-
-
-
-
-
