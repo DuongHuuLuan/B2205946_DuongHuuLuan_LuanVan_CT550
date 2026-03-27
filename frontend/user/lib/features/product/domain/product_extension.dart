@@ -35,6 +35,19 @@ String _viewIdentity(ProductImage image) {
   return "id:${image.id}";
 }
 
+int _sizePriority(String size) {
+  switch (size.trim().toUpperCase()) {
+    case "M":
+      return 0;
+    case "L":
+      return 1;
+    case "XL":
+      return 2;
+    default:
+      return 999;
+  }
+}
+
 extension ProductX on Product {
   List<ProductImage> _imagesForColor(int? colorId) {
     final byColor = images
@@ -98,10 +111,24 @@ extension ProductX on Product {
 
     final cId = colorId ?? uniqueColors.first.colorId;
     final seen = <int>{};
-    return productDetails
-        .where((element) => element.colorId == cId)
-        .where((element) => seen.add(element.sizeId))
-        .toList();
+    final indexedSizes = <({int index, ProductDetail detail})>[];
+
+    for (var index = 0; index < productDetails.length; index++) {
+      final detail = productDetails[index];
+      if (detail.colorId == cId && seen.add(detail.sizeId)) {
+        indexedSizes.add((index: index, detail: detail));
+      }
+    }
+
+    indexedSizes.sort((left, right) {
+      final priority = _sizePriority(
+        left.detail.size,
+      ).compareTo(_sizePriority(right.detail.size));
+      if (priority != 0) return priority;
+      return left.index.compareTo(right.index);
+    });
+
+    return indexedSizes.map((entry) => entry.detail).toList();
   }
 
   ProductDetail? findProductDetail(int? colorId, int? sizeId) {

@@ -1,4 +1,4 @@
-﻿import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
+import 'package:b2205946_duonghuuluan_luanvan/app/utils/currency_ext.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/widget/design_sticker_info.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/domain/product.dart';
@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 class CartRow extends StatelessWidget {
   final CartDetail cartDetail;
   final Product? product;
+  final bool isBusy;
   final VoidCallback onRemove;
   final void Function(int quantity) onUpdateQuantity;
   final bool isSelected;
@@ -20,6 +21,7 @@ class CartRow extends StatelessWidget {
     required this.onRemove,
     required this.onUpdateQuantity,
     required this.product,
+    required this.isBusy,
     required this.isSelected,
     required this.onSelectedChanged,
   });
@@ -121,12 +123,12 @@ class CartRow extends StatelessWidget {
             child: _QuantityControl(
               onChanged: onUpdateQuantity,
               quantity: cartDetail.quantity,
-              locked: cartDetail.isLocked,
+              locked: cartDetail.isLocked || isBusy,
             ),
           ),
 
           const SizedBox(width: 5),
-          _RemoveButton(onPressed: onRemove),
+          _RemoveButton(onPressed: isBusy ? null : onRemove),
           const SizedBox(width: 3),
         ],
       ),
@@ -200,7 +202,7 @@ class _StatusMessage extends StatelessWidget {
 }
 
 class _RemoveButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   const _RemoveButton({required this.onPressed});
 
   @override
@@ -336,7 +338,7 @@ class _QuantityButton extends StatelessWidget {
             color: disabled ? colorScheme.outlineVariant : colorScheme.outline,
           ),
           color: disabled
-              ? colorScheme.surfaceContainerHighest.withOpacity(0.6)
+              ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
               : null,
         ),
         child: Icon(

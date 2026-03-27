@@ -2,24 +2,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ProductPromoCarousel extends StatefulWidget {
-  final List<CategoryPromoItem> items;
+  final List<ProductPromoItem> items;
   final double height;
   final Duration autoPlayDuration;
-  final ValueChanged<int>? onCategoryTap;
+  final ValueChanged<int>? onProductTap;
 
   const ProductPromoCarousel({
     super.key,
     required this.items,
     this.height = 200,
     this.autoPlayDuration = const Duration(seconds: 3),
-    this.onCategoryTap,
+    this.onProductTap,
   });
 
   @override
-  State<ProductPromoCarousel> createState() => _CategoryPromoCarouselState();
+  State<ProductPromoCarousel> createState() => _ProductPromoCarouselState();
 }
 
-class _CategoryPromoCarouselState extends State<ProductPromoCarousel>
+class _ProductPromoCarouselState extends State<ProductPromoCarousel>
     with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController(viewportFraction: 1);
 
@@ -100,7 +100,7 @@ class _CategoryPromoCarouselState extends State<ProductPromoCarousel>
                     itemBuilder: (context, index) {
                       final item = widget.items[index];
                       return InkWell(
-                        onTap: () => widget.onCategoryTap?.call(item.categoryId),
+                        onTap: () => widget.onProductTap?.call(item.productId),
                         child: Image.asset(
                           item.imagePath,
                           fit: BoxFit.cover,
@@ -139,12 +139,9 @@ class _CategoryPromoCarouselState extends State<ProductPromoCarousel>
   }
 }
 
-class CategoryPromoItem {
+class ProductPromoItem {
   final String imagePath;
-  final int categoryId;
+  final int productId;
 
-  const CategoryPromoItem({
-    required this.imagePath,
-    required this.categoryId,
-  });
+  const ProductPromoItem({required this.imagePath, required this.productId});
 }

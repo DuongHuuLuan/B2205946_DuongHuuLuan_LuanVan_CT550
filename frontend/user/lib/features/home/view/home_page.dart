@@ -41,6 +41,10 @@ class _HomePageState extends State<HomePage> {
     context.go('/products/categories/$categoryId');
   }
 
+  void _openProduct(BuildContext context, int productId) {
+    context.go('/products/$productId');
+  }
+
   @override
   Widget build(BuildContext context) {
     final productVm = context.watch<ProductViewmodel>();
@@ -84,15 +88,15 @@ class _HomePageState extends State<HomePage> {
           SliverToBoxAdapter(
             child: ProductPromoCarousel(
               height: 170,
-              onCategoryTap: (categoryId) => _openCategory(context, categoryId),
+              onProductTap: (productId) => _openProduct(context, productId),
               items: [
-                CategoryPromoItem(
+                ProductPromoItem(
                   imagePath: 'assets/images/M139h.webp',
-                  categoryId: 1,
+                  productId: 7,
                 ),
-                CategoryPromoItem(
+                ProductPromoItem(
                   imagePath: 'assets/images/M239-1.webp',
-                  categoryId: 2,
+                  productId: 24,
                 ),
               ],
             ),

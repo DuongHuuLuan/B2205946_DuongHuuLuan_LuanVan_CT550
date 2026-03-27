@@ -205,7 +205,19 @@ class OrderOut(BaseModel):
 
             fee_value = Decimal("0")
             if ghn_shipments:
-                first = ghn_shipments[0]
+                ordered_shipments = sorted(
+                    list(ghn_shipments),
+                    key=lambda item: (
+                        getattr(item, "created_at", None)
+                        if not isinstance(item, dict)
+                        else item.get("created_at"),
+                        getattr(item, "id", 0)
+                        if not isinstance(item, dict)
+                        else item.get("id", 0),
+                    ),
+                    reverse=True,
+                )
+                first = ordered_shipments[0]
                 raw_fee = (
                     getattr(first, "shipping_fee", None)
                     if not isinstance(first, dict)

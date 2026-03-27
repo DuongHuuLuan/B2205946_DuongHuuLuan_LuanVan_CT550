@@ -30,7 +30,7 @@ class CartTable extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface.withOpacity(1),
+        color: colorScheme.surface.withValues(alpha: 1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
@@ -59,7 +59,7 @@ class CartTable extends StatelessWidget {
               itemCount: cartDetails.length,
               separatorBuilder: (context, index) => Divider(
                 height: 24,
-                color: colorScheme.outlineVariant.withOpacity(0.5),
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
               itemBuilder: (context, index) {
                 final cartDetail = cartDetails[index];
@@ -67,6 +67,7 @@ class CartTable extends StatelessWidget {
                 return CartRow(
                   cartDetail: cartDetail,
                   product: resolveProduct(cartDetail.productDetailId),
+                  isBusy: isLoading,
                   onRemove: () => onRemove(cartDetail.id),
                   onUpdateQuantity: (quantity) =>
                       onUpdateQuantity(cartDetail.id, quantity),

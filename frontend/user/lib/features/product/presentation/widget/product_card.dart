@@ -266,7 +266,15 @@ class _ProductCardState extends State<ProductCard>
         decoration: BoxDecoration(
           color: AppColors.onPrimary,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colorScheme.outlineVariant, width: 1),
+          // border: Border.all(color: colorScheme.outlineVariant, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10, // Độ nhòe của bóng
+              spreadRadius: 0, // Độ lan rộng của bóng
+              offset: const Offset(0, 4), // Bóng đổ xuống dưới 4 pixel
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

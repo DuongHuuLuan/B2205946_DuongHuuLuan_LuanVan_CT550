@@ -638,6 +638,7 @@ class _OrderProductTile extends StatelessWidget {
                   designId: detail.designId,
                   designName: detail.designName,
                   designPreviewImageUrl: detail.designPreviewImageUrl,
+                  stickerImageUrls: detail.stickerImageUrls,
                 ),
               ],
               const SizedBox(height: 2),

@@ -123,6 +123,7 @@ class OrderHistoryList extends StatelessWidget {
                     designName: designSummary,
                     designPreviewImageUrl:
                         primaryDesignedItem.designPreviewImageUrl,
+                    stickerImageUrls: primaryDesignedItem.stickerImageUrls,
                     imageSize: 26,
                   ),
                 ],

@@ -291,13 +291,16 @@ class ProductViewmodel extends ChangeNotifier {
   void updateQuantity(int delta) {
     final detail = selectedProductDetail;
     if (detail == null || !detail.isActive) return;
+    if (_stockLoading || _availableQuantity == null) return;
 
-    final maxStock = _availableQuantity ?? 0;
+    final maxStock = _availableQuantity!;
     final newQuantity = _quantity + delta;
 
     if (maxStock <= 0) {
-      _quantity = 1;
-      notifyListeners();
+      if (_quantity != 1) {
+        _quantity = 1;
+        notifyListeners();
+      }
       return;
     }
     if (newQuantity >= 1 && newQuantity <= maxStock) {

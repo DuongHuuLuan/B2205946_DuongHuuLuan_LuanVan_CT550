@@ -17,7 +17,6 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  final Set<int> _lastDiscountCategoryIds = {};
   final Set<int> _selectedDiscountIds = {};
   final Set<int> _selectedCartDetailIds = {};
   bool _selectionTouched = false;
@@ -267,19 +266,16 @@ class _CartPageState extends State<CartPage> {
           setState(() => _selectedDiscountIds.clear());
         });
       }
-      if (_lastDiscountCategoryIds.isNotEmpty) {
-        _lastDiscountCategoryIds.clear();
-        vm.fetchDiscountsForCategories(const []);
+      if (vm.discounts.isNotEmpty ||
+          vm.discountError != null ||
+          vm.isDiscountLoading) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          vm.fetchDiscountsForCategories(const []);
+        });
       }
       return;
     }
-    if (_lastDiscountCategoryIds.length == normalized.length &&
-        _lastDiscountCategoryIds.containsAll(normalized)) {
-      return;
-    }
-    _lastDiscountCategoryIds
-      ..clear()
-      ..addAll(normalized);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       vm.fetchDiscountsForCategories(normalized.toList());

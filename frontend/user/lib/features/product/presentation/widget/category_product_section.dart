@@ -56,20 +56,6 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
     }
   }
 
-  // void _scrollBy(double dx) {
-  //   if (!_controller.hasClients) return;
-
-  //   final minE = _controller.position.minScrollExtent;
-  //   final maxE = _controller.position.maxScrollExtent;
-
-  //   final target = (_controller.offset + dx).clamp(minE, maxE);
-  //   _controller.animateTo(
-  //     target,
-  //     duration: const Duration(milliseconds: 250),
-  //     curve: Curves.easeOut,
-  //   );
-  // }
-
   @override
   void initState() {
     super.initState();
@@ -166,7 +152,7 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,
-              mainAxisSpacing: 12,
+              mainAxisSpacing: 10,
               childAspectRatio: 0.52,
             ),
             itemBuilder: (context, index) {
@@ -180,75 +166,6 @@ class _CategoryProductSectionState extends State<CategoryProductSection> {
             },
           ),
 
-          // SizedBox(
-          //   height: 380,
-          //   child: Stack(
-          //     children: [
-
-          //       // ListView.separated(
-          //       //   controller: _controller,
-          //       //   scrollDirection: Axis.horizontal,
-          //       //   padding: const EdgeInsets.symmetric(horizontal: 16),
-          //       //   itemCount: widget.products.length,
-          //       //   separatorBuilder: (_, __) => const SizedBox(width: 14),
-          //       //   itemBuilder: (context, index) {
-          //       //     final product = widget.products[index];
-          //       //     return SizedBox(
-          //       //       width: 220,
-          //       //       child: ProductCard(
-          //       //         product: product,
-          //       //         onTap: () => widget.onProductTap(product),
-          //       //         onAddToCart: (p, v, quantity) =>
-          //       //             widget.onAddToCart(p, v, quantity),
-          //       //       ),
-          //       //     );
-          //       //   },
-          //       // ),
-
-          //       // Left arrow (fade)
-          //       // Positioned(
-          //       //   left: 6,
-          //       //   top: 0,
-          //       //   bottom: 0,
-          //       //   child: Center(
-          //       //     child: IgnorePointer(
-          //       //       ignoring: !_showLeft,
-          //       //       child: AnimatedOpacity(
-          //       //         opacity: _showLeft ? 1 : 0,
-          //       //         duration: const Duration(milliseconds: 180),
-          //       //         curve: Curves.easeOut,
-          //       //         child: ArrowButton(
-          //       //           icon: Icons.chevron_left,
-          //       //           onTap: () => _scrollBy(-260),
-          //       //         ),
-          //       //       ),
-          //       //     ),
-          //       //   ),
-          //       // ),
-
-          //       // // Right arrow (fade)
-          //       // Positioned(
-          //       //   right: 6,
-          //       //   top: 0,
-          //       //   bottom: 0,
-          //       //   child: Center(
-          //       //     child: IgnorePointer(
-          //       //       ignoring: !_showRight,
-          //       //       child: AnimatedOpacity(
-          //       //         opacity: _showRight ? 1 : 0,
-          //       //         duration: const Duration(milliseconds: 180),
-          //       //         curve: Curves.easeOut,
-          //       //         child: ArrowButton(
-          //       //           icon: Icons.chevron_right,
-          //       //           onTap: () => _scrollBy(260),
-          //       //         ),
-          //       //       ),
-          //       //     ),
-          //       //   ),
-          //       // ),
-          //     ],
-          //   ),
-          // ),
           const SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.only(right: 10),

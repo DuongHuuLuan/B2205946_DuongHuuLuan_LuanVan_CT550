@@ -38,6 +38,7 @@ class OrderDetailOut {
   final String? imageUrl;
   final String? designName;
   final String? designPreviewImageUrl;
+  final List<String> stickerImageUrls;
 
   const OrderDetailOut({
     this.designId,
@@ -50,6 +51,7 @@ class OrderDetailOut {
     this.imageUrl,
     this.designName,
     this.designPreviewImageUrl,
+    this.stickerImageUrls = const [],
   });
 
   bool get hasDesign => (designId ?? 0) > 0;

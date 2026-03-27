@@ -80,10 +80,30 @@ class OrderMapper {
           designPreviewImageUrl: _toNullableString(
             item["design_preview_image_url"],
           ),
+          stickerImageUrls: _extractStickerImageUrls(
+            item["design_snapshot_json"],
+          ),
         ),
       );
     }
     return result;
+  }
+
+  static List<String> _extractStickerImageUrls(dynamic rawSnapshot) {
+    if (rawSnapshot is! Map) return const [];
+    final snapshot = rawSnapshot.cast<String, dynamic>();
+    final rawLayers = snapshot["layers"];
+    if (rawLayers is! List) return const [];
+
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final item in rawLayers) {
+      if (item is! Map) continue;
+      final url = _toNullableString(item["image_url"]);
+      if (url == null || !seen.add(url)) continue;
+      urls.add(url);
+    }
+    return urls;
   }
 
   static String? _pickDiscountCode(Map<String, dynamic> json) {

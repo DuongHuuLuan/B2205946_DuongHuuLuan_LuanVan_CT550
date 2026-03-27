@@ -7,6 +7,7 @@ class DesignStickerInfo extends StatefulWidget {
   final int? designId;
   final String? designName;
   final String? designPreviewImageUrl;
+  final List<String> stickerImageUrls;
   final double imageSize;
   final String label;
 
@@ -15,6 +16,7 @@ class DesignStickerInfo extends StatefulWidget {
     required this.designId,
     this.designName,
     this.designPreviewImageUrl,
+    this.stickerImageUrls = const [],
     this.imageSize = 32,
     this.label = "Thiết kế",
   });
@@ -24,8 +26,7 @@ class DesignStickerInfo extends StatefulWidget {
 }
 
 class _DesignStickerInfoState extends State<DesignStickerInfo> {
-  static final Map<int, Future<String?>> _stickerUrlCache = {};
-  Future<String?>? _stickerUrlFuture;
+  Future<List<String>>? _stickerUrlFuture;
 
   @override
   void initState() {
@@ -37,28 +38,50 @@ class _DesignStickerInfoState extends State<DesignStickerInfo> {
   void didUpdateWidget(covariant DesignStickerInfo oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.designId != widget.designId ||
-        oldWidget.designPreviewImageUrl != widget.designPreviewImageUrl) {
+        oldWidget.designPreviewImageUrl != widget.designPreviewImageUrl ||
+        !_sameUrls(oldWidget.stickerImageUrls, widget.stickerImageUrls)) {
       _stickerUrlFuture = _createStickerFuture();
     }
   }
 
-  Future<String?>? _createStickerFuture() {
+  bool _sameUrls(List<String> first, List<String> second) {
+    if (identical(first, second)) return true;
+    if (first.length != second.length) return false;
+    for (var i = 0; i < first.length; i++) {
+      if (first[i] != second[i]) return false;
+    }
+    return true;
+  }
+
+  Future<List<String>>? _createStickerFuture() {
+    final providedUrls = _normalizeUrls(widget.stickerImageUrls);
+    if (providedUrls.isNotEmpty) {
+      return Future.value(providedUrls);
+    }
+
+    final fallbackUrl = _normalizeUrl(widget.designPreviewImageUrl);
     final designId = widget.designId;
     if (designId == null || designId <= 0) {
-      return null;
+      if (fallbackUrl == null) return null;
+      return Future.value([fallbackUrl]);
     }
-    final fallbackUrl = _normalizeUrl(widget.designPreviewImageUrl);
+
     final repository = context.read<HelmetDesignerRepository>();
-    return _stickerUrlCache.putIfAbsent(designId, () async {
+    return (() async {
+      final urls = <String>[];
+      final seen = <String>{};
       try {
         final design = await repository.getDesignDetail(designId);
         for (final sticker in design.stickers) {
           final url = _normalizeUrl(sticker.imageUrl);
-          if (url != null) return url;
+          if (url == null || !seen.add(url)) continue;
+          urls.add(url);
         }
       } catch (_) {}
-      return fallbackUrl;
-    });
+
+      if (urls.isNotEmpty) return urls;
+      return fallbackUrl == null ? const <String>[] : [fallbackUrl];
+    })();
   }
 
   String? _normalizeUrl(String? value) {
@@ -67,10 +90,23 @@ class _DesignStickerInfoState extends State<DesignStickerInfo> {
     return text;
   }
 
+  List<String> _normalizeUrls(List<String> values) {
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final value in values) {
+      final url = _normalizeUrl(value);
+      if (url == null || !seen.add(url)) continue;
+      urls.add(url);
+    }
+    return urls;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final designId = widget.designId;
-    if (designId == null || designId <= 0) {
+    final fallbackUrl = _normalizeUrl(widget.designPreviewImageUrl);
+    final providedUrls = _normalizeUrls(widget.stickerImageUrls);
+    final hasDesignId = (widget.designId ?? 0) > 0;
+    if (!hasDesignId && providedUrls.isEmpty && fallbackUrl == null) {
       return const SizedBox.shrink();
     }
 
@@ -82,56 +118,64 @@ class _DesignStickerInfoState extends State<DesignStickerInfo> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withOpacity(0.32),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.32),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
-      child: Row(
-        children: [
-          FutureBuilder<String?>(
-            future: _stickerUrlFuture,
-            builder: (context, snapshot) => _StickerThumb(
-              url: snapshot.data ?? _normalizeUrl(widget.designPreviewImageUrl),
-              size: widget.imageSize,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: colorScheme.onSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+      child: FutureBuilder<List<String>>(
+        future: _stickerUrlFuture,
+        builder: (context, snapshot) {
+          final urls = snapshot.data ?? providedUrls;
+          final displayUrls = urls.isNotEmpty
+              ? urls
+              : fallbackUrl == null
+              ? const <String>[]
+              : [fallbackUrl];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: Text(
+                  widget.label,
                   style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: displayUrls.isEmpty
+                    ? [_StickerThumb(url: null, size: widget.imageSize)]
+                    : displayUrls
+                          .map(
+                            (url) =>
+                                _StickerThumb(url: url, size: widget.imageSize),
+                          )
+                          .toList(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

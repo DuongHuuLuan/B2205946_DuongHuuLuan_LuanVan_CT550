@@ -79,10 +79,16 @@
               <div>{{ order.rejection_reason }}</div>
             </div>
 
-            <div
-              v-if="normalizeEnumText(order?.payment_status) === 'paid' && showRefundBadge(order?.refund_support_status)"
-              class="alert alert-warning mt-3 mb-0">
-              Đơn này đã thanh toán. Nếu bị từ chối, khách hàng cần được hướng dẫn liên hệ chat để xử lý hoàn tiền.
+            <div v-if="showRefundContactAlert" class="alert alert-warning mt-3 mb-0">
+              <div class="d-flex align-items-start justify-content-between gap-3 flex-column flex-md-row">
+                <div>
+                  Đơn này đã thanh toán. Nếu bị từ chối, cần liên hệ khách hàng để xử lý hoàn tiền.
+                </div>
+                <RouterLink v-if="customerChatUserId" class="btn btn-sm btn-outline-dark flex-shrink-0"
+                  :to="{ name: 'chat', query: { userId: customerChatUserId } }">
+                  <i class="fa-regular fa-comments me-1"></i> Chat với khách hàng
+                </RouterLink>
+              </div>
             </div>
 
             <div class="row g-3 mt-1">
@@ -277,8 +283,16 @@ const order = ref(null);
 const actionLoading = ref(false);
 
 const orderItems = computed(() => order.value?.order_details || []);
+const customerChatUserId = computed(
+  () => Number(order.value?.user?.id || order.value?.user_id || 0),
+);
 const canReviewOrder = computed(
   () => normalizeEnumText(order.value?.status) === "pending",
+);
+const showRefundContactAlert = computed(
+  () =>
+    normalizeEnumText(order.value?.payment_status) === "paid" &&
+    showRefundBadge(order.value?.refund_support_status),
 );
 
 function calcLineTotal(item) {

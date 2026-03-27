@@ -99,18 +99,15 @@
                 <ErrorMessage name="model_3d_url" class="invalid-feedback d-block" />
               </div> -->
 
-              <div class="col-12">
+              <!-- <div class="col-12">
                 <label class="form-label">Upload model 3D (.glb)</label>
                 <input ref="model3dFileInput" type="file" accept=".glb,model/gltf-binary,application/octet-stream"
                   class="form-control bg-transparent" @change="onModel3dFileChange" />
-                <!-- <div class="form-text">
-                  Nếu chọn file `.glb`, hệ thống sẽ lưu trực tiếp trên server trong `static/models`. File được ưu tiên
-                  hơn URL nhập tay.
-                </div> -->
+
                 <div v-if="model3dFileName" class="small mt-2 opacity-75">
                   Đã chọn: {{ model3dFileName }}
                 </div>
-              </div>
+              </div> -->
 
 
 

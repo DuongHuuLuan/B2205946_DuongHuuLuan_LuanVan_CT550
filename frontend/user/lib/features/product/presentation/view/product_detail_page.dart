@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:b2205946_duonghuuluan_luanvan/app/theme/colors.dart';
 import 'package:b2205946_duonghuuluan_luanvan/app/widgets/app_logo_loader.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/product/presentation/widget/arrow_button.dart';
@@ -254,6 +254,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final productDetail = vm.selectedProductDetail;
     final productImages = vm.displayProductImages;
     final availableQuantity = vm.availableQuantity;
+    final canAdjustQuantity =
+        !vm.isStockLoading &&
+        availableQuantity != null &&
+        availableQuantity > 0;
 
     final mainUrl = productImages.isNotEmpty
         ? productImages[vm.imgIndex.clamp(0, max(0, productImages.length - 1))]
@@ -496,7 +500,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  onPressed: () => vm.updateQuantity(-1),
+                                  onPressed: canAdjustQuantity
+                                      ? () => vm.updateQuantity(-1)
+                                      : null,
                                   icon: const Icon(Icons.remove, size: 16),
                                   color: Colors.black54,
                                 ),
@@ -537,12 +543,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  onPressed: () => vm.updateQuantity(1),
+                                  onPressed: canAdjustQuantity
+                                      ? () => vm.updateQuantity(1)
+                                      : null,
                                   icon: const Icon(Icons.add, size: 16),
                                   color: Colors.black54,
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            vm.isStockLoading
+                                ? "Đang kiểm tra tồn kho..."
+                                : availableQuantity == null
+                                ? "Chưa tải được tồn kho"
+                                : "Còn $availableQuantity sản phẩm",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

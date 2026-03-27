@@ -73,11 +73,26 @@ class CartViewmodel extends ChangeNotifier {
     } catch (e) {}
   }
 
+  void _resetDiscountCache({bool clearDiscounts = false}) {
+    _lastDiscountCategoryIds = {};
+    if (clearDiscounts) {
+      discounts = [];
+      _discountError = null;
+      _isDiscountLoading = false;
+    }
+  }
+
+  double _calculateCartTotal(List<CartDetail> details) {
+    return details.fold(0, (sum, item) => sum + item.lineTotal);
+  }
+
   Future<void> fetchDiscountsForCategories(List<int> categoryIds) async {
     final normalized = categoryIds.toSet();
     if (normalized.isEmpty) {
       discounts = [];
       _lastDiscountCategoryIds = {};
+      _discountError = null;
+      _isDiscountLoading = false;
       notifyListeners();
       return;
     }
@@ -109,6 +124,7 @@ class CartViewmodel extends ChangeNotifier {
     try {
       cart = await _repository.getCart();
       await _loadProductMap();
+      _resetDiscountCache(clearDiscounts: true);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -130,6 +146,7 @@ class CartViewmodel extends ChangeNotifier {
         quantity: quantity,
       );
       await _loadProductMap();
+      _resetDiscountCache(clearDiscounts: true);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -142,8 +159,30 @@ class CartViewmodel extends ChangeNotifier {
     required int cartDetailId,
     required int newQuantity,
   }) async {
+    final previousCart = cart;
+    final currentCart = cart;
+
+    if (currentCart != null) {
+      var hasChange = false;
+      final updatedDetails = currentCart.cartDetails.map((detail) {
+        if (detail.id != cartDetailId) return detail;
+        hasChange = detail.quantity != newQuantity;
+        return detail.copyWith(quantity: newQuantity);
+      }).toList();
+
+      if (!hasChange) {
+        return;
+      }
+
+      cart = currentCart.copyWith(
+        cartDetails: updatedDetails,
+        totalPrice: _calculateCartTotal(updatedDetails),
+      );
+    }
+
     _isLoading = true;
     _errorMessage = null;
+    _resetDiscountCache(clearDiscounts: true);
     notifyListeners();
     try {
       cart = await _repository.updateCartDetail(
@@ -151,7 +190,9 @@ class CartViewmodel extends ChangeNotifier {
         newQuantity: newQuantity,
       );
       await _loadProductMap();
+      _resetDiscountCache(clearDiscounts: true);
     } catch (e) {
+      cart = previousCart;
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
@@ -167,6 +208,7 @@ class CartViewmodel extends ChangeNotifier {
       await _repository.deleteCartDetail(cartDetailId: cartDetailId);
       cart = await _repository.getCart();
       await _loadProductMap();
+      _resetDiscountCache(clearDiscounts: true);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
