@@ -131,6 +131,26 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
+  @override
+  Future<ChatMessage> addToCartAction(
+    int conversationId, {
+    required int productDetailId,
+    int quantity = 1,
+  }) async {
+    try {
+      final response = await _api.addToCartAction(
+        conversationId,
+        productDetailId: productDetailId,
+        quantity: quantity,
+      );
+      return ChatMessage.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
   int? _parseInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;

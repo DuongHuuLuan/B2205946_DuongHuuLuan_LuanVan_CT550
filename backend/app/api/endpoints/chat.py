@@ -1,6 +1,7 @@
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -9,8 +10,9 @@ from starlette.concurrency import run_in_threadpool
 from app.api.deps import require_user
 from app.core.config import settings
 from app.db.session import SessionLocal, get_db
-from app.models import Conversation, User
+from app.models import Conversation, ProductDetail, User
 from app.models.user import UserRole
+from app.schemas.cart import CartDetailCreate
 from app.schemas.chat import (
     ConversationCreateIn,
     ConversationOut,
@@ -19,11 +21,14 @@ from app.schemas.chat import (
     MessageListOut,
     MessageOut,
 )
+from app.services.cart_service import CartService
+from app.services.chatbot_service import ChatbotService
 from app.services.chat_service import ChatService
 from app.services.chat_ws_service import chat_ws_manager
 
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
+logger = logging.getLogger(__name__)
 
 
 def _normalize_ws_token(token: str) -> str:
@@ -110,6 +115,24 @@ def _create_message(
         db.close()
 
 
+def _create_chatbot_message(
+    conversation_id: int,
+    user_message_id: int,
+) -> Optional[MessageOut]:
+    db = SessionLocal()
+    try:
+        message = ChatbotService.generate_reply_for_message(
+            db=db,
+            conversation_id=conversation_id,
+            user_message_id=user_message_id,
+        )
+        if not message:
+            return None
+        return _build_message_out(message)
+    finally:
+        db.close()
+
+
 def _recall_message(
     conversation_id: int,
     message_id: int,
@@ -150,6 +173,158 @@ def _mark_conversation_read(
             message_id=message_id,
         )
         return ConversationReadOut.model_validate(read_result)
+    finally:
+        db.close()
+
+
+def _claim_handoff(
+    conversation_id: int,
+    user_id: int,
+) -> MessageOut:
+    db = SessionLocal()
+    try:
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid user")
+
+        message = ChatService.claim_handoff(
+            db=db,
+            conversation_id=conversation_id,
+            current_user=current_user,
+        )
+        return _build_message_out(message)
+    finally:
+        db.close()
+
+
+def _resume_chatbot(
+    conversation_id: int,
+    user_id: int,
+) -> MessageOut:
+    db = SessionLocal()
+    try:
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid user")
+
+        message = ChatService.resume_chatbot(
+            db=db,
+            conversation_id=conversation_id,
+            current_user=current_user,
+        )
+        return _build_message_out(message)
+    finally:
+        db.close()
+
+
+def _add_to_cart_from_chat(
+    conversation_id: int,
+    user_id: int,
+    cart_detail_in: CartDetailCreate,
+) -> MessageOut:
+    db = SessionLocal()
+    try:
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid user")
+        if current_user.role != UserRole.USER:
+            raise HTTPException(status_code=403, detail="Chỉ người dùng mới có thể thêm sản phẩm từ chat")
+
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        ChatService._assert_member(conversation, current_user)
+
+        product_detail = ChatService.get_or_404(
+            db,
+            ProductDetail,
+            cart_detail_in.product_detail_id,
+            "Sản phẩm không tồn tại",
+        )
+        product = product_detail.product
+        color = getattr(product_detail, "color", None)
+        size = getattr(product_detail, "size", None)
+        image_url = (
+            CartService._pick_image_url(product, getattr(color, "id", None))
+            if product
+            else None
+        )
+        variant_bits = [
+            bit
+            for bit in [
+                getattr(color, "name", None),
+                getattr(size, "size", None),
+            ]
+            if bit
+        ]
+        variant_label = " / ".join(variant_bits) if variant_bits else None
+        product_name = getattr(product, "name", None) or "Sản phẩm đã chọn"
+
+        try:
+            CartService.add_to_cart(
+                db=db,
+                user_id=current_user.id,
+                cart_detail_in=cart_detail_in,
+            )
+            quantity_label = (
+                f"Đã thêm {cart_detail_in.quantity} sản phẩm"
+                if cart_detail_in.quantity > 1
+                else f"Đã thêm {product_name}"
+            )
+            if cart_detail_in.quantity > 1 and variant_label:
+                content = f"{quantity_label} của biến thể {variant_label} vào giỏ hàng."
+            elif variant_label:
+                content = f"{quantity_label} - {variant_label} vào giỏ hàng."
+            else:
+                content = f"{quantity_label} vào giỏ hàng."
+            payload = {
+                "kind": "cart_action_result",
+                "title": "Đã thêm vào giỏ hàng",
+                "actions": [
+                    {
+                        "type": "open_cart",
+                        "label": "Xem giỏ hàng",
+                        "target": "/cart",
+                    }
+                ],
+                "cart_action_result": {
+                    "status": "success",
+                    "product_detail_id": cart_detail_in.product_detail_id,
+                    "product_name": product_name,
+                    "image_url": image_url,
+                    "variant_label": variant_label,
+                    "quantity": cart_detail_in.quantity,
+                    "message": content,
+                },
+            }
+        except HTTPException as exc:
+            detail = str(exc.detail).strip() if exc.detail else ""
+            content = detail or "Không thể thêm sản phẩm vào giỏ hàng."
+            payload = {
+                "kind": "cart_action_result",
+                "title": "Không thể thêm vào giỏ hàng",
+                "cart_action_result": {
+                    "status": "error",
+                    "product_detail_id": cart_detail_in.product_detail_id,
+                    "product_name": product_name,
+                    "image_url": image_url,
+                    "variant_label": variant_label,
+                    "quantity": cart_detail_in.quantity,
+                    "message": content,
+                },
+            }
+
+        message = ChatService.create_system_message(
+            db=db,
+            conversation_id=conversation_id,
+            content=content,
+            payload=payload,
+            actor_user_id=conversation.admin_id,
+        )
+        return _build_message_out(message)
     finally:
         db.close()
 
@@ -241,6 +416,20 @@ async def _broadcast_admin_message_new(conversation_id: int, message_out: Messag
     await chat_ws_manager.broadcast_admin(admin_id=admin_id, payload=event_payload)
 
 
+async def _broadcast_message_new(conversation_id: int, message_out: MessageOut) -> None:
+    await chat_ws_manager.broadcast(
+        conversation_id=conversation_id,
+        payload=_message_new_payload(
+            conversation_id=conversation_id,
+            message_out=message_out,
+        ),
+    )
+    await _broadcast_admin_message_new(
+        conversation_id=conversation_id,
+        message_out=message_out,
+    )
+
+
 async def _broadcast_admin_message_recalled(
     conversation_id: int,
     message_out: MessageOut,
@@ -273,6 +462,33 @@ async def _broadcast_admin_message_read(
 
     admin_id, event_payload = payload
     await chat_ws_manager.broadcast_admin(admin_id=admin_id, payload=event_payload)
+
+
+async def _process_chatbot_reply_background(
+    conversation_id: int,
+    user_message_id: int,
+) -> None:
+    try:
+        chatbot_message_out = await run_in_threadpool(
+            _create_chatbot_message,
+            conversation_id,
+            user_message_id,
+        )
+    except Exception:
+        logger.exception(
+            "Khong the tao chatbot message cho conversation_id=%s, user_message_id=%s",
+            conversation_id,
+            user_message_id,
+        )
+        return
+
+    if not chatbot_message_out:
+        return
+
+    await _broadcast_message_new(
+        conversation_id=conversation_id,
+        message_out=chatbot_message_out,
+    )
 
 
 @router.get("/conversations", response_model=List[ConversationOut])
@@ -322,6 +538,7 @@ def get_messages(
 @router.post("/conversations/{conversation_id}/messages", response_model=MessageOut)
 async def send_message_with_uploads(
     conversation_id: int,
+    background_tasks: BackgroundTasks,
     files: Optional[List[UploadFile]] = File(default=None),
     content: Optional[str] = Form(default=None),
     client_msg_id: Optional[str] = Form(default=None),
@@ -335,11 +552,23 @@ async def send_message_with_uploads(
         content,
         client_msg_id,
     )
-    await chat_ws_manager.broadcast(
+    await _broadcast_message_new(
         conversation_id=conversation_id,
-        payload=_message_new_payload(conversation_id=conversation_id, message_out=message_out),
+        message_out=message_out,
     )
-    await _broadcast_admin_message_new(conversation_id=conversation_id, message_out=message_out)
+
+    if (
+        not settings.CHATBOT_ENABLED
+        or current_user.role != UserRole.USER
+        or not (message_out.content or "").strip()
+    ):
+        return message_out
+
+    background_tasks.add_task(
+        _process_chatbot_reply_background,
+        conversation_id,
+        message_out.id,
+    )
     return message_out
 
 
@@ -396,6 +625,59 @@ async def mark_conversation_read(
             read_out=read_out,
         )
     return read_out
+
+
+@router.post("/conversations/{conversation_id}/handoff/claim", response_model=MessageOut)
+async def claim_handoff(
+    conversation_id: int,
+    current_user: User = Depends(require_user),
+):
+    message_out = await run_in_threadpool(
+        _claim_handoff,
+        conversation_id,
+        current_user.id,
+    )
+    await _broadcast_message_new(
+        conversation_id=conversation_id,
+        message_out=message_out,
+    )
+    return message_out
+
+
+@router.post("/conversations/{conversation_id}/handoff/resume", response_model=MessageOut)
+async def resume_chatbot(
+    conversation_id: int,
+    current_user: User = Depends(require_user),
+):
+    message_out = await run_in_threadpool(
+        _resume_chatbot,
+        conversation_id,
+        current_user.id,
+    )
+    await _broadcast_message_new(
+        conversation_id=conversation_id,
+        message_out=message_out,
+    )
+    return message_out
+
+
+@router.post("/conversations/{conversation_id}/actions/add-to-cart", response_model=MessageOut)
+async def add_to_cart_from_chat(
+    conversation_id: int,
+    payload: CartDetailCreate,
+    current_user: User = Depends(require_user),
+):
+    message_out = await run_in_threadpool(
+        _add_to_cart_from_chat,
+        conversation_id,
+        current_user.id,
+        payload,
+    )
+    await _broadcast_message_new(
+        conversation_id=conversation_id,
+        message_out=message_out,
+    )
+    return message_out
 
 
 @router.websocket("/ws/admin")

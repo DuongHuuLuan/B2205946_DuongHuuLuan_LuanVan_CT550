@@ -16,6 +16,13 @@ load_dotenv()
 raw_password = os.getenv('DB_PASSWORD')
 encoded_password = quote_plus(raw_password) if raw_password else ""
 
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
 class Settings(BaseSettings):
     DATABASE_URL: str = (
         f"mysql+pymysql://{os.getenv('DB_USER')}:"
@@ -49,6 +56,11 @@ class Settings(BaseSettings):
     OPENAI_TRANSCRIPTION_MODEL: str = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "gpt-4o-mini-transcribe")
     OPENAI_TRANSCRIPTION_LANGUAGE: str = os.getenv("OPENAI_TRANSCRIPTION_LANGUAGE", "vi")
     OPENAI_TRANSCRIPTION_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_TRANSCRIPTION_TIMEOUT_SECONDS", 60))
+    CHATBOT_ENABLED: bool = _env_flag("CHATBOT_ENABLED", False)
+    OPENAI_CHAT_MODEL: str = os.getenv("OPENAI_CHAT_MODEL", "gpt-5-mini")
+    OPENAI_CHAT_FALLBACK_MODEL: str = os.getenv("OPENAI_CHAT_FALLBACK_MODEL", "gpt-5.4")
+    OPENAI_CHAT_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_CHAT_TIMEOUT_SECONDS", 30))
+    CHATBOT_MAX_PRODUCTS: int = int(os.getenv("CHATBOT_MAX_PRODUCTS", 5))
     AI_STICKER_MAX_PER_DAY: int = int(os.getenv("AI_STICKER_MAX_PER_DAY", 0))
     AI_STICKER_VOICE_MAX_FILE_MB: int = int(os.getenv("AI_STICKER_VOICE_MAX_FILE_MB", 25))
 

@@ -185,6 +185,35 @@ class ChatViewmodel extends ChangeNotifier {
     }
   }
 
+  Future<ChatMessage> addToCartAction({
+    required int productDetailId,
+    int quantity = 1,
+  }) async {
+    final conversation = _activeConversation;
+    if (conversation == null) {
+      throw StateError("Chưa có cuộc trò chuyện đang mở");
+    }
+
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final message = await _repository.addToCartAction(
+        conversation.id,
+        productDetailId: productDetailId,
+        quantity: quantity,
+      );
+      _upsertMessage(message);
+      _touchConversationAfterMessage(message, isIncoming: true);
+      notifyListeners();
+      return message;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> leaveConversation() async {
     _activeConversation = null;
     _messages.clear();

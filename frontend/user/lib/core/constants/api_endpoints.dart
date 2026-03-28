@@ -79,6 +79,8 @@ class ApiEndpoints {
       "/chat/conversations/$conversationId/messages/$messageId/recall";
   static String chatRead(int conversationId) =>
       "/chat/conversations/$conversationId/read";
+  static String chatAddToCartAction(int conversationId) =>
+      "/chat/conversations/$conversationId/actions/add-to-cart";
 
   // Push notification
   static const pushDevices = "/push/devices";

@@ -1,5 +1,8 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/domain/chat_message.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_cart_action_result_bubble.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_order_summary_bubble.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_product_list_bubble.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -52,14 +55,28 @@ class _ChatPageState extends State<ChatPage> {
     final images = List<String>.from(_selectedImages);
     if (content.isEmpty && images.isEmpty) return;
 
+    _messageController.clear();
+    setState(() {
+      _selectedImages.clear();
+    });
+
     try {
       await vm.sendMessage(content: content, filePaths: images);
       if (!mounted) return;
-      _messageController.clear();
-      setState(_selectedImages.clear);
       _scrollToBottom();
     } catch (_) {
       if (!mounted) return;
+      if (_messageController.text.trim().isEmpty && _selectedImages.isEmpty) {
+        _messageController.text = content;
+        _messageController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _messageController.text.length),
+        );
+        if (images.isNotEmpty) {
+          setState(() {
+            _selectedImages.addAll(images);
+          });
+        }
+      }
       final message = vm.errorMessage ?? "Không thể gửi tin nhắn.";
       ScaffoldMessenger.of(
         context,
@@ -160,7 +177,12 @@ class _ChatPageState extends State<ChatPage> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      final isMine = message.userId == myUserId;
+                      final senderRole = message.senderRole
+                          ?.trim()
+                          .toLowerCase();
+                      final isMine = senderRole == null || senderRole.isEmpty
+                          ? message.userId == myUserId
+                          : senderRole == "user" && message.userId == myUserId;
                       final isRead =
                           isMine &&
                           vm.counterpartLastReadMessageId != null &&
@@ -297,6 +319,26 @@ class _ChatBubble extends StatelessWidget {
       message.mediaItems.isNotEmpty &&
       message.mediaItems.every((item) => item.mediaType == "image");
 
+  bool get _hasProductListPayload =>
+      message.payload?.kind == "product_list" &&
+      (message.payload?.products.isNotEmpty ?? false);
+
+  bool get _hasOrderSummaryPayload =>
+      message.payload?.kind == "order_summary" &&
+      message.payload?.order != null;
+
+  bool get _hasCartActionResultPayload =>
+      message.payload?.kind == "cart_action_result" &&
+      message.payload?.cartActionResult != null;
+
+  bool get _isHandoffNotice => message.payload?.kind == "handoff_notice";
+
+  bool get _hasStructuredPayload =>
+      _hasProductListPayload ||
+      _hasOrderSummaryPayload ||
+      _hasCartActionResultPayload ||
+      _isHandoffNotice;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -314,7 +356,9 @@ class _ChatBubble extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.only(bottom: 10),
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.74,
+              maxWidth:
+                  MediaQuery.of(context).size.width *
+                  (_hasStructuredPayload ? 0.84 : 0.74),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -399,6 +443,48 @@ class _ChatBubble extends StatelessWidget {
                     message.content != null &&
                     message.content!.trim().isNotEmpty)
                   Text(message.content!, style: TextStyle(color: textColor)),
+                if (!message.isRecalled &&
+                    _hasStructuredPayload &&
+                    (message.content?.trim().isNotEmpty ?? false))
+                  const SizedBox(height: 10),
+                if (!message.isRecalled && _hasProductListPayload)
+                  ChatProductListBubble(payload: message.payload!),
+                if (!message.isRecalled && _hasOrderSummaryPayload)
+                  ChatOrderSummaryBubble(payload: message.payload!),
+                if (!message.isRecalled && _hasCartActionResultPayload)
+                  ChatCartActionResultBubble(payload: message.payload!),
+                if (!message.isRecalled && _isHandoffNotice)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(isMine ? 0.12 : 0.05),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.support_agent_outlined,
+                          size: 18,
+                          color: textColor.withOpacity(0.9),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            message.payload?.noticeMessage?.trim().isNotEmpty ==
+                                    true
+                                ? message.payload!.noticeMessage!
+                                : "Tư vấn viên sẽ tham gia hỗ trợ bạn trong ít phút nữa.",
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.94),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

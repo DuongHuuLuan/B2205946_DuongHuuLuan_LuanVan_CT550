@@ -64,6 +64,18 @@ class ChatService {
       })
     ).data;
   }
+
+  async claimHandoff(conversationId) {
+    return (
+      await this.api.post(`/conversations/${conversationId}/handoff/claim`)
+    ).data;
+  }
+
+  async resumeChatbot(conversationId) {
+    return (
+      await this.api.post(`/conversations/${conversationId}/handoff/resume`)
+    ).data;
+  }
 }
 
 export default new ChatService();

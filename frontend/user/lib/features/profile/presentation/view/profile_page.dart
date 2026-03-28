@@ -4,7 +4,6 @@ import 'package:b2205946_duonghuuluan_luanvan/core/constants/app_constants.dart'
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/evaluate/presentation/viewmodel/evaluate_viewmodel.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/order/domain/order_models.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/viewmodel/profile_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_header.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/widget/profile_utility_grid.dart';
@@ -25,12 +24,31 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _imagePicker = ImagePicker();
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   context.read<ProfileViewmodel>().load();
+  //   context.read<EvaluateViewmodel>().load(perPage: 10);
+  //   context.read<ChatViewmodel>().loadConversations(silent: true);
+  // }
   @override
   void initState() {
     super.initState();
-    context.read<ProfileViewmodel>().load();
-    context.read<EvaluateViewmodel>().load(perPage: 10);
-    context.read<ChatViewmodel>().loadConversations(silent: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<ProfileViewmodel>().load();
+
+      if (!mounted) return;
+      final vm = context.read<ProfileViewmodel>();
+      final evaluateVm = context.read<EvaluateViewmodel>();
+
+      if (vm.completedOrders.isNotEmpty) {
+        final orderIds = vm.completedOrders.map((e) => e.id).toList();
+        await evaluateVm.syncEvaluateStatusForOrders(orderIds);
+      }
+
+      await evaluateVm.load(perPage: 10);
+      context.read<ChatViewmodel>().loadConversations(silent: true);
+    });
   }
 
   @override
@@ -42,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final profile = vm.profile;
     final completedOrders = vm.completedOrders;
 
-    _scheduleEvaluateStatusSync(completedOrders, evaluateVm);
+    // _scheduleEvaluateStatusSync(completedOrders, evaluateVm);
 
     final pendingReviewCount = completedOrders
         .where((order) => !evaluateVm.reviewedOrderIds.contains(order.id))
@@ -264,22 +282,30 @@ class _ProfilePageState extends State<ProfilePage> {
     final profileVm = context.read<ProfileViewmodel>();
     final evaluateVm = context.read<EvaluateViewmodel>();
     final chatVm = context.read<ChatViewmodel>();
+
     await profileVm.refresh();
+
     if (!mounted) return;
+    if (profileVm.completedOrders.isNotEmpty) {
+      await evaluateVm.syncEvaluateStatusForOrders(
+        profileVm.completedOrders.map((e) => e.id).toList(),
+      );
+    }
+
     await evaluateVm.refresh();
     await chatVm.loadConversations(silent: true);
   }
 
-  void _scheduleEvaluateStatusSync(
-    List<OrderOut> completedOrders,
-    EvaluateViewmodel evaluateVm,
-  ) {
-    final orderIds = completedOrders.map((e) => e.id).toList(growable: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || orderIds.isEmpty) return;
-      evaluateVm.syncEvaluateStatusForOrders(orderIds);
-    });
-  }
+  // void _scheduleEvaluateStatusSync(
+  //   List<OrderOut> completedOrders,
+  //   EvaluateViewmodel evaluateVm,
+  // ) {
+  //   final orderIds = completedOrders.map((e) => e.id).toList(growable: false);
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     if (!mounted || orderIds.isEmpty) return;
+  //     evaluateVm.syncEvaluateStatusForOrders(orderIds);
+  //   });
+  // }
 
   String _supportingText(ProfileViewmodel vm) {
     final phone = (vm.profile?.phone ?? "").trim();

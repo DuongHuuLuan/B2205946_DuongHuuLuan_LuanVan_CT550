@@ -12,17 +12,11 @@ class ChatApi {
     }
   }
 
-  Future<Response> createOrGetConversation({
-    int? userId,
-    int? adminId,
-  }) async {
+  Future<Response> createOrGetConversation({int? userId, int? adminId}) async {
     try {
       return await DioClient.instance.post(
         ApiEndpoints.chatConversations,
-        data: {
-          "user_id": userId,
-          "admin_id": adminId,
-        },
+        data: {"user_id": userId, "admin_id": adminId},
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
@@ -37,10 +31,8 @@ class ChatApi {
     try {
       return await DioClient.instance.get(
         ApiEndpoints.chatMessages(conversationId),
-        queryParameters: {
-          "cursor": cursor,
-          "limit": limit,
-        }..removeWhere((key, value) => value == null),
+        queryParameters: {"cursor": cursor, "limit": limit}
+          ..removeWhere((key, value) => value == null),
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
@@ -92,9 +84,23 @@ class ChatApi {
     try {
       return await DioClient.instance.post(
         ApiEndpoints.chatRead(conversationId),
-        data: {
-          "message_id": messageId,
-        }..removeWhere((key, value) => value == null),
+        data: {"message_id": messageId}
+          ..removeWhere((key, value) => value == null),
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  Future<Response> addToCartAction(
+    int conversationId, {
+    required int productDetailId,
+    int quantity = 1,
+  }) async {
+    try {
+      return await DioClient.instance.post(
+        ApiEndpoints.chatAddToCartAction(conversationId),
+        data: {"product_detail_id": productDetailId, "quantity": quantity},
       );
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);

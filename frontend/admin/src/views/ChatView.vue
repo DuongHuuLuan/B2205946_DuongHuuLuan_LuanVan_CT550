@@ -57,9 +57,14 @@
                     {{ formatConversationStamp(conversation) }}
                   </div>
                 </div>
-                <span v-if="conversation.unread_count" class="badge text-bg-danger rounded-pill">
-                  {{ conversation.unread_count > 99 ? "99+" : conversation.unread_count }}
-                </span>
+                <div class="d-flex flex-column align-items-end gap-1">
+                  <span v-if="isConversationHandoffActive(conversation)" class="badge text-bg-warning rounded-pill">
+                    Chờ tiếp quản
+                  </span>
+                  <span v-if="conversation.unread_count" class="badge text-bg-danger rounded-pill">
+                    {{ conversation.unread_count > 99 ? "99+" : conversation.unread_count }}
+                  </span>
+                </div>
               </div>
             </button>
           </div>
@@ -81,7 +86,33 @@
                 </div>
               </div>
 
+              <div v-if="activeConversationHandoffActive" class="small mt-1 text-warning-emphasis fw-semibold">
+                {{ activeConversationClaimed ? "Tư vấn viên đang hỗ trợ thủ công" : "Cuộc chat đang chờ tiếp quản" }}
+              </div>
+
               <div class="d-flex gap-2">
+                <button
+                  v-if="activeConversationHandoffActive && !activeConversationClaimed"
+                  class="btn btn-sm btn-warning"
+                  type="button"
+                  :disabled="handoffActionLoading === 'claim'"
+                  @click="claimActiveHandoff"
+                >
+                  <i v-if="handoffActionLoading === 'claim'" class="fa-solid fa-spinner fa-spin me-1"></i>
+                  <i v-else class="fa-solid fa-user-check me-1"></i>
+                  Tiếp nhận
+                </button>
+                <button
+                  v-if="activeConversationHandoffActive"
+                  class="btn btn-sm btn-outline-primary"
+                  type="button"
+                  :disabled="handoffActionLoading === 'resume'"
+                  @click="resumeActiveChatbot"
+                >
+                  <i v-if="handoffActionLoading === 'resume'" class="fa-solid fa-spinner fa-spin me-1"></i>
+                  <i v-else class="fa-solid fa-robot me-1"></i>
+                  Bật lại trợ lý AI
+                </button>
                 <RouterLink class="btn btn-sm btn-outline-secondary"
                   :to="{ name: 'users.detail', params: { id: activeConversation.user_id } }">
                   <i class="fa-solid fa-user me-1"></i>
@@ -102,8 +133,20 @@
 
               <div v-else class="p-3 d-flex flex-column gap-2">
                 <div v-for="message in messages" :key="message.id || message.client_msg_id" class="message-row"
-                  :class="{ mine: isMine(message) }">
-                  <div class="message-bubble">
+                  :class="{
+                    mine: isMine(message),
+                    'system-row': isBotLikeMessage(message),
+                    'handoff-row': isHandoffNotice(message),
+                  }">
+                  <div class="message-bubble" :class="{
+                    'message-bubble-bot': isBotLikeMessage(message),
+                    'message-bubble-notice': isHandoffNotice(message),
+                  }">
+                    <div v-if="messageSenderLabel(message)" class="message-sender">
+                      <i class="me-2" :class="messageSenderIconClass(message)"></i>
+                      {{ messageSenderLabel(message) }}
+                    </div>
+
                     <div v-if="isRecalled(message)" class="message-recalled">
                       <i class="fa-solid fa-rotate-left me-2"></i>
                       {{ message.content || "Tin nhắn đã được thu hồi" }}
@@ -123,6 +166,12 @@
                     <div v-if="!isRecalled(message) && message.content"
                       :class="{ 'mt-2': message.media_items?.length }">
                       {{ message.content }}
+                    </div>
+
+                    <div v-if="!isRecalled(message) && isHandoffNotice(message) && message.payload?.notice_message"
+                      class="message-notice">
+                      <i class="fa-solid fa-user-headset me-2"></i>
+                      {{ message.payload.notice_message }}
                     </div>
                   </div>
 
@@ -219,6 +268,7 @@ const loadingConversations = ref(false);
 const loadingMessages = ref(false);
 const sending = ref(false);
 const recallingMessageId = ref(null);
+const handoffActionLoading = ref("");
 const errorMessage = ref("");
 const draft = ref("");
 const selectedFiles = ref([]);
@@ -242,6 +292,10 @@ const socketConnected = computed(() => chatNotificationState.socketConnected);
 const activeConversation = computed(() =>
   conversations.value.find((item) => item.id === activeConversationId.value) || null
 );
+const activeConversationHandoffActive = computed(() =>
+  isConversationHandoffActive(activeConversation.value)
+);
+const activeConversationClaimed = computed(() => hasClaimedNotice(messages.value));
 
 const lastSeenByCustomerMessageId = computed(
   () => activeConversation.value?.last_read_user_message_id || 0
@@ -263,6 +317,8 @@ function normalizeMessage(item = {}) {
     media_items: [],
     is_recalled: false,
     recalled_at: null,
+    sender_role: null,
+    payload: null,
     ...item,
   };
 }
@@ -387,8 +443,65 @@ function upsertMessage(message) {
   );
 }
 
+function messageSenderRole(message) {
+  const senderRole = String(message?.sender_role || "")
+    .trim()
+    .toLowerCase();
+  if (senderRole) return senderRole;
+  return Number(message?.user_id || 0) === currentAdminId.value ? "admin" : "user";
+}
+
 function isMine(message) {
-  return Number(message.user_id) === currentAdminId.value;
+  return messageSenderRole(message) === "admin";
+}
+
+function isBotLikeMessage(message) {
+  const role = messageSenderRole(message);
+  return role === "bot" || role === "system";
+}
+
+function isHandoffNotice(message) {
+  return String(message?.payload?.kind || "")
+    .trim()
+    .toLowerCase() === "handoff_notice";
+}
+
+function handoffNoticeCode(message) {
+  return String(message?.payload?.notice_code || "")
+    .trim()
+    .toLowerCase();
+}
+
+function hasClaimedNotice(list = []) {
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    const message = list[index];
+    if (!isHandoffNotice(message)) continue;
+    const code = handoffNoticeCode(message);
+    if (code === "human_handoff_claimed") return true;
+    if (code === "human_handoff_requested" || code === "bot_resumed") return false;
+  }
+  return false;
+}
+
+function isConversationHandoffActive(conversation) {
+  return String(conversation?.status || "")
+    .trim()
+    .toLowerCase() === "closed";
+}
+
+function messageSenderLabel(message) {
+  const role = messageSenderRole(message);
+  if (role === "bot") return "Trợ lý AI";
+  if (role === "system") return "Hệ thống";
+  return "";
+}
+
+function messageSenderIconClass(message) {
+  if (isHandoffNotice(message)) return "fa-solid fa-user-headset";
+  const role = messageSenderRole(message);
+  if (role === "bot") return "fa-solid fa-robot";
+  if (role === "system") return "fa-solid fa-circle-info";
+  return "fa-regular fa-message";
 }
 
 function isRecalled(message) {
@@ -503,7 +616,7 @@ function touchConversationAfterMessage(message) {
   if (index < 0) return;
 
   const current = conversations.value[index];
-  const incoming = !isMine(message);
+  const incoming = messageSenderRole(message) === "user";
   const updated = {
     ...current,
     last_message_id: message.id,
@@ -619,6 +732,44 @@ async function submitMessage() {
   }
 }
 
+async function claimActiveHandoff() {
+  if (!activeConversation.value || handoffActionLoading.value) return;
+
+  handoffActionLoading.value = "claim";
+  errorMessage.value = "";
+  try {
+    const response = await ChatService.claimHandoff(activeConversation.value.id);
+    upsertMessage(response);
+    touchConversationAfterMessage(response);
+    await loadConversations({ silent: true });
+    await scrollToBottom();
+  } catch (error) {
+    errorMessage.value =
+      error?.response?.data?.detail || error?.message || "Không thể tiếp nhận cuộc hội thoại này.";
+  } finally {
+    handoffActionLoading.value = "";
+  }
+}
+
+async function resumeActiveChatbot() {
+  if (!activeConversation.value || handoffActionLoading.value) return;
+
+  handoffActionLoading.value = "resume";
+  errorMessage.value = "";
+  try {
+    const response = await ChatService.resumeChatbot(activeConversation.value.id);
+    upsertMessage(response);
+    touchConversationAfterMessage(response);
+    await loadConversations({ silent: true });
+    await scrollToBottom();
+  } catch (error) {
+    errorMessage.value =
+      error?.response?.data?.detail || error?.message || "Không thể bật lại trợ lý AI lúc này.";
+  } finally {
+    handoffActionLoading.value = "";
+  }
+}
+
 async function recallMessage(message) {
   if (!activeConversation.value || !canRecallMessage(message)) return;
 
@@ -694,7 +845,7 @@ watch(
 
       upsertMessage(message);
       await scrollToBottom();
-      if (!isMine(message)) {
+      if (messageSenderRole(message) === "user") {
         await markConversationRead(message.id);
       }
       return;
@@ -814,6 +965,10 @@ onBeforeUnmount(() => {
   align-items: flex-end;
 }
 
+.message-row.system-row {
+  align-items: flex-start;
+}
+
 .message-bubble {
   max-width: min(70%, 720px);
   padding: 0.85rem 1rem;
@@ -828,9 +983,38 @@ onBeforeUnmount(() => {
   color: #112033;
 }
 
+.message-bubble-bot {
+  background: #f5f7fb;
+  color: #213042;
+}
+
+.message-bubble-notice {
+  background: #fff3d6;
+  color: #5f4500;
+  border: 1px solid rgba(185, 132, 0, 0.18);
+}
+
+.message-sender {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  opacity: 0.84;
+}
+
 .message-recalled {
   font-style: italic;
   opacity: 0.82;
+}
+
+.message-notice {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(95, 69, 0, 0.2);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .message-meta-row {

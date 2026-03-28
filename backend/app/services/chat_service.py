@@ -1,5 +1,6 @@
+import json
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cloudinary.uploader
 from fastapi import HTTPException, UploadFile
@@ -7,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Conversation, Message, MessageMedia, User
+from app.models.conversation import ConversationStatus
 from app.models.message import MessageType
 from app.models.message_media import MessageMediaType
 from app.models.user import UserRole
@@ -140,19 +142,48 @@ class ChatService(BaseService):
         }
 
     @staticmethod
+    def _parse_message_metadata(message: Message) -> Dict[str, Any]:
+        raw = getattr(message, "metadata_json", None)
+        if not raw:
+            return {}
+
+        if isinstance(raw, dict):
+            return raw
+
+        if isinstance(raw, str):
+            try:
+                parsed = json.loads(raw)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+
+        return {}
+
+    @staticmethod
     def serialize_message(message: Message) -> dict:
         is_recalled = message.deleted_at is not None
+        metadata = ChatService._parse_message_metadata(message)
+        sender_role = metadata.get("sender_role")
+        if sender_role is not None:
+            sender_role = str(sender_role).strip().lower() or None
+
+        payload = metadata.get("payload")
+        if not isinstance(payload, dict):
+            payload = None
+
         return {
             "id": message.id,
             "conversation_id": message.conversation_id,
             "user_id": message.user_id,
             "type": message.type,
             "client_msg_id": message.client_msg_id,
+            "sender_role": sender_role,
             "content": (
                 ChatService.RECALLED_MESSAGE_PLACEHOLDER
                 if is_recalled
                 else message.content
             ),
+            "payload": None if is_recalled else payload,
             "created_at": message.created_at,
             "media_items": (
                 []
@@ -371,6 +402,203 @@ class ChatService(BaseService):
                 except Exception:
                     pass
             raise
+
+    @staticmethod
+    def _create_automated_message(
+        db: Session,
+        conversation: Conversation,
+        *,
+        sender_role: str,
+        actor_user_id: Optional[int],
+        content: str,
+        payload: Optional[Dict[str, Any]] = None,
+        reply_to_message_id: Optional[int] = None,
+    ) -> Message:
+        cleaned_content = (content or "").strip()
+        if not cleaned_content and payload is None:
+            raise HTTPException(status_code=400, detail="Tin nhắn hệ thống không được để trống")
+
+        metadata: Dict[str, Any] = {
+            "sender_role": sender_role,
+        }
+        if isinstance(payload, dict) and payload:
+            metadata["payload"] = payload
+        if reply_to_message_id is not None:
+            metadata["reply_to_message_id"] = reply_to_message_id
+
+        try:
+            message = Message(
+                conversation_id=conversation.id,
+                user_id=actor_user_id or conversation.admin_id,
+                type=MessageType.SYSTEM,
+                content=cleaned_content or None,
+                metadata_json=json.dumps(metadata, ensure_ascii=False),
+            )
+            db.add(message)
+            db.flush()
+
+            conversation.last_message_id = message.id
+            conversation.last_message_at = datetime.utcnow()
+
+            if not chat_ws_manager.has_user_connection(
+                conversation_id=conversation.id,
+                user_id=conversation.user_id,
+            ):
+                PushNotificationService.enqueue_chat_notification(
+                    db=db,
+                    conversation=conversation,
+                    message=message,
+                    receiver_user_id=conversation.user_id,
+                )
+
+            db.commit()
+
+            return (
+                db.query(Message)
+                .options(joinedload(Message.media_items))
+                .filter(Message.id == message.id)
+                .first()
+            )
+        except Exception:
+            db.rollback()
+            raise
+
+    @staticmethod
+    def create_bot_message(
+        db: Session,
+        conversation_id: int,
+        content: str,
+        payload: Optional[Dict[str, Any]] = None,
+        reply_to_message_id: Optional[int] = None,
+    ) -> Message:
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        return ChatService._create_automated_message(
+            db=db,
+            conversation=conversation,
+            sender_role="bot",
+            actor_user_id=conversation.admin_id,
+            content=content,
+            payload=payload,
+            reply_to_message_id=reply_to_message_id,
+        )
+
+    @staticmethod
+    def create_system_message(
+        db: Session,
+        conversation_id: int,
+        content: str,
+        payload: Optional[Dict[str, Any]] = None,
+        actor_user_id: Optional[int] = None,
+    ) -> Message:
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        return ChatService._create_automated_message(
+            db=db,
+            conversation=conversation,
+            sender_role="system",
+            actor_user_id=actor_user_id or conversation.admin_id,
+            content=content,
+            payload=payload,
+        )
+
+    @staticmethod
+    def activate_handoff(
+        db: Session,
+        conversation_id: int,
+        content: str,
+        notice_message: str,
+        reply_to_message_id: Optional[int] = None,
+    ) -> Message:
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        conversation.status = ConversationStatus.CLOSED
+        return ChatService._create_automated_message(
+            db=db,
+            conversation=conversation,
+            sender_role="bot",
+            actor_user_id=conversation.admin_id,
+            content=content,
+            payload={
+                "kind": "handoff_notice",
+                "notice_code": "human_handoff_requested",
+                "notice_message": notice_message,
+            },
+            reply_to_message_id=reply_to_message_id,
+        )
+
+    @staticmethod
+    def claim_handoff(
+        db: Session,
+        conversation_id: int,
+        current_user: User,
+    ) -> Message:
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        ChatService._assert_member(conversation, current_user)
+        if current_user.role != UserRole.ADMIN or current_user.id != conversation.admin_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền tiếp nhận cuộc hội thoại này")
+        if conversation.status != ConversationStatus.CLOSED:
+            raise HTTPException(status_code=400, detail="Cuộc hội thoại này chưa ở trạng thái cần tiếp nhận")
+
+        return ChatService._create_automated_message(
+            db=db,
+            conversation=conversation,
+            sender_role="system",
+            actor_user_id=current_user.id,
+            content="Tư vấn viên đã tham gia cuộc trò chuyện và sẽ hỗ trợ bạn trực tiếp.",
+            payload={
+                "kind": "handoff_notice",
+                "notice_code": "human_handoff_claimed",
+                "notice_message": "Tư vấn viên đã tiếp nhận cuộc trò chuyện này.",
+            },
+        )
+
+    @staticmethod
+    def resume_chatbot(
+        db: Session,
+        conversation_id: int,
+        current_user: User,
+    ) -> Message:
+        conversation = ChatService.get_or_404(
+            db,
+            Conversation,
+            conversation_id,
+            "Conversation not found",
+        )
+        ChatService._assert_member(conversation, current_user)
+        if current_user.role != UserRole.ADMIN or current_user.id != conversation.admin_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền bật lại trợ lý AI cho cuộc hội thoại này")
+
+        conversation.status = ConversationStatus.OPEN
+        return ChatService._create_automated_message(
+            db=db,
+            conversation=conversation,
+            sender_role="system",
+            actor_user_id=current_user.id,
+            content="Trợ lý AI đã được bật lại. Bạn có thể tiếp tục hỏi để được hỗ trợ nhanh hơn.",
+            payload={
+                "kind": "handoff_notice",
+                "notice_code": "bot_resumed",
+                "notice_message": "Trợ lý AI đã được kích hoạt lại cho cuộc trò chuyện này.",
+            },
+        )
 
     @staticmethod
     def recall_message(

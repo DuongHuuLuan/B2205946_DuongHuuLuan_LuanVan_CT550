@@ -6,10 +6,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/chat/domain/chat_read_res
 abstract class ChatRepository {
   Future<List<ChatConversation>> getConversations();
 
-  Future<ChatConversation> createOrGetConversation({
-    int? userId,
-    int? adminId,
-  });
+  Future<ChatConversation> createOrGetConversation({int? userId, int? adminId});
 
   Future<ChatMessagePage> getMessages(
     int conversationId, {
@@ -24,13 +21,16 @@ abstract class ChatRepository {
     List<String> filePaths = const [],
   });
 
-  Future<ChatMessage> recallMessage(
-    int conversationId,
-    int messageId,
-  );
+  Future<ChatMessage> recallMessage(int conversationId, int messageId);
 
   Future<ChatReadResult> markConversationRead(
     int conversationId, {
     int? messageId,
+  });
+
+  Future<ChatMessage> addToCartAction(
+    int conversationId, {
+    required int productDetailId,
+    int quantity = 1,
   });
 }

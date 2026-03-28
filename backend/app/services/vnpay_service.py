@@ -15,6 +15,25 @@ from app.models.vnpay import VnPayTransaction
 
 class VnpayService:
     @staticmethod
+    def _latest_shipping_fee(order: Order) -> Decimal:
+        shipments = list(getattr(order, "ghn_shipments", []) or [])
+        if not shipments:
+            return Decimal("0")
+
+        shipments.sort(
+            key=lambda item: (
+                getattr(item, "created_at", None) or datetime.min,
+                getattr(item, "id", 0) or 0,
+            ),
+            reverse=True,
+        )
+        latest = shipments[0]
+        shipping_fee = getattr(latest, "shipping_fee", None)
+        if shipping_fee is None:
+            return Decimal("0")
+        return Decimal(str(shipping_fee))
+
+    @staticmethod
     def has_successful_transaction(db: Session, order_id: int) -> bool:
         return (
             db.query(VnPayTransaction.id)
@@ -63,6 +82,7 @@ class VnpayService:
         total = Decimal("0")
         for detail in order.order_details:
             total += Decimal(str(detail.price)) * detail.quantity
+        total += VnpayService._latest_shipping_fee(order)
         return max(total, Decimal("0"))
 
     @staticmethod
@@ -76,7 +96,10 @@ class VnpayService:
     ) -> str:
         order = (
             db.query(Order)
-            .options(joinedload(Order.order_details))
+            .options(
+                joinedload(Order.order_details),
+                joinedload(Order.ghn_shipments),
+            )
             .filter(Order.id == order_id)
             .first()
         )
@@ -192,7 +215,10 @@ class VnpayService:
 
             order = (
                 db.query(Order)
-                .options(joinedload(Order.order_details))
+                .options(
+                    joinedload(Order.order_details),
+                    joinedload(Order.ghn_shipments),
+                )
                 .filter(Order.id == order_id)
                 .first()
             )

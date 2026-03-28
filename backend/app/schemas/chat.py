@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 from app.models.conversation import ConversationStatus
 from app.models.message import MessageType
@@ -76,7 +76,9 @@ class MessageOut(BaseModel):
     user_id: int
     type: MessageType
     client_msg_id: Optional[str] = None
+    sender_role: Optional[str] = None
     content: Optional[str] = None
+    payload: Optional[Dict[str, Any]] = None
     created_at: datetime
     media_items: List[MessageMediaOut] = Field(default_factory=list)
     is_recalled: bool = False
