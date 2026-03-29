@@ -148,7 +148,7 @@ class DiscountService(BaseService):
     def get_valid_discount(db: Session, code_name: str):
         now = datetime.now()
         return db.query(Discount).filter(
-            Discount.name == code_name,
+            Discount.name.ilike((code_name or "").strip()),
             Discount.status == DiscountStatus.ACTIVE,
             Discount.start_at <=  now,
             Discount.end_at >= now
@@ -192,4 +192,37 @@ class DiscountService(BaseService):
             Discount.start_at <= now,
             Discount.end_at >= now
         ).all()
+
+    @staticmethod
+    def get_active_discounts(
+        db: Session,
+        limit: Optional[int] = None,
+        keyword: Optional[str] = None,
+    ) -> List[Discount]:
+        now = datetime.now()
+        query = db.query(Discount).filter(
+            Discount.status == DiscountStatus.ACTIVE,
+            Discount.start_at <= now,
+            Discount.end_at >= now,
+        )
+
+        cleaned_keyword = (keyword or "").strip()
+        if cleaned_keyword:
+            like = f"%{cleaned_keyword}%"
+            query = query.filter(
+                or_(
+                    Discount.name.ilike(like),
+                    Discount.description.ilike(like),
+                )
+            )
+
+        query = query.order_by(
+            Discount.percent.desc(),
+            Discount.end_at.asc(),
+            Discount.id.desc(),
+        )
+
+        if isinstance(limit, int) and limit > 0:
+            query = query.limit(limit)
+        return query.all()
         

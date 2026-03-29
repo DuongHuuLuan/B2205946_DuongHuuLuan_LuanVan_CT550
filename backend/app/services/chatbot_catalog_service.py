@@ -271,6 +271,7 @@ class ChatbotCatalogService:
                 {
                     "score": score,
                     "product_id": product.id,
+                    "category_id": getattr(product, "category_id", None),
                     "name": getattr(product, "name", "") or "",
                     "image_url": ChatbotCatalogService._pick_image_url(
                         product,

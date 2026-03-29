@@ -10,8 +10,10 @@ from app.models import Conversation, Message
 from app.models.conversation import ConversationStatus
 from app.models.message import MessageType
 from app.models.order import OrderStatus, PaymentStatus, RefundSupportStatus
+from app.services.cart_service import CartService
 from app.services.chat_service import ChatService
 from app.services.chatbot_catalog_service import ChatbotCatalogService
+from app.services.discount_service import DiscountService
 from app.services.openai_chat_service import OpenAIChatService
 from app.services.order_service import OrderService
 
@@ -37,8 +39,37 @@ class ChatbotService:
         "da giao chua",
         "trang thai don",
     )
+    _DISCOUNT_LOOKUP_KEYWORDS = (
+        "ma giam gia",
+        "voucher",
+        "coupon",
+        "khuyen mai",
+        "ma khuyen mai",
+        "code giam",
+        "code khuyen mai",
+        "uu dai",
+        "ma uu dai",
+    )
+    _GENERIC_DISCOUNT_CODE_TOKENS = {
+        "code",
+        "coupon",
+        "discount",
+        "giam",
+        "giamgia",
+        "khuyenmai",
+        "ma",
+        "nay",
+        "nao",
+        "uu",
+        "uu dai",
+        "voucher",
+    }
     _ORDER_ID_PATTERN = re.compile(
         r"(?:#|ma\s*don|don|order)\s*#?\s*(\d{1,9})",
+        re.IGNORECASE,
+    )
+    _DISCOUNT_CODE_PATTERN = re.compile(
+        r"(?:ma|voucher|coupon|code)\s*(?:giam\s*gia|khuyen\s*mai|uu\s*dai)?\s*[:#-]?\s*([a-z0-9_-]{3,40})",
         re.IGNORECASE,
     )
     _ORDER_STATUS_LABELS = {
@@ -72,6 +103,11 @@ class ChatbotService:
         return any(keyword in normalized_text for keyword in ChatbotService._ORDER_LOOKUP_KEYWORDS)
 
     @staticmethod
+    def _should_lookup_discount(message_text: str) -> bool:
+        normalized_text = ChatbotService._normalize_text(message_text)
+        return any(keyword in normalized_text for keyword in ChatbotService._DISCOUNT_LOOKUP_KEYWORDS)
+
+    @staticmethod
     def _extract_order_id(message_text: str) -> Optional[int]:
         normalized_text = ChatbotService._normalize_text(message_text)
         match = ChatbotService._ORDER_ID_PATTERN.search(normalized_text)
@@ -81,6 +117,18 @@ class ChatbotService:
             return int(match.group(1))
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _extract_discount_code(message_text: str) -> Optional[str]:
+        normalized_text = ChatbotService._normalize_text(message_text)
+        match = ChatbotService._DISCOUNT_CODE_PATTERN.search(normalized_text)
+        if not match:
+            return None
+
+        code = (match.group(1) or "").strip().lower()
+        if not code or code in ChatbotService._GENERIC_DISCOUNT_CODE_TOKENS:
+            return None
+        return code
 
     @staticmethod
     def _is_enabled() -> bool:
@@ -306,6 +354,186 @@ class ChatbotService:
         return f"{prefix} Trạng thái hiện tại: {order_label}. Thanh toán: {payment_label}."
 
     @staticmethod
+    def _build_discount_payload(
+        discounts: List[Any],
+        title: str,
+        actions: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        return {
+            "kind": "discount_list",
+            "title": title,
+            "discounts": [
+                {
+                    "discount_id": item.id,
+                    "name": getattr(item, "name", "") or "",
+                    "description": getattr(item, "description", None),
+                    "percent": float(getattr(item, "percent", 0) or 0),
+                    "status": getattr(getattr(item, "status", None), "value", getattr(item, "status", "")),
+                    "category_id": getattr(item, "category_id", None),
+                    "category_name": getattr(getattr(item, "category", None), "name", None),
+                    "start_at": (
+                        getattr(item, "start_at", None).isoformat()
+                        if getattr(item, "start_at", None) is not None
+                        else None
+                    ),
+                    "end_at": (
+                        getattr(item, "end_at", None).isoformat()
+                        if getattr(item, "end_at", None) is not None
+                        else None
+                    ),
+                }
+                for item in discounts
+            ],
+            "actions": actions,
+        }
+
+    @staticmethod
+    def _generate_discount_reply(
+        db: Session,
+        conversation: Conversation,
+        user_message_id: int,
+        cleaned_content: str,
+    ) -> Message:
+        requested_code = ChatbotService._extract_discount_code(cleaned_content)
+        discounts: List[Any] = []
+        source = "general"
+
+        if requested_code is not None:
+            discount = DiscountService.get_valid_discount(db, code_name=requested_code)
+            if not discount:
+                return ChatService.create_bot_message(
+                    db=db,
+                    conversation_id=conversation.id,
+                    content=(
+                        f"Mình chưa tìm thấy mã giảm giá `{requested_code.upper()}` còn hiệu lực. "
+                        "Bạn có thể kiểm tra lại mã hoặc mở kho voucher để xem các mã đang áp dụng."
+                    ),
+                    reply_to_message_id=user_message_id,
+                )
+            discounts = [discount]
+            source = "code"
+        else:
+            cart = CartService.get_cart(db, conversation.user_id)
+            cart_category_ids = list(
+                {
+                    int(category_id)
+                    for detail in getattr(cart, "cart_details", []) or []
+                    for category_id in [
+                        getattr(
+                            getattr(getattr(detail, "product_detail", None), "product", None),
+                            "category_id",
+                            None,
+                        )
+                    ]
+                    if isinstance(category_id, int)
+                }
+            )
+
+            candidate_products: List[Dict[str, Any]] = []
+            category_ids = cart_category_ids
+            if category_ids:
+                source = "cart"
+            else:
+                candidate_products = ChatbotCatalogService.search_products(
+                    db=db,
+                    query=cleaned_content,
+                    limit=settings.CHATBOT_MAX_PRODUCTS,
+                )
+                category_ids = list(
+                    {
+                        int(category_id)
+                        for item in candidate_products
+                        for category_id in [item.get("category_id")]
+                        if isinstance(category_id, int)
+                    }
+                )
+                if category_ids:
+                    source = "query"
+
+            if category_ids:
+                discounts = list(
+                    DiscountService.get_valid_discounts_by_category_ids(
+                        db,
+                        category_ids=category_ids,
+                    ).values()
+                )
+            if not discounts:
+                discounts = DiscountService.get_active_discounts(
+                    db=db,
+                    limit=settings.CHATBOT_MAX_PRODUCTS,
+                )
+                source = "general"
+
+        discounts = sorted(
+            discounts,
+            key=lambda item: (
+                -float(getattr(item, "percent", 0) or 0),
+                getattr(item, "end_at", None) or getattr(item, "start_at", None),
+                -int(getattr(item, "id", 0) or 0),
+            ),
+        )[: settings.CHATBOT_MAX_PRODUCTS]
+
+        if not discounts:
+            return ChatService.create_bot_message(
+                db=db,
+                conversation_id=conversation.id,
+                content="Hiện tại chưa có mã giảm giá nào còn hiệu lực phù hợp với yêu cầu của bạn.",
+                reply_to_message_id=user_message_id,
+            )
+
+        actions = [
+            {
+                "type": "open_vouchers",
+                "label": "Xem kho voucher",
+                "target": "/profile/vouchers",
+            }
+        ]
+        if source == "cart":
+            actions.insert(
+                0,
+                {
+                    "type": "open_cart",
+                    "label": "Mở giỏ hàng",
+                    "target": "/cart",
+                },
+            )
+
+        first_discount = discounts[0]
+        first_category_name = getattr(getattr(first_discount, "category", None), "name", None)
+        if requested_code is not None:
+            content = (
+                f"Mã giảm giá {getattr(first_discount, 'name', '').upper()} đang còn hiệu lực. "
+                f"Ưu đãi hiện tại là giảm {float(getattr(first_discount, 'percent', 0) or 0):g}%"
+                + (
+                    f" cho danh mục {first_category_name}."
+                    if (first_category_name or "").strip()
+                    else "."
+                )
+            )
+            title = f"Mã giảm giá {getattr(first_discount, 'name', '').upper()}"
+        elif source == "cart":
+            content = "Mình tìm được một số mã giảm giá đang áp dụng cho các sản phẩm trong giỏ hàng của bạn."
+            title = "Mã giảm giá cho giỏ hàng"
+        elif source == "query":
+            content = "Mình tìm được một số mã giảm giá phù hợp với nhóm sản phẩm bạn đang quan tâm."
+            title = "Mã giảm giá phù hợp"
+        else:
+            content = "Hiện shop đang có một số mã giảm giá còn hiệu lực mà bạn có thể tham khảo."
+            title = "Mã giảm giá đang áp dụng"
+
+        return ChatService.create_bot_message(
+            db=db,
+            conversation_id=conversation.id,
+            content=content,
+            payload=ChatbotService._build_discount_payload(
+                discounts=discounts,
+                title=title,
+                actions=actions,
+            ),
+            reply_to_message_id=user_message_id,
+        )
+
+    @staticmethod
     def _generate_order_reply(
         db: Session,
         conversation: Conversation,
@@ -406,6 +634,14 @@ class ChatbotService:
                 content="Mình sẽ chuyển cuộc trò chuyện này cho tư vấn viên để hỗ trợ bạn kỹ hơn.",
                 notice_message="Tư vấn viên sẽ tham gia cuộc trò chuyện sớm nhất có thể.",
                 reply_to_message_id=user_message_id,
+            )
+
+        if ChatbotService._should_lookup_discount(cleaned_content):
+            return ChatbotService._generate_discount_reply(
+                db=db,
+                conversation=conversation,
+                user_message_id=user_message_id,
+                cleaned_content=cleaned_content,
             )
 
         if ChatbotService._should_lookup_order(cleaned_content):

@@ -2,6 +2,7 @@ class ChatMessagePayload {
   final String kind;
   final String? title;
   final List<ChatProductCardData> products;
+  final List<ChatDiscountData> discounts;
   final List<String> followUpSuggestions;
   final List<ChatProductActionData> actions;
   final String? noticeCode;
@@ -13,6 +14,7 @@ class ChatMessagePayload {
     required this.kind,
     required this.title,
     required this.products,
+    required this.discounts,
     required this.followUpSuggestions,
     required this.actions,
     required this.noticeCode,
@@ -23,6 +25,7 @@ class ChatMessagePayload {
 
   factory ChatMessagePayload.fromJson(Map<String, dynamic> json) {
     final products = json["products"];
+    final discounts = json["discounts"];
     final suggestions = json["follow_up_suggestions"];
     final actions = json["actions"];
     final cartActionResult = json["cart_action_result"];
@@ -35,6 +38,16 @@ class ChatMessagePayload {
                 .whereType<Map>()
                 .map(
                   (item) => ChatProductCardData.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
+          : const [],
+      discounts: discounts is List
+          ? discounts
+                .whereType<Map>()
+                .map(
+                  (item) => ChatDiscountData.fromJson(
                     Map<String, dynamic>.from(item),
                   ),
                 )
@@ -63,6 +76,44 @@ class ChatMessagePayload {
       order: order is Map
           ? ChatOrderSummaryData.fromJson(Map<String, dynamic>.from(order))
           : null,
+    );
+  }
+}
+
+class ChatDiscountData {
+  final int discountId;
+  final int? categoryId;
+  final String name;
+  final String? description;
+  final double percent;
+  final String? status;
+  final String? categoryName;
+  final DateTime? startAt;
+  final DateTime? endAt;
+
+  const ChatDiscountData({
+    required this.discountId,
+    required this.categoryId,
+    required this.name,
+    required this.description,
+    required this.percent,
+    required this.status,
+    required this.categoryName,
+    required this.startAt,
+    required this.endAt,
+  });
+
+  factory ChatDiscountData.fromJson(Map<String, dynamic> json) {
+    return ChatDiscountData(
+      discountId: _parseInt(json["discount_id"]) ?? 0,
+      categoryId: _parseInt(json["category_id"]),
+      name: json["name"]?.toString() ?? "",
+      description: json["description"]?.toString(),
+      percent: _parseDouble(json["percent"]) ?? 0,
+      status: json["status"]?.toString(),
+      categoryName: json["category_name"]?.toString(),
+      startAt: _parseDate(json["start_at"]),
+      endAt: _parseDate(json["end_at"]),
     );
   }
 }

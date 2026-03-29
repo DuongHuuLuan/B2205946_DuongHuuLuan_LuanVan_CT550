@@ -1,6 +1,7 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/domain/chat_message.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_cart_action_result_bubble.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_discount_list_bubble.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_order_summary_bubble.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/widget/chat_product_list_bubble.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/viewmodel/chat_viewmodel.dart';
@@ -22,21 +23,24 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
   final List<String> _selectedImages = [];
+  late final ChatViewmodel _chatVm;
 
   @override
   void initState() {
     super.initState();
+    _chatVm = context.read<ChatViewmodel>();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<ChatViewmodel>().openSupportConversation();
+      await _chatVm.openSupportConversation();
+      if (!mounted) return;
       _scrollToBottom();
     });
   }
 
   @override
   void dispose() {
+    _chatVm.leaveConversation();
     _messageController.dispose();
     _scrollController.dispose();
-    context.read<ChatViewmodel>().leaveConversation();
     super.dispose();
   }
 
@@ -120,7 +124,7 @@ class _ChatPageState extends State<ChatPage> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
+      if (!mounted || !_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent + 80,
         duration: const Duration(milliseconds: 240),
@@ -323,6 +327,10 @@ class _ChatBubble extends StatelessWidget {
       message.payload?.kind == "product_list" &&
       (message.payload?.products.isNotEmpty ?? false);
 
+  bool get _hasDiscountListPayload =>
+      message.payload?.kind == "discount_list" &&
+      (message.payload?.discounts.isNotEmpty ?? false);
+
   bool get _hasOrderSummaryPayload =>
       message.payload?.kind == "order_summary" &&
       message.payload?.order != null;
@@ -335,6 +343,7 @@ class _ChatBubble extends StatelessWidget {
 
   bool get _hasStructuredPayload =>
       _hasProductListPayload ||
+      _hasDiscountListPayload ||
       _hasOrderSummaryPayload ||
       _hasCartActionResultPayload ||
       _isHandoffNotice;
@@ -449,6 +458,8 @@ class _ChatBubble extends StatelessWidget {
                   const SizedBox(height: 10),
                 if (!message.isRecalled && _hasProductListPayload)
                   ChatProductListBubble(payload: message.payload!),
+                if (!message.isRecalled && _hasDiscountListPayload)
+                  ChatDiscountListBubble(payload: message.payload!),
                 if (!message.isRecalled && _hasOrderSummaryPayload)
                   ChatOrderSummaryBubble(payload: message.payload!),
                 if (!message.isRecalled && _hasCartActionResultPayload)
