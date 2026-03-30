@@ -90,6 +90,7 @@ class ApiEndpoints {
   static String helmetDesignDetail(int id) => "/designs/$id";
   static String helmetDesignShare(int id) => "/designs/$id/share";
   static String helmetDesignOrder(int id) => "/designs/$id/order";
+  static const myDesigns = "/designs/my-designs";
   static const helmetStickerCatalog = "/stickers/";
   static const helmetStickerGenerate = "/stickers/generate";
   static const helmetStickerTranscribeVoice = "/stickers/transcribe-voice";

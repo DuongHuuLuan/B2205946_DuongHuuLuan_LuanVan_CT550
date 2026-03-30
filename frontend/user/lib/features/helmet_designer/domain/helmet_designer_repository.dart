@@ -22,4 +22,6 @@ abstract class HelmetDesignerRepository {
     required int productDetailId,
     int quantity = 1,
   });
+
+  Future<List<HelmetDesign>> getMyDesigns();
 }

@@ -10,6 +10,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/view/ch
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_designer_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_3d_view_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_try_on_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/profile_designs_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_detail_page.dart';
@@ -305,6 +306,13 @@ class AppRouter {
               ),
             );
           },
+        ),
+        GoRoute(
+          path: "/profile/my-designs",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ProfileDesignsPage(),
+          ),
         ),
         GoRoute(
           path: "/helmet-3d",

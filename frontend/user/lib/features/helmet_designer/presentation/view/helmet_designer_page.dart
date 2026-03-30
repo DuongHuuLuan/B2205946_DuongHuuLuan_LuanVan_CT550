@@ -193,7 +193,16 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                     if (!mounted) return;
                     if (saved != null) {
                       messenger.showSnackBar(
-                        SnackBar(content: Text("Đã lưu thiết kế #${saved.id}")),
+                        SnackBar(
+                          content: Text("Đã lưu thiết kế thành công."),
+                          action: SnackBarAction(
+                            label: "Xem thiết kế",
+                            onPressed: () {
+                              context.go("/profile/my-designs");
+                            },
+                          ),
+                          duration: const Duration(seconds: 4),
+                        ),
                       );
                     }
                   },
@@ -235,17 +244,7 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
                   icon: const Icon(Icons.ios_share_outlined),
                   label: Text(vm.shareUrl == null ? "Chia sẻ" : "Đã tạo link"),
                 ),
-                // FilledButton.icon(
-                //   onPressed: () => context.go("/helmet-try-on"),
-                //   icon: const Icon(Icons.view_in_ar_outlined),
-                //   label: const Text("Thử nón"),
-                // ),
-                // if (vm.has3dModel)
-                //   FilledButton.tonalIcon(
-                //     onPressed: () => context.push("/helmet-3d"),
-                //     icon: const Icon(Icons.threed_rotation),
-                //     label: const Text("Xem 3D"),
-                //   ),
+
                 FilledButton.tonalIcon(
                   onPressed: vm.isOrderingDesign || !vm.hasOrderTarget
                       ? null

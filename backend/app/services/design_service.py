@@ -223,3 +223,7 @@ class DesignService(BaseService):
             "cart_detail_id": cart_detail.id,
             "design_id": design.id,
         }
+    
+    @staticmethod
+    def get_my_designs(db: Session, user_id: int) -> list[Design]:
+        return DesignService._query_with_relations(db).filter(Design.user_id == user_id).order_by(Design.created_at.desc(), Design.id.desc()).all()

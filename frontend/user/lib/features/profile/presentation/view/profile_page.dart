@@ -93,6 +93,13 @@ class _ProfilePageState extends State<ProfilePage> {
         onTap: vm.isUpdatingProfile ? null : () => _openEditProfileDialog(auth),
       ),
       ProfileUtilityItem(
+        icon: Icons.palette_outlined,
+        accentColor: Colors.black54,
+        title: "Thiết kế của tôi",
+        subtitle: "Xem lại các mẫu nón bạn đã tự thiết kế",
+        onTap: () => context.push("/profile/my-designs"),
+      ),
+      ProfileUtilityItem(
         icon: Icons.chat_bubble_outline,
         accentColor: Colors.black54,
         title: "Trò chuyện",

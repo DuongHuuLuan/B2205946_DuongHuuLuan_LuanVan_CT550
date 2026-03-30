@@ -104,11 +104,16 @@ class HelmetDesignerApi {
     try {
       return await DioClient.instance.post(
         ApiEndpoints.helmetDesignOrder(designId),
-        data: {
-          "product_detail_id": productDetailId,
-          "quantity": quantity,
-        },
+        data: {"product_detail_id": productDetailId, "quantity": quantity},
       );
+    } on DioException catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  Future<Response> getMyDesigns() async {
+    try {
+      return await DioClient.instance.get(ApiEndpoints.myDesigns);
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }

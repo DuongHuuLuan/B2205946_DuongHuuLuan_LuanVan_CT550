@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.design import (
     DesignCreate,
+    DesignListOut,
     DesignOrderIn,
     DesignOrderOut,
     DesignOut,
@@ -34,6 +35,14 @@ def update_design(
     current_user: User = Depends(require_user),
 ):
     return DesignService.update_design(db, design_id, current_user.id, design_in)
+
+@router.get("/my-designs", response_model=DesignListOut)
+def get_my_designs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user),
+):
+    designs = DesignService.get_my_designs(db, current_user.id)
+    return DesignListOut(items=designs)
 
 
 @router.get("/{design_id}", response_model=DesignOut)

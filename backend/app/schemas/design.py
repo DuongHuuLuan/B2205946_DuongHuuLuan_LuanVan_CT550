@@ -128,6 +128,22 @@ class DesignOut(DesignBase):
     class Config:
         from_attributes = True
 
+class DesignListItemOut(BaseModel):
+    id: int
+    product_id: int
+    name: str
+    base_image_url: str
+    is_shared: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DesignListOut(BaseModel):
+    items: List[DesignListItemOut] = []
+
 
 class DesignShareOut(BaseModel):
     share_url: str

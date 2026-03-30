@@ -160,4 +160,12 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
         )
         .toList();
   }
+
+  @override
+  Future<List<HelmetDesign>> getMyDesigns() async {
+    final response = await _api.getMyDesigns();
+    final items = _extractList(response.data);
+
+    return items.map(HelmetDesignMapper.fromJson).toList();
+  }
 }
