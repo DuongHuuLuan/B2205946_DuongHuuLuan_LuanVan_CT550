@@ -80,6 +80,7 @@ class DesignLayerOut(DesignLayerBase):
 
 class DesignBase(BaseModel):
     product_id: int
+    product_detail_id: Optional[int] = None
     name: str
     base_image_url: str
 
@@ -117,6 +118,7 @@ class DesignOut(DesignBase):
         return {
             "id": getattr(data, "id"),
             "product_id": getattr(data, "product_id"),
+            "product_detail_id": getattr(data, "product_detail_id", None),
             "name": getattr(data, "name"),
             "base_image_url": getattr(data, "base_image_url"),
             "stickers": list(getattr(data, "layers", []) or []),
@@ -131,6 +133,7 @@ class DesignOut(DesignBase):
 class DesignListItemOut(BaseModel):
     id: int
     product_id: int
+    product_detail_id: Optional[int] = None
     name: str
     base_image_url: str
     is_shared: bool

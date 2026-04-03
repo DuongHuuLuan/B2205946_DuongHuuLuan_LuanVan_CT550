@@ -52,12 +52,43 @@ class DesignService(BaseService):
     @staticmethod
     def _get_owned_design(db: Session, design_id: int, user_id: int) -> Design:
         design = DesignService._get_design_or_404(db, design_id)
-        DesignService.assert_owner(user_id, design.user_id, "Bạn không có quyền truy cập thiết kế này")
+        DesignService.assert_owner(
+            user_id,
+            design.user_id,
+            "Bạn không có quyền truy cập thiết kế này",
+        )
         return design
 
     @staticmethod
     def _ensure_product_exists(db: Session, product_id: int) -> Product:
-        return DesignService.get_or_404(db, Product, product_id, "Không tìm thấy sản phẩm")
+        return DesignService.get_or_404(
+            db,
+            Product,
+            product_id,
+            "Không tìm thấy sản phẩm",
+        )
+
+    @staticmethod
+    def _resolve_product_detail_id(
+        db: Session,
+        product_id: int,
+        product_detail_id: Optional[int],
+    ) -> Optional[int]:
+        if not product_detail_id or product_detail_id <= 0:
+            return None
+
+        product_detail = DesignService.get_or_404(
+            db,
+            ProductDetail,
+            product_detail_id,
+            "Không tìm thấy biến thể sản phẩm",
+        )
+        if product_detail.product_id != product_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Biến thể sản phẩm không thuộc mẫu nón của thiết kế này",
+            )
+        return product_detail.id
 
     @staticmethod
     def _normalize_layers(layers: Iterable[DesignLayerIn]) -> list[tuple[int, DesignLayerIn]]:
@@ -66,7 +97,12 @@ class DesignService(BaseService):
         return indexed_layers
 
     @staticmethod
-    def _replace_layers(db: Session, design: Design, layers: list[DesignLayerIn], user_id: int) -> None:
+    def _replace_layers(
+        db: Session,
+        design: Design,
+        layers: list[DesignLayerIn],
+        user_id: int,
+    ) -> None:
         sticker_map = StickerService.get_accessible_sticker_map(
             db,
             [layer.sticker_id for layer in layers],
@@ -77,7 +113,9 @@ class DesignService(BaseService):
             db.delete(existing_layer)
         db.flush()
 
-        for normalized_z_index, (_, layer_in) in enumerate(DesignService._normalize_layers(layers)):
+        for normalized_z_index, (_, layer_in) in enumerate(
+            DesignService._normalize_layers(layers)
+        ):
             sticker = sticker_map[layer_in.sticker_id]
             crop = layer_in.crop
             db.add(
@@ -104,10 +142,16 @@ class DesignService(BaseService):
     @staticmethod
     def create_design(db: Session, user_id: int, design_in: DesignCreate) -> Design:
         DesignService._ensure_product_exists(db, design_in.product_id)
+        product_detail_id = DesignService._resolve_product_detail_id(
+            db,
+            design_in.product_id,
+            design_in.product_detail_id,
+        )
 
         design = Design(
             user_id=user_id,
             product_id=design_in.product_id,
+            product_detail_id=product_detail_id,
             name=design_in.name,
             base_image_url=design_in.base_image_url,
             is_shared=False,
@@ -121,7 +165,12 @@ class DesignService(BaseService):
         return DesignService._get_design_or_404(db, design.id)
 
     @staticmethod
-    def update_design(db: Session, design_id: int, user_id: int, design_in: DesignUpdate) -> Design:
+    def update_design(
+        db: Session,
+        design_id: int,
+        user_id: int,
+        design_in: DesignUpdate,
+    ) -> Design:
         if design_in.id != design_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -129,9 +178,15 @@ class DesignService(BaseService):
             )
 
         DesignService._ensure_product_exists(db, design_in.product_id)
+        product_detail_id = DesignService._resolve_product_detail_id(
+            db,
+            design_in.product_id,
+            design_in.product_detail_id,
+        )
         design = DesignService._get_owned_design(db, design_id, user_id)
 
         design.product_id = design_in.product_id
+        design.product_detail_id = product_detail_id
         design.name = design_in.name
         design.base_image_url = design_in.base_image_url
 
@@ -180,24 +235,22 @@ class DesignService(BaseService):
     @staticmethod
     def order_design(db: Session, design_id: int, user_id: int, order_in: DesignOrderIn) -> dict:
         design = DesignService._get_owned_design(db, design_id, user_id)
-        product_detail = DesignService.get_or_404(
+        product_detail_id = DesignService._resolve_product_detail_id(
             db,
-            ProductDetail,
+            design.product_id,
             order_in.product_detail_id,
-            "Không tìm thấy biến thể sản phẩm",
         )
-
-        if product_detail.product_id != design.product_id:
+        if product_detail_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Biến thế sản phẩm không thuộc mẫu nón của thiết kế này",
+                detail="Không tìm thấy biến thể sản phẩm",
             )
 
         cart = CartService.add_to_cart(
             db,
             user_id,
             CartDetailCreate(
-                product_detail_id=order_in.product_detail_id,
+                product_detail_id=product_detail_id,
                 design_id=design.id,
                 quantity=order_in.quantity,
             ),
@@ -206,7 +259,7 @@ class DesignService(BaseService):
             (
                 item
                 for item in cart.cart_details
-                if item.product_detail_id == order_in.product_detail_id
+                if item.product_detail_id == product_detail_id
                 and item.design_id == design.id
             ),
             None,
@@ -214,7 +267,7 @@ class DesignService(BaseService):
         if cart_detail is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Không thể đưa thiết kế nào giỏ hàng",
+                detail="Không thể đưa thiết kế vào giỏ hàng",
             )
 
         return {
@@ -223,7 +276,12 @@ class DesignService(BaseService):
             "cart_detail_id": cart_detail.id,
             "design_id": design.id,
         }
-    
+
     @staticmethod
     def get_my_designs(db: Session, user_id: int) -> list[Design]:
-        return DesignService._query_with_relations(db).filter(Design.user_id == user_id).order_by(Design.created_at.desc(), Design.id.desc()).all()
+        return (
+            DesignService._query_with_relations(db)
+            .filter(Design.user_id == user_id)
+            .order_by(Design.created_at.desc(), Design.id.desc())
+            .all()
+        )

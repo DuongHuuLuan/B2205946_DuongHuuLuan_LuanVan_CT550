@@ -15,6 +15,9 @@ class HelmetDesignMapper {
           (json["helmet_product_id"] as num?)?.toInt() ??
           (json["helmetProductId"] as num?)?.toInt() ??
           0,
+      productDetailId:
+          (json["product_detail_id"] as num?)?.toInt() ??
+          (json["productDetailId"] as num?)?.toInt(),
       helmetName:
           json["name"]?.toString() ??
           json["helmet_name"]?.toString() ??
@@ -41,6 +44,7 @@ class HelmetDesignMapper {
     return {
       "id": design.id,
       "product_id": design.helmetProductId,
+      "product_detail_id": design.productDetailId,
       "name": design.helmetName,
       "base_image_url": design.helmetBaseImageUrl,
       "stickers": design.stickers.map(StickerLayerMapper.toJson).toList(),

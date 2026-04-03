@@ -60,6 +60,7 @@ class MockHelmetDesignerData {
     1001: {
       "id": 1001,
       "helmet_product_id": 101,
+      "product_detail_id": 10001,
       "helmet_name": "Royal Street Helmet",
       "helmet_base_image_url": "assets/images/logo.webp",
       "stickers": [
@@ -136,6 +137,7 @@ class MockHelmetDesignerData {
     final saved = HelmetDesign(
       id: design.id > 0 ? design.id : _nextDesignId++,
       helmetProductId: design.helmetProductId,
+      productDetailId: design.productDetailId,
       helmetName: design.helmetName,
       helmetBaseImageUrl: design.helmetBaseImageUrl,
       stickers: design.stickers,

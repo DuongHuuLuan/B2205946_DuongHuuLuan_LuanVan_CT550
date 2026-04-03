@@ -22,6 +22,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   HelmetDesign _currentDesign = HelmetDesign(
     id: 0,
     helmetProductId: 0,
+    productDetailId: null,
     helmetName: "",
     helmetBaseImageUrl: "",
     stickers: const [],
@@ -115,6 +116,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     _currentDesign = HelmetDesign(
       id: 0,
       helmetProductId: helmetProductId,
+      productDetailId: productDetailId,
       helmetName: helmetName,
       helmetBaseImageUrl: _resolvePreviewImageUrl(
         fallbackImageUrl: helmetBaseImageUrl,
@@ -143,6 +145,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
         ? productDetailId
         : null;
     _orderQuantity = quantity < 1 ? 1 : quantity;
+    _syncCurrentDesign();
     if (notify) {
       notifyListeners();
     }
@@ -171,6 +174,10 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     try {
       final design = await _repository.getDesignDetail(designId);
       _currentDesign = await _restoreDesignContext(design);
+      _selectedProductDetailId =
+          (_currentDesign.productDetailId ?? 0) > 0
+          ? _currentDesign.productDetailId
+          : null;
       _stickerLayers
         ..clear()
         ..addAll(design.stickers);
@@ -675,6 +682,8 @@ class HelmetDesignerViewModel extends ChangeNotifier {
   void _syncCurrentDesign() {
     _currentDesign = _currentDesign.copyWith(
       helmetBaseImageUrl: _resolvePreviewImageUrl(),
+      productDetailId: _selectedProductDetailId,
+      clearProductDetailId: _selectedProductDetailId == null,
       stickers: _sortedLayers(),
     );
   }

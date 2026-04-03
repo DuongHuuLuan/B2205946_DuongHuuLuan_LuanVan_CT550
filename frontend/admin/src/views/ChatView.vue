@@ -168,6 +168,416 @@
                       {{ message.content }}
                     </div>
 
+                    <div
+                      v-if="!isRecalled(message) && hasMonitoringCardPayload(message)"
+                      class="message-structured"
+                      :class="{ 'mt-3': hasMessageBody(message) }"
+                    >
+                      <template v-if="isProductListMessage(message)">
+                        <div class="monitor-card-stack">
+                          <div
+                            v-if="message.payload?.title"
+                            class="monitor-section-title"
+                          >
+                            <i class="fa-solid fa-box-open"></i>
+                            {{ message.payload.title }}
+                          </div>
+
+                          <div
+                            v-for="product in message.payload?.products || []"
+                            :key="`product-${message.id}-${product.product_id}`"
+                            class="monitor-card"
+                          >
+                            <div class="monitor-card-head">
+                              <img
+                                v-if="product.image_url"
+                                :src="product.image_url"
+                                :alt="product.name || 'Sản phẩm'"
+                                class="monitor-thumb"
+                              />
+
+                              <div class="monitor-card-copy">
+                                <div class="monitor-card-heading">
+                                  {{ product.name || `Sản phẩm #${product.product_id}` }}
+                                </div>
+
+                                <div class="monitor-card-subtitle">
+                                  <span v-if="product.category_name">
+                                    {{ product.category_name }}
+                                  </span>
+                                  <span v-if="product.price != null">
+                                    {{ formatCurrency(product.price) }}
+                                  </span>
+                                </div>
+
+                                <div
+                                  v-if="product.short_description"
+                                  class="monitor-card-text"
+                                >
+                                  {{ product.short_description }}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              v-if="product.variants?.length"
+                              class="monitor-chip-row"
+                            >
+                              <span
+                                v-for="variant in product.variants"
+                                :key="`variant-${message.id}-${variant.product_detail_id}`"
+                                class="monitor-chip"
+                                :class="
+                                  variant.is_available
+                                    ? 'monitor-chip-available'
+                                    : 'monitor-chip-unavailable'
+                                "
+                              >
+                                {{ formatVariantLabel(variant) }}
+                                <span class="monitor-chip-divider">•</span>
+                                {{ formatVariantStock(variant) }}
+                              </span>
+                            </div>
+
+                            <div class="monitor-inline-actions">
+                              <RouterLink
+                                v-if="toPositiveNumber(product.product_id)"
+                                class="monitor-inline-link"
+                                :to="{
+                                  name: 'products.detail',
+                                  params: { id: product.product_id },
+                                }"
+                              >
+                                <i class="fa-solid fa-up-right-from-square me-1"></i>
+                                Xem sản phẩm
+                              </RouterLink>
+                            </div>
+                          </div>
+
+                          <div
+                            v-if="message.payload?.follow_up_suggestions?.length"
+                            class="monitor-card monitor-card-muted"
+                          >
+                            <div class="monitor-section-title monitor-section-title-sm">
+                              <i class="fa-solid fa-comment-dots"></i>
+                              Gợi ý tiếp theo của bot
+                            </div>
+
+                            <div class="monitor-suggestion-row">
+                              <span
+                                v-for="(suggestion, index) in message.payload.follow_up_suggestions"
+                                :key="`suggestion-${message.id}-${index}`"
+                                class="monitor-suggestion"
+                              >
+                                {{ suggestion }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+
+                      <template v-else-if="isDiscountListMessage(message)">
+                        <div class="monitor-card-stack">
+                          <div
+                            v-if="message.payload?.title"
+                            class="monitor-section-title"
+                          >
+                            <i class="fa-solid fa-ticket-percent"></i>
+                            {{ message.payload.title }}
+                          </div>
+
+                          <div
+                            v-for="discount in message.payload?.discounts || []"
+                            :key="`discount-${message.id}-${discount.discount_id}`"
+                            class="monitor-card"
+                          >
+                            <div class="d-flex flex-column flex-md-row gap-3 justify-content-between">
+                              <div class="monitor-card-copy">
+                                <div class="monitor-card-heading">
+                                  {{ discount.name || `Mã #${discount.discount_id}` }}
+                                </div>
+
+                                <div class="monitor-card-subtitle">
+                                  <span class="monitor-emphasis">
+                                    Giảm {{ formatPercent(discount.percent) }}
+                                  </span>
+                                  <span v-if="discount.category_name">
+                                    {{ discount.category_name }}
+                                  </span>
+                                  <span class="monitor-status-pill monitor-status-neutral">
+                                    {{ discountStatusLabel(discount.status) }}
+                                  </span>
+                                </div>
+
+                                <div
+                                  v-if="discount.description"
+                                  class="monitor-card-text"
+                                >
+                                  {{ discount.description }}
+                                </div>
+
+                                <div class="monitor-inline-meta">
+                                  <span v-if="discount.start_at">
+                                    Bắt đầu: {{ formatDate(discount.start_at) }}
+                                  </span>
+                                  <span v-if="discount.end_at">
+                                    Kết thúc: {{ formatDate(discount.end_at) }}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div class="monitor-inline-actions monitor-inline-actions-tight">
+                                <RouterLink
+                                  v-if="toPositiveNumber(discount.discount_id)"
+                                  class="monitor-inline-link"
+                                  :to="{
+                                    name: 'discounts.detail',
+                                    params: { id: discount.discount_id },
+                                  }"
+                                >
+                                  <i class="fa-solid fa-up-right-from-square me-1"></i>
+                                  Xem mã
+                                </RouterLink>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+
+                      <template v-else-if="isOrderSummaryMessage(message)">
+                        <div class="monitor-card-stack">
+                          <div class="monitor-section-title">
+                            <i class="fa-solid fa-receipt"></i>
+                            {{ message.payload?.title || `Đơn hàng #${message.payload?.order?.order_id}` }}
+                          </div>
+
+                          <div class="monitor-card">
+                            <div class="d-flex flex-column flex-md-row gap-3 justify-content-between">
+                              <div class="monitor-card-copy">
+                                <div class="monitor-card-subtitle">
+                                  <span
+                                    class="monitor-status-pill"
+                                    :class="orderStatusClass(message.payload?.order?.status)"
+                                  >
+                                    {{
+                                      message.payload?.order?.status_label ||
+                                      message.payload?.order?.status ||
+                                      "Không rõ trạng thái"
+                                    }}
+                                  </span>
+
+                                  <span
+                                    class="monitor-status-pill"
+                                    :class="paymentStatusClass(message.payload?.order?.payment_status)"
+                                  >
+                                    {{
+                                      message.payload?.order?.payment_status_label ||
+                                      message.payload?.order?.payment_status ||
+                                      "Không rõ thanh toán"
+                                    }}
+                                  </span>
+
+                                  <span
+                                    v-if="message.payload?.order?.refund_support_status_label"
+                                    class="monitor-status-pill monitor-status-neutral"
+                                  >
+                                    {{ message.payload.order.refund_support_status_label }}
+                                  </span>
+                                </div>
+
+                                <div class="monitor-inline-meta">
+                                  <span v-if="message.payload?.order?.created_at">
+                                    Tạo lúc: {{ formatDateTime(message.payload.order.created_at) }}
+                                  </span>
+                                  <span v-if="message.payload?.order?.payment_method_name">
+                                    Thanh toán: {{ message.payload.order.payment_method_name }}
+                                  </span>
+                                  <span v-if="message.payload?.order?.recipient_name">
+                                    Người nhận: {{ message.payload.order.recipient_name }}
+                                  </span>
+                                  <span v-if="message.payload?.order?.recipient_phone">
+                                    SĐT: {{ message.payload.order.recipient_phone }}
+                                  </span>
+                                </div>
+
+                                <div
+                                  v-if="message.payload?.order?.delivery_address"
+                                  class="monitor-card-text"
+                                >
+                                  {{ message.payload.order.delivery_address }}
+                                </div>
+                              </div>
+
+                              <div class="monitor-inline-actions monitor-inline-actions-tight">
+                                <RouterLink
+                                  v-if="toPositiveNumber(message.payload?.order?.order_id)"
+                                  class="monitor-inline-link"
+                                  :to="{
+                                    name: 'orders.detail',
+                                    params: { id: message.payload.order.order_id },
+                                  }"
+                                >
+                                  <i class="fa-solid fa-up-right-from-square me-1"></i>
+                                  Chi tiết đơn
+                                </RouterLink>
+
+                                <RouterLink
+                                  v-if="toPositiveNumber(message.payload?.order?.order_id)"
+                                  class="monitor-inline-link"
+                                  :to="{
+                                    name: 'orders.production',
+                                    params: { id: message.payload.order.order_id },
+                                  }"
+                                >
+                                  <i class="fa-solid fa-industry me-1"></i>
+                                  Sản xuất
+                                </RouterLink>
+                              </div>
+                            </div>
+
+                            <div
+                              v-if="message.payload?.order?.items?.length"
+                              class="monitor-order-items"
+                            >
+                              <div
+                                v-for="(item, index) in message.payload.order.items"
+                                :key="`order-item-${message.id}-${index}`"
+                                class="monitor-order-item"
+                              >
+                                <img
+                                  v-if="item.image_url"
+                                  :src="item.image_url"
+                                  :alt="item.product_name || 'Sản phẩm'"
+                                  class="monitor-order-thumb"
+                                />
+
+                                <div class="monitor-card-copy">
+                                  <div class="monitor-card-heading monitor-card-heading-sm">
+                                    {{ item.product_name || "Sản phẩm" }}
+                                  </div>
+                                  <div
+                                    v-if="formatOrderItemVariant(item)"
+                                    class="monitor-card-subtitle"
+                                  >
+                                    {{ formatOrderItemVariant(item) }}
+                                  </div>
+                                </div>
+
+                                <div class="monitor-order-price">
+                                  {{ item.quantity || 0 }} ×
+                                  {{ formatCurrency(item.unit_price) }}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="monitor-stat-grid">
+                              <div class="monitor-stat">
+                                <div class="monitor-stat-label">Số lượng</div>
+                                <div class="monitor-stat-value">
+                                  {{ message.payload?.order?.total_items || 0 }}
+                                </div>
+                              </div>
+
+                              <div class="monitor-stat">
+                                <div class="monitor-stat-label">Phí ship</div>
+                                <div class="monitor-stat-value">
+                                  {{ formatCurrency(message.payload?.order?.shipping_fee) }}
+                                </div>
+                              </div>
+
+                              <div class="monitor-stat">
+                                <div class="monitor-stat-label">Tổng tiền</div>
+                                <div class="monitor-stat-value">
+                                  {{ formatCurrency(message.payload?.order?.total_amount) }}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+
+                      <template v-else-if="isCartActionResultMessage(message)">
+                        <div class="monitor-card-stack">
+                          <div class="monitor-section-title">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                            {{ message.payload?.title || "Kết quả thao tác giỏ hàng" }}
+                          </div>
+
+                          <div
+                            class="monitor-card"
+                            :class="
+                              message.payload?.cart_action_result?.status === 'error'
+                                ? 'monitor-card-error'
+                                : 'monitor-card-success'
+                            "
+                          >
+                            <div class="monitor-card-head">
+                              <img
+                                v-if="message.payload?.cart_action_result?.image_url"
+                                :src="message.payload.cart_action_result.image_url"
+                                :alt="
+                                  message.payload?.cart_action_result?.product_name ||
+                                  'Sản phẩm'
+                                "
+                                class="monitor-thumb"
+                              />
+
+                              <div class="monitor-card-copy">
+                                <div class="monitor-card-heading">
+                                  {{
+                                    message.payload?.cart_action_result?.product_name ||
+                                    "Sản phẩm trong giỏ"
+                                  }}
+                                </div>
+
+                                <div class="monitor-card-subtitle">
+                                  <span
+                                    class="monitor-status-pill"
+                                    :class="
+                                      cartActionStatusClass(
+                                        message.payload?.cart_action_result?.status
+                                      )
+                                    "
+                                  >
+                                    {{
+                                      cartActionStatusLabel(
+                                        message.payload?.cart_action_result?.status
+                                      )
+                                    }}
+                                  </span>
+
+                                  <span v-if="message.payload?.cart_action_result?.variant_label">
+                                    {{ message.payload.cart_action_result.variant_label }}
+                                  </span>
+
+                                  <span>
+                                    SL {{ message.payload?.cart_action_result?.quantity || 0 }}
+                                  </span>
+                                </div>
+
+                                <div
+                                  v-if="message.payload?.cart_action_result?.message"
+                                  class="monitor-card-text"
+                                >
+                                  {{ message.payload.cart_action_result.message }}
+                                </div>
+
+                                <div
+                                  v-if="toPositiveNumber(message.payload?.cart_action_result?.product_detail_id)"
+                                  class="monitor-inline-meta"
+                                >
+                                  <span>
+                                    Mã biến thể:
+                                    PD{{ message.payload.cart_action_result.product_detail_id }}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+
                     <div v-if="!isRecalled(message) && isHandoffNotice(message) && message.payload?.notice_message"
                       class="message-notice">
                       <i class="fa-solid fa-user-headset me-2"></i>
@@ -300,6 +710,30 @@ const activeConversationClaimed = computed(() => hasClaimedNotice(messages.value
 const lastSeenByCustomerMessageId = computed(
   () => activeConversation.value?.last_read_user_message_id || 0
 );
+
+const currencyFormatter = new Intl.NumberFormat("vi-VN", {
+  style: "currency",
+  currency: "VND",
+  maximumFractionDigits: 0,
+});
+
+const percentFormatter = new Intl.NumberFormat("vi-VN", {
+  maximumFractionDigits: 2,
+});
+
+const shortDateFormatter = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 function normalizeConversation(item = {}) {
   return {
@@ -464,6 +898,158 @@ function isHandoffNotice(message) {
   return String(message?.payload?.kind || "")
     .trim()
     .toLowerCase() === "handoff_notice";
+}
+
+function messagePayloadKind(message) {
+  return String(message?.payload?.kind || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isProductListMessage(message) {
+  return (
+    messagePayloadKind(message) === "product_list" &&
+    Array.isArray(message?.payload?.products) &&
+    message.payload.products.length > 0
+  );
+}
+
+function isDiscountListMessage(message) {
+  return (
+    messagePayloadKind(message) === "discount_list" &&
+    Array.isArray(message?.payload?.discounts) &&
+    message.payload.discounts.length > 0
+  );
+}
+
+function isOrderSummaryMessage(message) {
+  return (
+    messagePayloadKind(message) === "order_summary" &&
+    message?.payload?.order &&
+    typeof message.payload.order === "object"
+  );
+}
+
+function isCartActionResultMessage(message) {
+  return (
+    messagePayloadKind(message) === "cart_action_result" &&
+    message?.payload?.cart_action_result &&
+    typeof message.payload.cart_action_result === "object"
+  );
+}
+
+function hasMonitoringCardPayload(message) {
+  return (
+    isProductListMessage(message) ||
+    isDiscountListMessage(message) ||
+    isOrderSummaryMessage(message) ||
+    isCartActionResultMessage(message)
+  );
+}
+
+function hasMessageBody(message) {
+  return (
+    Boolean(String(message?.content || "").trim()) ||
+    Boolean(message?.media_items?.length)
+  );
+}
+
+function toPositiveNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function formatCurrency(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "Chưa có giá";
+  return currencyFormatter.format(amount);
+}
+
+function formatPercent(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "0%";
+  return `${percentFormatter.format(amount)}%`;
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return shortDateFormatter.format(date);
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return dateTimeFormatter.format(date);
+}
+
+function formatVariantLabel(variant = {}) {
+  const bits = [variant.color_name, variant.size_name].filter(Boolean);
+  return bits.join(" / ") || `PD${variant.product_detail_id || "?"}`;
+}
+
+function formatVariantStock(variant = {}) {
+  const stock = Number(variant?.stock || 0);
+  return variant?.is_available ? `Tồn ${stock}` : "Hết hàng";
+}
+
+function discountStatusLabel(status) {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "active") return "Đang áp dụng";
+  if (normalized === "upcoming") return "Sắp áp dụng";
+  if (normalized === "expired") return "Hết hạn";
+  if (normalized === "inactive") return "Tạm ngưng";
+  return status || "Không rõ trạng thái";
+}
+
+function formatOrderItemVariant(item = {}) {
+  return [item.color_name, item.size_name].filter(Boolean).join(" / ");
+}
+
+function orderStatusClass(status) {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "completed") return "monitor-status-success";
+  if (normalized === "shipping") return "monitor-status-warning";
+  if (normalized === "cancelled") return "monitor-status-danger";
+  return "monitor-status-neutral";
+}
+
+function paymentStatusClass(status) {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "paid") return "monitor-status-success";
+  if (normalized === "unpaid") return "monitor-status-warning";
+  return "monitor-status-neutral";
+}
+
+function cartActionStatusClass(status) {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "success") return "monitor-status-success";
+  if (normalized === "error") return "monitor-status-danger";
+  return "monitor-status-neutral";
+}
+
+function cartActionStatusLabel(status) {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "success") return "Thành công";
+  if (normalized === "error") return "Thất bại";
+  return status || "Không rõ trạng thái";
 }
 
 function handoffNoticeCode(message) {
@@ -1017,6 +1603,274 @@ onBeforeUnmount(() => {
   line-height: 1.45;
 }
 
+.message-structured {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.monitor-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.monitor-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.monitor-section-title-sm {
+  font-size: 0.74rem;
+}
+
+.monitor-card {
+  padding: 0.85rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(33, 48, 66, 0.1);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.monitor-card-muted {
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.monitor-card-success {
+  border-color: rgba(46, 125, 50, 0.25);
+}
+
+.monitor-card-error {
+  border-color: rgba(176, 0, 32, 0.25);
+}
+
+.monitor-card-head {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.monitor-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 0.8rem;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.monitor-card-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.monitor-card-heading {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.monitor-card-heading-sm {
+  font-size: 0.92rem;
+}
+
+.monitor-card-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+  opacity: 0.82;
+}
+
+.monitor-card-text {
+  font-size: 0.92rem;
+  line-height: 1.48;
+}
+
+.monitor-emphasis {
+  font-weight: 700;
+}
+
+.monitor-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.monitor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(33, 48, 66, 0.12);
+  background: rgba(255, 255, 255, 0.48);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.monitor-chip-available {
+  color: #1f4f29;
+}
+
+.monitor-chip-unavailable {
+  color: #8b1831;
+  background: rgba(176, 0, 32, 0.07);
+}
+
+.monitor-chip-divider {
+  opacity: 0.45;
+}
+
+.monitor-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+
+.monitor-inline-actions-tight {
+  margin-top: 0;
+}
+
+.monitor-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #486581;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.monitor-inline-link:hover {
+  color: #213042;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.monitor-inline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.78;
+}
+
+.monitor-suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.monitor-suggestion {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.36rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+}
+
+.monitor-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.monitor-order-item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.monitor-order-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.7rem;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.monitor-order-price {
+  text-align: right;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.monitor-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.monitor-stat {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.monitor-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.monitor-stat-value {
+  margin-top: 0.2rem;
+  font-weight: 700;
+}
+
+.monitor-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.56rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.monitor-status-success {
+  background: rgba(46, 125, 50, 0.14);
+  color: #215c29;
+}
+
+.monitor-status-warning {
+  background: rgba(185, 132, 0, 0.14);
+  color: #7a5a00;
+}
+
+.monitor-status-danger {
+  background: rgba(176, 0, 32, 0.12);
+  color: #8b1831;
+}
+
+.monitor-status-neutral {
+  background: rgba(33, 48, 66, 0.08);
+  color: inherit;
+}
+
 .message-meta-row {
   display: flex;
   align-items: center;
@@ -1100,6 +1954,29 @@ onBeforeUnmount(() => {
 
   .message-bubble {
     max-width: 88%;
+  }
+
+  .monitor-card-head {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .monitor-thumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .monitor-order-item {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .monitor-order-thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  .monitor-order-price {
+    grid-column: 2;
+    text-align: left;
   }
 }
 
