@@ -1,7 +1,6 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/ai_sticker_request.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_design.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_designer_repository.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/helmet_3d_surface.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_crop.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_layer.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/sticker_template.dart';
@@ -25,8 +24,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     helmetProductId: 0,
     helmetName: "",
     helmetBaseImageUrl: "",
-    helmetModel3dUrl: null,
-    helmetModel3dIosUrl: null,
     stickers: const [],
     isShared: false,
   );
@@ -81,8 +78,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       activeDesignView?.url ?? _currentDesign.helmetBaseImageUrl;
   bool get hasOrderTarget =>
       (_selectedProductDetailId ?? 0) > 0 && _orderQuantity > 0;
-  bool get has3dModel =>
-      (_currentDesign.helmetModel3dUrl?.trim().isNotEmpty ?? false);
 
   Future<void> loadStickerCatalog() async {
     if (isLoadingCatalog) return;
@@ -108,8 +103,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     required String helmetName,
     required String helmetBaseImageUrl,
     List<ProductImage> designViews = const [],
-    String? helmetModel3dUrl,
-    String? helmetModel3dIosUrl,
     int? productDetailId,
     int orderQuantity = 1,
   }) {
@@ -126,8 +119,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       helmetBaseImageUrl: _resolvePreviewImageUrl(
         fallbackImageUrl: helmetBaseImageUrl,
       ),
-      helmetModel3dUrl: helmetModel3dUrl,
-      helmetModel3dIosUrl: helmetModel3dIosUrl,
       stickers: const [],
       isShared: false,
     );
@@ -161,15 +152,11 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     int? helmetProductId,
     String? helmetName,
     String? helmetBaseImageUrl,
-    String? helmetModel3dUrl,
-    String? helmetModel3dIosUrl,
   }) {
     _currentDesign = _currentDesign.copyWith(
       helmetProductId: helmetProductId,
       helmetName: helmetName,
       helmetBaseImageUrl: helmetBaseImageUrl ?? _resolvePreviewImageUrl(),
-      helmetModel3dUrl: helmetModel3dUrl,
-      helmetModel3dIosUrl: helmetModel3dIosUrl,
       stickers: _sortedLayers(),
     );
     notifyListeners();
@@ -263,10 +250,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       zIndex: _stickerLayers.length,
       viewImageKey: _designViews.isEmpty ? null : _activeViewImageKey,
       crop: StickerCrop(),
-      surface: Helmet3dSurface.front,
-      surfaceX: 0.5,
-      surfaceY: 0.45,
-      surfaceScale: 1,
     );
 
     _stickerLayers.add(layer);
@@ -339,22 +322,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       bottom: _unitValue(crop.bottom),
     );
     _updateSelectedLayer(crop: normalized);
-  }
-
-  void updateSelectedLayerSurface(Helmet3dSurface surface) {
-    _updateSelectedLayer(surface: surface);
-  }
-
-  void updateSelectedLayerSurfacePlacement({
-    double? surfaceX,
-    double? surfaceY,
-    double? surfaceScale,
-  }) {
-    _updateSelectedLayer(
-      surfaceX: surfaceX,
-      surfaceY: surfaceY,
-      surfaceScale: surfaceScale,
-    );
   }
 
   void bringSelectedLayerForward() {
@@ -575,9 +542,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
             ? design.helmetName
             : product.name,
         helmetBaseImageUrl: resolvedImageUrl,
-        helmetModel3dUrl: design.helmetModel3dUrl ?? product.model3dUrl,
-        helmetModel3dIosUrl:
-            design.helmetModel3dIosUrl ?? product.model3dIosUrl,
       );
     } catch (_) {
       _activeViewImageKey = _resolveLoadedViewImageKey(
@@ -617,10 +581,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
         savedLayers[index].copyWith(
           viewImageKey: localLayer?.viewImageKey,
           clearViewImageKey: localLayer == null,
-          surface: localLayer?.surface,
-          surfaceX: localLayer?.surfaceX,
-          surfaceY: localLayer?.surfaceY,
-          surfaceScale: localLayer?.surfaceScale,
         ),
       );
     }
@@ -647,10 +607,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     int? tintColorValue,
     bool clearTintColor = false,
     StickerCrop? crop,
-    Helmet3dSurface? surface,
-    double? surfaceX,
-    double? surfaceY,
-    double? surfaceScale,
   }) {
     final layerId = selectedLayerId;
     if (layerId == null) return;
@@ -666,12 +622,6 @@ class HelmetDesignerViewModel extends ChangeNotifier {
       tintColorValue: tintColorValue,
       clearTintColor: clearTintColor,
       crop: crop,
-      surface: surface,
-      surfaceX: surfaceX == null ? null : _unitValue(surfaceX),
-      surfaceY: surfaceY == null ? null : _unitValue(surfaceY),
-      surfaceScale: surfaceScale == null
-          ? null
-          : _surfaceScaleValue(surfaceScale),
     );
     _syncCurrentDesign();
     notifyListeners();
@@ -772,9 +722,5 @@ class HelmetDesignerViewModel extends ChangeNotifier {
 
   double _scaleValue(double value) {
     return value.clamp(0.1, 4.0).toDouble();
-  }
-
-  double _surfaceScaleValue(double value) {
-    return value.clamp(0.35, 2.4).toDouble();
   }
 }

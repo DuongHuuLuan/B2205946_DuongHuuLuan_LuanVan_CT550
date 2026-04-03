@@ -5,9 +5,6 @@ from pydantic import ValidationError
 
 import cloudinary.uploader
 from app.api.utils import (
-    build_absolute_static_url,
-    delete_model_3d_from_cloudinary,
-    delete_local_model_3d_by_url,
     extract_replace_images_map,
     extract_view_image_key_map,
     extract_uploads,
@@ -16,7 +13,6 @@ from app.api.utils import (
     parse_int,
     parse_int_list,
     upload_images_to_cloudinary,
-    upload_model_3d_to_static,
 )
 from app.db.session import get_db
 from app.schemas.product import ProductCreate, ProductOut, ProductPaginationOut
@@ -40,7 +36,6 @@ def _parse_form_product_fields(form):
     return {
         "name": _get_str("name"),
         "description": description,
-        "model_3d_url": _get_str("model_3d_url") or _get_str("model3dUrl"),
         "unit": _get_str("unit"),
         "category_id": parse_int(_get_str("category_id")),
     }
@@ -52,29 +47,11 @@ async def _update_product_from_request(product_id: int, request: Request, db: Se
         form = await request.form()
         payload = _parse_form_product_fields(form)
         existing = ProductService.get_product_byID(db, product_id)
-        has_model_3d_url = "model_3d_url" in form or "model3dUrl" in form
-        model_3d_file = form.get("model_3d_file")
-        uploaded_model_relative_url = None
-        old_model_public_id = existing.model_3d_public_id
-        old_model_url = existing.model_3d_url
-
-        if is_upload_file(model_3d_file) and (model_3d_file.filename or "").strip():
-            try:
-                uploaded_model_relative_url = upload_model_3d_to_static(model_3d_file)
-            except ValueError as exc:
-                raise HTTPException(status_code=422, detail=str(exc))
-            payload["model_3d_url"] = build_absolute_static_url(
-                str(request.base_url),
-                uploaded_model_relative_url,
-            )
-            has_model_3d_url = True
 
         if not payload.get("name"):
             payload["name"] = existing.name
         if payload.get("description") is None:
             payload["description"] = existing.description
-        if not has_model_3d_url:
-            payload["model_3d_url"] = existing.model_3d_url
         if not payload.get("unit"):
             payload["unit"] = existing.unit
         if payload.get("category_id") is None:
@@ -83,29 +60,13 @@ async def _update_product_from_request(product_id: int, request: Request, db: Se
         try:
             product_in = ProductCreate(**payload)
         except ValidationError as exc:
-            if uploaded_model_relative_url:
-                delete_local_model_3d_by_url(uploaded_model_relative_url)
             raise HTTPException(status_code=422, detail=exc.errors())
 
         try:
             updated_product = ProductService.update_product(db, product_id, product_in)
-            if has_model_3d_url:
-                updated_product.model_3d_public_id = None
-                db.commit()
-                db.refresh(updated_product)
         except Exception:
             db.rollback()
-            if uploaded_model_relative_url:
-                delete_local_model_3d_by_url(uploaded_model_relative_url)
             raise
-
-        if old_model_url and old_model_url != getattr(updated_product, "model_3d_url", None):
-            delete_local_model_3d_by_url(old_model_url)
-        if old_model_public_id and old_model_public_id != getattr(updated_product, "model_3d_public_id", None):
-            try:
-                delete_model_3d_from_cloudinary(old_model_public_id)
-            except Exception:
-                pass
 
         replace_images = extract_replace_images_map(form)
         view_image_key_updates = extract_view_image_key_map(form)
@@ -211,41 +172,19 @@ async def create_product(
         form = await request.form()
 
         payload = _parse_form_product_fields(form)
-        model_3d_file = form.get("model_3d_file")
-        uploaded_model_relative_url = None
-
-        if is_upload_file(model_3d_file) and (model_3d_file.filename or "").strip():
-            try:
-                uploaded_model_relative_url = upload_model_3d_to_static(model_3d_file)
-            except ValueError as exc:
-                raise HTTPException(status_code=422, detail=str(exc))
-            payload["model_3d_url"] = build_absolute_static_url(
-                str(request.base_url),
-                uploaded_model_relative_url,
-            )
 
         if not payload.get("name") or not payload.get("unit") or payload.get("category_id") is None:
-            if uploaded_model_relative_url:
-                delete_local_model_3d_by_url(uploaded_model_relative_url)
             raise HTTPException(status_code=422, detail="Missing required fields")
 
         try:
             product_in = ProductCreate(**payload)
         except ValidationError as exc:
-            if uploaded_model_relative_url:
-                delete_local_model_3d_by_url(uploaded_model_relative_url)
             raise HTTPException(status_code=422, detail=exc.errors())
 
         try:
             new_product = ProductService.create_product(db, product_in)
-            if uploaded_model_relative_url:
-                new_product.model_3d_public_id = None
-                db.commit()
-                db.refresh(new_product)
         except Exception:
             db.rollback()
-            if uploaded_model_relative_url:
-                delete_local_model_3d_by_url(uploaded_model_relative_url)
             raise
 
         files = extract_uploads(form.getlist("images[]"))
@@ -312,15 +251,9 @@ def delete_product(product_id: int, db: Session = Depends(get_db), current_admin
     """
     API xóa 1 sản phẩm theo Id
     """
-    product = ProductService.ensure_product_can_delete(db, product_id)
+    ProductService.ensure_product_can_delete(db, product_id)
     ImageService.deleteAll_image(db, product_id)
     result = ProductService.delete_product(db, product_id, skip_validate=True)
-    delete_local_model_3d_by_url(getattr(product, "model_3d_url", None))
-    if getattr(product, "model_3d_public_id", None):
-        try:
-            delete_model_3d_from_cloudinary(product.model_3d_public_id)
-        except Exception:
-            pass
     return result
 
 

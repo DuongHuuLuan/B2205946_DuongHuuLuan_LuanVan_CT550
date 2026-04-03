@@ -11,7 +11,6 @@ from app.schemas.product_detail import ProductDetailCreate, ProductDetailOut
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
-    model_3d_url: Optional[str] = None
     unit: UnitEnum = UnitEnum.CHIEC
     category_id: int
 

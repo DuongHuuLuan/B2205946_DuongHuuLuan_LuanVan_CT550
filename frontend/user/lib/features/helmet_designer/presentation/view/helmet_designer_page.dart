@@ -29,7 +29,6 @@ class HelmetDesignerPage extends StatefulWidget {
   final int? initialQuantity;
   final String? initialHelmetName;
   final String? initialHelmetBaseImageUrl;
-  final String? initialHelmetModel3dUrl;
   final List<ProductImage> initialHelmetDesignViews;
 
   const HelmetDesignerPage({
@@ -40,7 +39,6 @@ class HelmetDesignerPage extends StatefulWidget {
     this.initialQuantity,
     this.initialHelmetName,
     this.initialHelmetBaseImageUrl,
-    this.initialHelmetModel3dUrl,
     this.initialHelmetDesignViews = const [],
   });
 
@@ -122,7 +120,6 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           helmetName: widget.initialHelmetName ?? "Mũ bảo hiểm",
           helmetBaseImageUrl: widget.initialHelmetBaseImageUrl ?? "",
           designViews: widget.initialHelmetDesignViews,
-          helmetModel3dUrl: widget.initialHelmetModel3dUrl,
           orderQuantity: widget.initialQuantity ?? 1,
         );
         return;
@@ -133,7 +130,6 @@ class _HelmetDesignerPageState extends State<HelmetDesignerPage> {
           helmetProductId: 101,
           helmetName: "Mũ bảo hiểm Royal Street",
           helmetBaseImageUrl: "assets/images/logo_royalStore2.png",
-          helmetModel3dUrl: widget.initialHelmetModel3dUrl,
           productDetailId: widget.initialProductDetailId,
           orderQuantity: widget.initialQuantity ?? 1,
         );

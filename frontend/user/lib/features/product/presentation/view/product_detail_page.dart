@@ -195,7 +195,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         "quantity": quantity,
         "helmetName": product.name,
         "helmetBaseImageUrl": baseImageUrl ?? "",
-        "helmetModel3dUrl": product.model3dUrl,
         "helmetDesignViews": designViews,
       },
     );

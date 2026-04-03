@@ -1,20 +1,11 @@
-import os
-import shutil
-import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
-from urllib.parse import urlparse
 
 import cloudinary.uploader
 from fastapi import UploadFile
 
 from app.models.order import OrderStatus
 from app.models.receipt import ReceiptStatus
-
-BACKEND_DIR = Path(__file__).resolve().parents[2]
-MODEL_3D_UPLOAD_DIR = BACKEND_DIR / "static" / "models"
-
 
 def is_upload_file(value) -> bool:
     return hasattr(value, "file") and hasattr(value, "filename")
@@ -100,58 +91,6 @@ def upload_images_to_cloudinary(
             }
         )
     return uploaded
-
-
-def upload_model_3d_to_static(file: UploadFile) -> str:
-    filename = (getattr(file, "filename", None) or "").strip()
-    if not filename.lower().endswith(".glb"):
-        raise ValueError("Model 3D phai la file .glb")
-
-    MODEL_3D_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-    ext = os.path.splitext(filename)[1] or ".glb"
-    stem = Path(filename).stem.strip()
-    safe_stem = "".join(ch if ch.isalnum() or ch in ("-", "_") else "-" for ch in stem)
-    safe_stem = safe_stem.strip("-_") or "helmet-model"
-    file_name = f"{safe_stem}-{uuid.uuid4().hex}{ext.lower()}"
-    file_path = MODEL_3D_UPLOAD_DIR / file_name
-
-    file.file.seek(0)
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    return f"/static/models/{file_name}"
-
-
-def build_absolute_static_url(base_url: str, relative_url: str) -> str:
-    normalized_base = (base_url or "").rstrip("/")
-    normalized_relative = f"/{relative_url.lstrip('/')}"
-    return f"{normalized_base}{normalized_relative}"
-
-
-def delete_local_model_3d_by_url(model_url: Optional[str]) -> None:
-    if not model_url:
-        return
-
-    parsed = urlparse(model_url)
-    path = parsed.path or ""
-    if not path.startswith("/static/models/"):
-        return
-
-    file_path = BACKEND_DIR / path.lstrip("/")
-    try:
-        if file_path.exists():
-            file_path.unlink()
-    except OSError:
-        pass
-
-
-def delete_model_3d_from_cloudinary(public_id: Optional[str]) -> None:
-    if not public_id:
-        return
-    cloudinary.uploader.destroy(public_id, resource_type="raw", invalidate=True)
-
-
 def format_dashboard_meta(timestamp: Optional[datetime]) -> str:
     if not timestamp:
         return "--"

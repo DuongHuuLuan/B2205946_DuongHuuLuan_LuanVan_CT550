@@ -8,8 +8,6 @@ import 'package:b2205946_duonghuuluan_luanvan/features/auth/presentation/view/re
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/presentation/view/cart_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/chat/presentation/view/chat_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_designer_page.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_3d_view_page.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/helmet_try_on_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/presentation/view/profile_designs_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/home/view/home_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/order_result_page.dart';
@@ -300,8 +298,6 @@ class AppRouter {
                 initialHelmetName: payload["helmetName"]?.toString(),
                 initialHelmetBaseImageUrl: payload["helmetBaseImageUrl"]
                     ?.toString(),
-                initialHelmetModel3dUrl: payload["helmetModel3dUrl"]
-                    ?.toString(),
                 initialHelmetDesignViews: designViews,
               ),
             );
@@ -312,20 +308,6 @@ class AppRouter {
           pageBuilder: (context, state) => AppRouteTransitions.buildPage(
             state: state,
             child: const ProfileDesignsPage(),
-          ),
-        ),
-        GoRoute(
-          path: "/helmet-3d",
-          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
-            state: state,
-            child: const Helmet3dViewPage(),
-          ),
-        ),
-        GoRoute(
-          path: "/helmet-try-on",
-          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
-            state: state,
-            child: const HelmetTryOnPage(),
           ),
         ),
 

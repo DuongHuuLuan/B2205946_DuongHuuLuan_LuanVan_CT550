@@ -97,16 +97,6 @@
                   {{ product.description || "-" }}
                 </div>
               </div>
-              <!-- <div class="mb-3">
-                <span class="label">Model 3D:</span>
-                <div class="text-muted mt-1">
-                  <a v-if="product.model_3d_url" :href="product.model_3d_url" target="_blank" rel="noopener noreferrer">
-                    {{ product.model_3d_url }}
-                  </a>
-                  <span v-else>-</span>
-                </div>
-              </div> -->
-
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
                   <thead>

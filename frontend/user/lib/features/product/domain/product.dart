@@ -7,8 +7,6 @@ class Product {
   final String description;
   final String unit;
   final int categoryId;
-  final String? model3dUrl;
-  final String? model3dIosUrl;
   final List<ProductImage> images;
   final List<ProductImage> designViews;
   final List<ProductDetail> productDetails;
@@ -21,8 +19,6 @@ class Product {
     required this.description,
     required this.unit,
     required this.categoryId,
-    this.model3dUrl,
-    this.model3dIosUrl,
     required this.images,
     this.designViews = const [],
     required this.productDetails,

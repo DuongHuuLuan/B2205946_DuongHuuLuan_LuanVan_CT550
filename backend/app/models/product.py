@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
@@ -17,8 +17,6 @@ class Product(Base):
     category_id = Column(Integer, ForeignKey("categories.id"))
     name = Column(String(255), nullable=False)
     description = Column(Text)
-    model_3d_url = Column(Text)
-    model_3d_public_id = Column(String(255))
     unit = Column(Enum(UnitEnum), default=UnitEnum.CHIEC, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -57,12 +57,12 @@ class HomeDrawer extends StatelessWidget {
               },
               trailing: const Icon(Icons.chevron_right, color: Colors.black),
             ),
-            _DrawerItem(
-              title: "Tin tức",
-              onTap: () {},
-              trailing: const Icon(Icons.chevron_right, color: Colors.black),
-            ),
-            _DrawerItem(title: "Liên hệ", onTap: () {}),
+            // _DrawerItem(
+            //   title: "Tin tức",
+            //   onTap: () {},
+            //   trailing: const Icon(Icons.chevron_right, color: Colors.black),
+            // ),
+            // _DrawerItem(title: "Liên hệ", onTap: () {}),
           ],
         ),
       ),
