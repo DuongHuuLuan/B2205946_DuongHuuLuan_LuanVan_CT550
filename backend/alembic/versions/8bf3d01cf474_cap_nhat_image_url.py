@@ -1,4 +1,4 @@
-"""Cap nhat image_url
+"""Cập nhật image_url
 
 Revision ID: 8bf3d01cf474
 Revises: b5a0aef7ad73

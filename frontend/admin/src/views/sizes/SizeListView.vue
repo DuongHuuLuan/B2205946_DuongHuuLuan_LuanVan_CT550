@@ -39,7 +39,7 @@
               <thead>
                 <tr>
                   <th class="ps-3" style="width: 140px">Mã kích thước</th>
-                  <th>Gia tri</th>
+                  <th>Giá trị</th>
                   <th class="text-end pe-3" style="width: 160px">Thao tác</th>
                 </tr>
               </thead>
@@ -57,11 +57,11 @@
                   <td class="text-end pe-3">
                     <div class="d-flex justify-content-end gap-2">
                       <RouterLink class="icon-btn icon-edit" :to="{ name: 'sizes.edit', params: { id: s.id } }"
-                        title="Chinh sua">
+                        title="Chỉnh sửa">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </RouterLink>
 
-                      <button class="icon-btn icon-delete" title="Xoa" @click="onDeleteClick(s.id)">
+                      <button class="icon-btn icon-delete" title="Xóa" @click="onDeleteClick(s.id)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
@@ -74,7 +74,7 @@
                   <td colspan="3" class="text-center py-5">
                     <div class="opacity-75">
                       <i class="fa-regular fa-folder-open fs-4 d-block mb-2"></i>
-                      Khong co kich thuoc phu hop.
+                      Không có kích thước phù hợp.
                     </div>
                   </td>
                 </tr>
@@ -114,8 +114,8 @@ async function fetchSizes() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Khong the tai kich thuoc.";
-    Swal.fire("Loi", msg, "error");
+      "Không thể tải kích thước.";
+    Swal.fire("Lỗi", msg, "error");
   } finally {
     loading.value = false;
   }
@@ -123,23 +123,23 @@ async function fetchSizes() {
 
 async function onDeleteClick(sizeId) {
   const result = await Swal.fire({
-    title: "Xoa kich thuoc nay?",
-    text: "Khong the hoan tac!",
+    title: "Xóa kích thước này?",
+    text: "Không thể hoàn tác!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Xoa",
-    cancelButtonText: "Huy",
+    confirmButtonText: "Xóa",
+    cancelButtonText: "Hủy",
   });
 
   if (result.isConfirmed) {
     try {
       await SizeService.delete(sizeId);
       await fetchSizes();
-      Swal.fire({ title: "Xoa thanh cong", icon: "success" });
+      Swal.fire({ title: "Xóa thành công", icon: "success" });
     } catch (err) {
       await Swal.fire({
-        title: "Loi",
-        text: err?.response?.data?.message || "Khong the xoa",
+        title: "Lỗi",
+        text: err?.response?.data?.message || "Không thể xóa",
         icon: "error",
       });
     }

@@ -1,4 +1,4 @@
-"""Cap nhat bang orders, delivery_info, paytment_methods
+"""Cập nhật bảng orders, delivery_info, paytment_methods
 
 Revision ID: 5c9f497eae08
 Revises: c8d5f2b9a2a6

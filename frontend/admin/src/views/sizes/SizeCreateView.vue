@@ -5,12 +5,12 @@
         class="d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-column flex-md-row"
       >
         <div>
-          <h4 class="mb-1">Tao kich thuoc</h4>
-          <div class="small opacity-75">Nhap kich thuoc va tao moi</div>
+          <h4 class="mb-1">Tạo kích thước</h4>
+          <div class="small opacity-75">Nhập kích thước và tạo mới</div>
         </div>
 
         <RouterLink class="btn btn-outline-secondary" :to="{ name: 'sizes.list' }">
-          <i class="fa-solid fa-arrow-left me-1"></i> Quay lai
+          <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </RouterLink>
       </div>
     </div>
@@ -20,7 +20,7 @@
         <div class="card-body">
           <Form :validation-schema="schema" @submit="onSubmit" v-slot="{ isSubmitting, resetForm }">
             <div class="mb-3">
-              <label class="form-label">Kich thuoc</label>
+              <label class="form-label">Kích thước</label>
 
               <Field name="size" v-slot="{ field, meta }">
                 <input
@@ -28,7 +28,7 @@
                   type="text"
                   class="form-control bg-transparent"
                   :class="{ 'is-invalid': meta.touched && !meta.valid }"
-                  placeholder="Vi du: S, M, L, XL"
+                  placeholder="Ví dụ: S, M, L, XL"
                 />
               </Field>
 
@@ -38,7 +38,7 @@
             <div class="d-flex gap-2">
               <button class="btn btn-accent" type="submit" :disabled="isSubmitting">
                 <i class="fa-solid fa-circle-plus me-1"></i>
-                {{ isSubmitting ? "Dang tao..." : "Tao kich thuoc" }}
+                {{ isSubmitting ? "Đang tạo..." : "Tạo kích thước" }}
               </button>
 
               <button
@@ -47,7 +47,7 @@
                 :disabled="isSubmitting"
                 @click="onReset(resetForm)"
               >
-                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                <i class="fa-solid fa-rotate-left me-1"></i> Làm mới
               </button>
             </div>
           </Form>
@@ -68,7 +68,7 @@ import SizeService from "@/services/size.service";
 const router = useRouter();
 
 const schema = yup.object({
-  size: yup.string().trim().required("Vui long nhap kich thuoc").max(20, "Toi da 20 ky tu"),
+  size: yup.string().trim().required("Vui lòng nhập kích thước").max(20, "Tối đa 20 ký tự"),
 });
 
 function onReset(resetFormFn) {
@@ -78,15 +78,15 @@ function onReset(resetFormFn) {
 async function onSubmit(values, { resetForm, setErrors }) {
   try {
     await SizeService.create({ size: values.size });
-    await Swal.fire("Thanh cong!", "Tao kich thuoc thanh cong!", "success");
+    await Swal.fire("Thành công!", "Tạo kích thước thành công!", "success");
     resetForm({ values: { size: "" } });
     router.push({ name: "sizes.list" });
   } catch (e) {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Tao kich thuoc that bai. Vui long thu lai.";
-    await Swal.fire("Tao kich thuoc that bai", msg, "error");
+      "Tạo kích thước thất bại. Vui lòng thử lại.";
+    await Swal.fire("Tạo kích thước thất bại", msg, "error");
     const errorsObj = e?.response?.data?.errors || {};
     const mapped = {};
     Object.keys(errorsObj).forEach((k) => {

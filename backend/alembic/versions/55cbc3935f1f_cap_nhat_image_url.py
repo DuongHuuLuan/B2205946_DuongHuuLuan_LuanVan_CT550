@@ -1,4 +1,4 @@
-"""Cap nhat image_url
+"""Cập nhật image_url
 
 Revision ID: 55cbc3935f1f
 Revises: 7552904fcd13

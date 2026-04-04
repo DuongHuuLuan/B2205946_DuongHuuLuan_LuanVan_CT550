@@ -1,4 +1,4 @@
-"""cap nhat bang dicounts, evaluates, order_discounts
+"""Cập nhật bảng dicounts, evaluates, order_discounts
 
 Revision ID: f0227cbaa8b1
 Revises: 5203d1b8727d

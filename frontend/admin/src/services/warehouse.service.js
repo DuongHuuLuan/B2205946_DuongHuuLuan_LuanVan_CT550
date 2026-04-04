@@ -25,7 +25,7 @@ class WarehouseService {
     return (await this.api.delete(`/${id}`)).data;
   }
 
-  // Lay chi tiet co phan trang
+  // Lấy chi tiết có phân trang
   async getDetails(id, params = {}) {
     return (await this.api.get(`/${id}/details`, { params })).data;
   }

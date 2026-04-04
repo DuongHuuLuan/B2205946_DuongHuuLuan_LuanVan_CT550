@@ -2,27 +2,27 @@
   <div class="card card-soft">
     <div class="card-body">
       <div v-if="loading" class="py-4 text-center opacity-75">
-        <i class="fa-solid fa-spinner fa-spin me-2"></i> Dang tai du lieu...
+        <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...
       </div>
 
       <div v-else>
-        <h4 class="mb-1">Chi tiet kich thuoc</h4>
+        <h4 class="mb-1">Chi tiết kích thước</h4>
         <div class="small opacity-75">ID: {{ id }}</div>
         <div class="mt-2">
-          <span class="fw-semibold">Gia tri:</span> {{ sizeValue || "-" }}
+          <span class="fw-semibold">Giá trị:</span> {{ sizeValue || "-" }}
         </div>
 
         <hr />
         <div class="d-flex gap-2">
           <RouterLink class="btn btn-outline-secondary" :to="{ name: 'sizes.list' }">
-            <i class="fa-solid fa-arrow-left me-1"></i> Quay lai
+            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
           </RouterLink>
 
           <RouterLink
             class="btn btn-outline-secondary"
             :to="{ name: 'sizes.edit', params: { id } }"
           >
-            <i class="fa-solid fa-pen-to-square me-1"></i> Chinh sua
+            <i class="fa-solid fa-pen-to-square me-1"></i> Chỉnh sửa
           </RouterLink>
         </div>
       </div>
@@ -53,8 +53,8 @@ async function fetchSize() {
     const msg =
       e?.response?.data?.message ||
       e?.response?.data?.error ||
-      "Khong the tai kich thuoc.";
-    await Swal.fire("Loi", msg, "error");
+      "Không thể tải kích thước.";
+    await Swal.fire("Lỗi", msg, "error");
     router.push({ name: "sizes.list" });
   } finally {
     loading.value = false;

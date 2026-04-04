@@ -1,4 +1,4 @@
-"""Cap nhat product
+"""Cập nhật product
 
 Revision ID: 7552904fcd13
 Revises: 8bf3d01cf474

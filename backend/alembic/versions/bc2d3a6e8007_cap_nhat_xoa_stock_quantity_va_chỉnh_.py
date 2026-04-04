@@ -1,4 +1,4 @@
-"""Cap nhat xoa stock_quantity va chỉnh sua kho
+"""Cập nhật xóa stock_quantity và chỉnh sửa kho
 
 Revision ID: bc2d3a6e8007
 Revises: b4da62be42a8

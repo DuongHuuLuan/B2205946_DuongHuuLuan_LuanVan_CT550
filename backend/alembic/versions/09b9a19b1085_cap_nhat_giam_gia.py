@@ -1,4 +1,4 @@
-"""Cap nhat giam gia
+"""Cập nhật giảm giá
 
 Revision ID: 09b9a19b1085
 Revises: 53a0e0b93937

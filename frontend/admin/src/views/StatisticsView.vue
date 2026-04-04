@@ -3,10 +3,10 @@
     <header class="hero-card">
       <div class="hero-copy">
         <div class="eyebrow">Thống kê</div>
-        <h1>Khung phần tích cho quản trị viên</h1>
+        <h1>Khung phân tích cho quản trị viên</h1>
         <p class="hero-text">
-          <!-- Trang nay nen la noi xem doanh thu, don hang, san pham, danh gia va cac canh bao van hanh
-          theo tung khoang thoi gian. -->
+          <!-- Trang này nên là nơi xem doanh thu, đơn hàng, sản phẩm, đánh giá và các cảnh báo vận hành
+          theo từng khoảng thời gian. -->
         </p>
 
         <div class="hero-actions">
@@ -101,7 +101,8 @@
     </section>
 
     <section class="metrics-grid">
-      <StatCard v-for="card in statCards" :key="card.label" :label="card.label" :value="card.value" :icon="card.icon" />
+      <StatCard v-for="card in statCards" :key="card.label" :label="card.label" :value="card.value" :lines="card.lines"
+        :icon="card.icon" />
     </section>
 
     <section v-if="showSalesView" class="analysis-grid">
@@ -836,8 +837,10 @@ const statCards = computed(() =>
           icon: "fa-solid fa-hourglass-half",
         },
         {
-          label: "Phương thức thanh toán chính",
-          value: `${topPaymentMethod.value.label} ${topPaymentMethod.value.share}%`,
+          label: "Top phương thức thanh toán",
+          lines: topPaymentMethods.value.length
+            ? topPaymentMethods.value.map((item) => `${item.label} ${item.share}%`)
+            : ["Chưa có dữ liệu"],
           icon: "fa-solid fa-credit-card",
         },
       ]
@@ -896,7 +899,20 @@ const lowRatingCount = computed(() =>
     .reduce((sum, item) => sum + item.count, 0),
 );
 
-const topPaymentMethod = computed(() => paymentMix.value[0] || { label: "--", share: 0 });
+const topPaymentMethods = computed(() => {
+  const sortedItems = [...paymentMix.value]
+    .filter((item) => item.label)
+    .sort((left, right) => {
+      if (right.share !== left.share) return right.share - left.share;
+      if (right.count !== left.count) return right.count - left.count;
+      return String(left.label).localeCompare(String(right.label), "vi");
+    });
+
+  return sortedItems.slice(0, 1).map((item) => ({
+    label: item.label,
+    share: item.share,
+  }));
+});
 
 const showSalesView = computed(() => filters.value.scope !== "reviews");
 const showReviewView = computed(() => filters.value.scope !== "sales");

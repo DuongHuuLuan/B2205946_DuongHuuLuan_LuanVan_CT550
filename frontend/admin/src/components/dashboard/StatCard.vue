@@ -8,7 +8,10 @@
         </div>
       </div>
 
-      <div class="stats-value">
+      <div v-if="displayLines.length" class="stats-lines">
+        <div v-for="line in displayLines" :key="line" class="value-line">{{ line }}</div>
+      </div>
+      <div v-else class="stats-value">
         <span class="value-number">{{ formatValue(value).number }}</span>
         <span class="value-unit">{{ formatValue(value).unit }}</span>
       </div>
@@ -17,11 +20,25 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
+
 const props = defineProps({
   label: String,
   value: [String, Number],
-  icon: String
+  icon: String,
+  lines: {
+    type: Array,
+    default: () => [],
+  },
 });
+
+const displayLines = computed(() =>
+  Array.isArray(props.lines)
+    ? props.lines
+      .map((line) => String(line || "").trim())
+      .filter(Boolean)
+    : [],
+);
 
 const formatValue = (val) => {
   if (!val) return { number: '0', unit: '' };
@@ -56,10 +73,23 @@ const formatValue = (val) => {
   gap: 4px;
 }
 
+.stats-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .value-number {
   font-size: 1.4rem;
   font-weight: 800;
   line-height: 1;
+  color: #333;
+}
+
+.value-line {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
   color: #333;
 }
 

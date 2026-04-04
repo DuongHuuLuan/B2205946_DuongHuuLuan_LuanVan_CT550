@@ -33,6 +33,7 @@ class OrderService {
     const response = await this.api.get(`/admin/${id}/production/export`, {
       params: { format, dpi },
       responseType: "blob",
+      timeout: 180000,
     });
 
     return {

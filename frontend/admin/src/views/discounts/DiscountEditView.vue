@@ -17,7 +17,7 @@
       <div class="card card-soft">
         <div class="card-body">
           <div v-if="loading" class="py-4 text-center opacity-75">
-            <i class="fa-solid fa-spinner fa-spin me-2"></i> Dang tai du lieu...
+            <i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải dữ liệu...
           </div>
 
           <Form v-else :key="formKey" :initial-values="initialValues" :validation-schema="schema" @submit="onSubmit"

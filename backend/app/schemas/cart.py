@@ -4,17 +4,17 @@ from datetime import datetime
 from app.schemas import *
 from app.schemas.product_detail import ProductDetailOut
 
-# du lieu khi them san pham vao gio
+# dữ liệu khi thêm sản phẩm vào giỏ
 class CartDetailCreate(BaseModel):
     product_detail_id: int
     design_id: Optional[int] = None
     quantity: int = 1
 
-#du lieu khi cap nhat so luong trong gio
+# dữ liệu khi cập nhật số lượng trong giỏ
 class CartDetailUpdate(BaseModel):
     quantity: int
 
-#schema cau truc hien thi mot mon hang trong gio
+# schema cấu trúc hiển thị một món hàng trong giỏ
 class CartDetailOut(BaseModel):
     id: int
     product_detail_id: int
@@ -36,7 +36,7 @@ class CartDetailOut(BaseModel):
     class Config: 
         from_attributes = True
 
-#schema hien thi toan bo gio hang
+# schema hiển thị toàn bộ giỏ hàng
 class CartOut(BaseModel):
     id: int
     user_id: int

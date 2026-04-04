@@ -1,4 +1,4 @@
-"""Them gia vao bien the san pham
+"""Thêm giá vào biến thể sản phẩm
 
 Revision ID: daf2f6a4a138
 Revises: 32042d410ddb

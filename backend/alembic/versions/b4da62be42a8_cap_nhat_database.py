@@ -1,4 +1,4 @@
-"""Cap nhat database
+"""Cập nhật database
 
 Revision ID: b4da62be42a8
 Revises: 55cbc3935f1f

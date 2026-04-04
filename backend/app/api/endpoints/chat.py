@@ -476,7 +476,7 @@ async def _process_chatbot_reply_background(
         )
     except Exception:
         logger.exception(
-            "Khong the tao chatbot message cho conversation_id=%s, user_message_id=%s",
+            "Không thể tạo tin nhắn chatbot cho conversation_id=%s, user_message_id=%s",
             conversation_id,
             user_message_id,
         )

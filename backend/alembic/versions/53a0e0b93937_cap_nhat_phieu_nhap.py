@@ -1,4 +1,4 @@
-"""Cap nhat phieu nhap
+"""Cập nhật phiếu nhập
 
 Revision ID: 53a0e0b93937
 Revises: bc2d3a6e8007
