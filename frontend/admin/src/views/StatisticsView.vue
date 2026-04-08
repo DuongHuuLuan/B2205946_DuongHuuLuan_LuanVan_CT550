@@ -5,8 +5,7 @@
         <div class="eyebrow">Thống kê</div>
         <h1>Khung phân tích cho quản trị viên</h1>
         <p class="hero-text">
-          <!-- Trang này nên là nơi xem doanh thu, đơn hàng, sản phẩm, đánh giá và các cảnh báo vận hành
-          theo từng khoảng thời gian. -->
+
         </p>
 
         <div class="hero-actions">
