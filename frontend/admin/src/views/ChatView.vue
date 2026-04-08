@@ -59,7 +59,7 @@
                 </div>
                 <div class="d-flex flex-column align-items-end gap-1">
                   <span v-if="isConversationHandoffActive(conversation)" class="badge text-bg-warning rounded-pill">
-                    Chờ tiếp quản
+                    AI tạm dừng
                   </span>
                   <span v-if="conversation.unread_count" class="badge text-bg-danger rounded-pill">
                     {{ conversation.unread_count > 99 ? "99+" : conversation.unread_count }}
@@ -86,13 +86,14 @@
                 </div>
               </div>
 
-              <div v-if="activeConversationHandoffActive" class="small mt-1 text-warning-emphasis fw-semibold">
-                {{ activeConversationClaimed ? "Tư vấn viên đang hỗ trợ thủ công" : "Cuộc chat đang chờ tiếp quản" }}
+              <div class="small mt-1 fw-semibold"
+                :class="activeConversationHandoffActive ? 'text-warning-emphasis' : 'text-success-emphasis'">
+                {{ activeConversationStatusText }}
               </div>
 
               <div class="d-flex gap-2">
                 <button
-                  v-if="activeConversationHandoffActive && !activeConversationClaimed"
+                  v-if="!activeConversationHandoffActive || !activeConversationClaimed"
                   class="btn btn-sm btn-warning"
                   type="button"
                   :disabled="handoffActionLoading === 'claim'"
@@ -706,6 +707,14 @@ const activeConversationHandoffActive = computed(() =>
   isConversationHandoffActive(activeConversation.value)
 );
 const activeConversationClaimed = computed(() => hasClaimedNotice(messages.value));
+const activeConversationStatusText = computed(() => {
+  if (activeConversationHandoffActive.value) {
+    return activeConversationClaimed.value
+      ? "Tư vấn viên đang hỗ trợ thủ công"
+      : "Trợ lý AI đang tạm dừng, cuộc chat chờ tiếp quản";
+  }
+  return "Trợ lý AI đang hỗ trợ";
+});
 
 const lastSeenByCustomerMessageId = computed(
   () => activeConversation.value?.last_read_user_message_id || 0
@@ -1293,9 +1302,35 @@ function createClientMsgId() {
   return `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+async function ensureManualModeBeforeReply() {
+  if (!activeConversation.value) return false;
+
+  if (activeConversationHandoffActive.value && activeConversationClaimed.value) {
+    return true;
+  }
+
+  if (!activeConversationHandoffActive.value) {
+    const result = await Swal.fire({
+      title: "Tiếp nhận cuộc chat?",
+      text: "Để nhắn thủ công, bạn cần tiếp nhận cuộc chat này và tạm dừng trợ lý AI trước khi gửi tin nhắn.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Tiếp nhận và nhắn",
+      cancelButtonText: "Hủy",
+    });
+
+    if (!result.isConfirmed) {
+      return false;
+    }
+  }
+
+  return claimActiveHandoff();
+}
+
 async function submitMessage() {
   if (!activeConversation.value || sending.value) return;
   if (!draft.value.trim() && !selectedFiles.value.length) return;
+  if (!(await ensureManualModeBeforeReply())) return;
 
   sending.value = true;
   errorMessage.value = "";
@@ -1319,7 +1354,11 @@ async function submitMessage() {
 }
 
 async function claimActiveHandoff() {
-  if (!activeConversation.value || handoffActionLoading.value) return;
+  if (!activeConversation.value) return false;
+  if (activeConversationHandoffActive.value && activeConversationClaimed.value) {
+    return true;
+  }
+  if (handoffActionLoading.value) return false;
 
   handoffActionLoading.value = "claim";
   errorMessage.value = "";
@@ -1329,9 +1368,11 @@ async function claimActiveHandoff() {
     touchConversationAfterMessage(response);
     await loadConversations({ silent: true });
     await scrollToBottom();
+    return true;
   } catch (error) {
     errorMessage.value =
       error?.response?.data?.detail || error?.message || "Không thể tiếp nhận cuộc hội thoại này.";
+    return false;
   } finally {
     handoffActionLoading.value = "";
   }

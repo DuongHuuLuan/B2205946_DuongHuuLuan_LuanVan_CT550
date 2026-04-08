@@ -554,8 +554,10 @@ class ChatService(BaseService):
         ChatService._assert_member(conversation, current_user)
         if current_user.role != UserRole.ADMIN or current_user.id != conversation.admin_id:
             raise HTTPException(status_code=403, detail="Bạn không có quyền tiếp nhận cuộc hội thoại này")
-        if conversation.status != ConversationStatus.CLOSED:
-            raise HTTPException(status_code=400, detail="Cuộc hội thoại này chưa ở trạng thái cần tiếp nhận")
+        if conversation.status == ConversationStatus.OPEN:
+            conversation.status = ConversationStatus.CLOSED
+        elif conversation.status != ConversationStatus.CLOSED:
+            raise HTTPException(status_code=400, detail="Cuộc hội thoại này không thể tiếp nhận lúc này")
 
         return ChatService._create_automated_message(
             db=db,

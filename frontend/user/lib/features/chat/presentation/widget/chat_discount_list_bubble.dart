@@ -95,32 +95,36 @@ class _DiscountTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: scheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  item.name.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.name.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Giảm ${_formatPercent(item.percent)}%",
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
-                  ),
+              Text(
+                "Giảm ${_formatPercent(item.percent)}%",
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
                 ),
               ),
             ],
@@ -137,21 +141,35 @@ class _DiscountTile extends StatelessWidget {
           ],
           if (hasCategory || hasExpiry) ...[
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (hasCategory)
-                  _MetaChip(
-                    icon: Icons.category_outlined,
-                    label: item.categoryName!.trim(),
-                  ),
-                if (hasExpiry)
-                  _MetaChip(
-                    icon: Icons.schedule_outlined,
-                    label: "HSD ${_formatDate(item.endAt!)}",
-                  ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (hasCategory)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: _MetaChip(
+                          icon: Icons.category_outlined,
+                          label: item.categoryName!.trim(),
+                        ),
+                      ),
+                    if (hasExpiry)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: _MetaChip(
+                          icon: Icons.schedule_outlined,
+                          label: "HSD ${_formatDate(item.endAt!)}",
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -194,11 +212,15 @@ class _MetaChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: scheme.onSurfaceVariant),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
           ),
         ],
       ),
