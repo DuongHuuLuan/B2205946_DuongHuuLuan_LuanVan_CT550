@@ -98,7 +98,16 @@ class GhnService:
 
         computed_insurance = insurance_value
         if computed_insurance is None:
-            computed_insurance = GhnService._order_total(order) if order else Decimal("0")
+            computed_insurance = Decimal("0")
+            if order:
+                for detail in order.order_details:
+                    unit_price = None
+                    if detail.product_detail is not None:
+                        unit_price = getattr(detail.product_detail, "price", None)
+                    if unit_price is None:
+                        unit_price = detail.price
+                    computed_insurance += Decimal(str(unit_price or 0)) * detail.quantity
+            computed_insurance = max(computed_insurance, Decimal("0"))
 
         payload = {
             "to_district_id": to_district_id,
@@ -145,6 +154,17 @@ class GhnService:
         order = GhnService._load_order(db, order_id)
         delivery = order.delivery_info
         total_amount = GhnService._order_total(order)
+        declared_value = insurance_value
+        if declared_value is None:
+            declared_value = Decimal("0")
+            for detail in order.order_details:
+                unit_price = None
+                if detail.product_detail is not None:
+                    unit_price = getattr(detail.product_detail, "price", None)
+                if unit_price is None:
+                    unit_price = detail.price
+                declared_value += Decimal(str(unit_price or 0)) * detail.quantity
+            declared_value = max(declared_value, Decimal("0"))
 
         if cod_amount is None:
             is_cod = False
@@ -185,7 +205,11 @@ class GhnService:
             "to_ward_code": to_ward_code,
             "to_district_id": to_district_id,
             "cod_amount": int(cod_amount),
-            "insurance_value": int(insurance_value or total_amount),
+            "insurance_value": int(declared_value),
+            "weight": weight_value,
+            "length": length_value,
+            "width": width_value,
+            "height": height_value,
             "Weight": weight_value,
             "Length": length_value,
             "Width": width_value,
@@ -216,12 +240,12 @@ class GhnService:
             to_address=delivery.address,
             to_ward_code=to_ward_code,
             to_district_id=to_district_id,
-            weight=settings.GHN_DEFAULT_WEIGHT,
-            length=settings.GHN_DEFAULT_LENGTH,
-            width=settings.GHN_DEFAULT_WIDTH,
-            height=settings.GHN_DEFAULT_HEIGHT,
+            weight=weight_value,
+            length=length_value,
+            width=width_value,
+            height=height_value,
             cod_amount=cod_amount,
-            insurance_value=insurance_value or total_amount,
+            insurance_value=declared_value,
             shipping_fee=Decimal(str(res.get("total_fee", 0))),
             expected_delivery_time=str(res.get("expected_delivery_time") or ""),
             leadtime=str(res.get("leadtime") or ""),
