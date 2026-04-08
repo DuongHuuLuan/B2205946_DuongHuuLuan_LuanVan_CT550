@@ -6,12 +6,14 @@ Xây dựng một hệ thống bán nón bảo hiểm hoàn chỉnh gồm backen
 
 Toàn bộ dự án được tổ chức thành 3 thành phần chính:
 
+```text
 Luan_Van/
-|-- backend/ FastAPI + SQLAlchemy + Alembic + MySQL
+|-- backend/          FastAPI + SQLAlchemy + Alembic + MySQL
 |-- frontend/
-| |-- admin/ Vue 3 + Vite cho quản trị viên
-| -- user/ Flutter cho ứng dụng người dùng
--- README.md Tài liệu tổng quan toàn dự án
+|   |-- admin/        Vue 3 + Vite cho quản trị viên
+|   `-- user/         Flutter cho ứng dụng người dùng
+`-- README.md         Tài liệu tổng quan toàn dự án
+```
 
 ### Vai trò từng thành phần
 
@@ -76,34 +78,36 @@ Luan_Van/
 
 ## 4. Cấu trúc thư mục quan trọng
 
+```text
 backend/
 |-- app/
-| |-- api/endpoints/ REST API theo từng nghiệp vụ
-| |-- core/ cấu hình, bảo mật, Firebase, Cloudinary
-| |-- db/ session và base database
-| |-- models/ SQLAlchemy models
-| |-- schemas/ Pydantic schemas
-| |-- services/ nghiệp vụ hệ thống
-| -- workers/ worker nền
-|-- alembic/ migration database
--- requirements.txt
+|   |-- api/endpoints/       REST API theo từng nghiệp vụ
+|   |-- core/                cấu hình, bảo mật, Firebase, Cloudinary
+|   |-- db/                  session và base database
+|   |-- models/              SQLAlchemy models
+|   |-- schemas/             Pydantic schemas
+|   |-- services/            nghiệp vụ hệ thống
+|   `-- workers/             worker nền
+|-- alembic/                 migration database
+`-- requirements.txt
 
 frontend/admin/
 |-- src/
-| |-- components/ layout, dashboard, chat
-| |-- routers/ định tuyến admin
-| |-- services/ tầng gọi API
-| |-- utils/ tiện ích dùng chung
-| `-- views/ màn hình quản trị theo module
--- package.json
+|   |-- components/          layout, dashboard, chat
+|   |-- routers/             định tuyến admin
+|   |-- services/            tầng gọi API
+|   |-- utils/               tiện ích dùng chung
+|   `-- views/               màn hình quản trị theo module
+`-- package.json
 
 frontend/user/
 |-- lib/
-| |-- app/ khởi tạo app, router, provider, theme
-| |-- core/ network, storage, constants, notifications
-| `-- features/ auth, product, cart, order, profile, chat,
-| evaluate, helmet_designer, ...
--- pubspec.yaml
+|   |-- app/                 khởi tạo app, router, provider, theme
+|   |-- core/                network, storage, constants, notifications
+|   `-- features/            auth, product, cart, order, profile, chat,
+|                            evaluate, helmet_designer, ...
+`-- pubspec.yaml
+```
 
 ## 5. Yêu cầu môi trường
 
