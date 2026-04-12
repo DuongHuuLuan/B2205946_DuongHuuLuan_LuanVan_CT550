@@ -86,6 +86,13 @@ class _ProfilePageState extends State<ProfilePage> {
         onTap: () => context.push("/profile/vouchers"),
       ),
       ProfileUtilityItem(
+        icon: Icons.location_on_outlined,
+        accentColor: Colors.black45,
+        title: "Địa chỉ giao hàng",
+        subtitle: "Xem các địa chỉ đã tạo và thêm địa chỉ mới",
+        onTap: () => context.push("/profile/addresses"),
+      ),
+      ProfileUtilityItem(
         icon: Icons.badge_outlined,
         accentColor: Colors.black54,
         title: "Chỉnh sửa hồ sơ",

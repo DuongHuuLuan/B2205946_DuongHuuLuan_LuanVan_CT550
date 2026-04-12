@@ -27,6 +27,9 @@ class ChatbotService:
         "thanh toan loi",
         "gap nhan vien",
         "gap admin",
+        "lien he nguoi ban",
+        "lien he shop",
+        "tu van vien", 
     )
     _ORDER_LOOKUP_KEYWORDS = (
         "don hang",

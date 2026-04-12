@@ -22,6 +22,7 @@ import 'package:b2205946_duonghuuluan_luanvan/features/order/presentation/view/o
 import 'package:b2205946_duonghuuluan_luanvan/features/cart/domain/cart.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/discount/domain/discount.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_page.dart';
+import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_addresses_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_orders_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_reviews_page.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/profile/presentation/view/profile_vouchers_page.dart';
@@ -332,6 +333,13 @@ class AppRouter {
           pageBuilder: (context, state) => AppRouteTransitions.buildPage(
             state: state,
             child: const ProfileReviewsPage(),
+          ),
+        ),
+        GoRoute(
+          path: "/profile/addresses",
+          pageBuilder: (context, state) => AppRouteTransitions.buildPage(
+            state: state,
+            child: const ProfileAddressesPage(),
           ),
         ),
         GoRoute(
