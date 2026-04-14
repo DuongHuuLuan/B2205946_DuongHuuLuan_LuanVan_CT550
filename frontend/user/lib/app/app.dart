@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:b2205946_duonghuuluan_luanvan/core/notifications/push_notification_service.dart';
@@ -27,6 +27,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   StreamSubscription<Uri>? _deepLinkSub;
   Timer? _chatBadgeTimer;
+  _PendingPaymentNavigation? _pendingPaymentNavigation;
+  bool _isFlushingPendingPaymentNavigation = false;
+  bool _hasQueuedPendingPaymentFlush = false;
 
   // Trạng thái cục bộ để quản lý UI mượt mà hơn
   int _unreadTotal = 0;
@@ -58,6 +61,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     unawaited(_syncPushState());
     _initDeepLinks();
+    _queuePendingPaymentNavigationFlush();
   }
 
   // --- LOGIC XỬ LÝ TRẠNG THÁI ---
@@ -66,6 +70,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!mounted) return;
     setState(() {}); // Rebuild để cập nhật shouldShowSupportChat
     unawaited(_syncPushState());
+    _queuePendingPaymentNavigationFlush();
   }
 
   void _handleChatStateChanged() {
@@ -80,6 +85,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void _handleRouteChanged() {
     if (!mounted) return;
     final nextLocation = _safeCurrentLocation();
+    final hasPendingPaymentNavigation = _pendingPaymentNavigation != null;
+
+    if (hasPendingPaymentNavigation && nextLocation == "/order-result") {
+      _pendingPaymentNavigation = null;
+    } else if (hasPendingPaymentNavigation &&
+        nextLocation != "/splash" &&
+        nextLocation != "/order-result") {
+      _queuePendingPaymentNavigationFlush();
+    }
+
     if (nextLocation == _currentLocation) return;
     setState(() {
       _currentLocation = nextLocation;
@@ -158,15 +173,50 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final orderId = int.tryParse(uri.queryParameters["orderId"] ?? "") ?? 0;
     if (orderId <= 0) return;
 
-    _router.go(
-      "/order-result",
-      extra: {
-        "orderId": orderId,
-        "paymentUrl": "",
-        "status": uri.queryParameters["status"] ?? "",
-        "valid": uri.queryParameters["valid"] ?? "",
-      },
-    );
+    setState(() {
+      _pendingPaymentNavigation = _PendingPaymentNavigation(
+        orderId: orderId,
+        status: uri.queryParameters["status"] ?? "",
+        valid: uri.queryParameters["valid"] ?? "",
+      );
+    });
+    _queuePendingPaymentNavigationFlush();
+  }
+
+  void _queuePendingPaymentNavigationFlush() {
+    if (!mounted || _hasQueuedPendingPaymentFlush) return;
+    _hasQueuedPendingPaymentFlush = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _hasQueuedPendingPaymentFlush = false;
+      if (!mounted) return;
+      unawaited(_flushPendingPaymentNavigation());
+    });
+  }
+
+  Future<void> _flushPendingPaymentNavigation() async {
+    if (!mounted || _isFlushingPendingPaymentNavigation) return;
+
+    final pending = _pendingPaymentNavigation;
+    if (pending == null || !_authVM.isInitialized) return;
+
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+
+    final currentLocation = _safeCurrentLocation();
+    if (currentLocation == "/order-result") {
+      _pendingPaymentNavigation = null;
+      return;
+    }
+    if (currentLocation == "/splash") return;
+
+    _isFlushingPendingPaymentNavigation = true;
+    try {
+      _router.go("/order-result", extra: pending.toExtra());
+    } finally {
+      _isFlushingPendingPaymentNavigation = false;
+    }
   }
 
   String _safeCurrentLocation() {
@@ -182,6 +232,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncPushState());
+      _queuePendingPaymentNavigationFlush();
     }
   }
 
@@ -198,13 +249,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final showPendingPaymentOverlay =
+        _pendingPaymentNavigation != null &&
+        _currentLocation != "/order-result";
+
     // Điều kiện hiển thị nút Chat
     final shouldShowSupportChat =
         _authVM.isAuthenticated &&
         _currentLocation != "/login" &&
         _currentLocation != "/register" &&
         _currentLocation != "/chat" &&
-        _currentLocation != "/splash";
+        _currentLocation != "/splash" &&
+        !showPendingPaymentOverlay;
 
     return MaterialApp.router(
       title: 'Helmet App',
@@ -217,6 +273,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
+            if (showPendingPaymentOverlay) const _PendingPaymentOverlay(),
             if (shouldShowSupportChat)
               Positioned(
                 right: _buttonOffset.dx,
@@ -260,6 +317,97 @@ class _SupportChatButton extends StatefulWidget {
 
   @override
   State<_SupportChatButton> createState() => _SupportChatButtonState();
+}
+
+class _PendingPaymentNavigation {
+  final int orderId;
+  final String status;
+  final String valid;
+
+  const _PendingPaymentNavigation({
+    required this.orderId,
+    required this.status,
+    required this.valid,
+  });
+
+  Map<String, dynamic> toExtra() {
+    return {
+      "orderId": orderId,
+      "paymentUrl": "",
+      "status": status,
+      "valid": valid,
+    };
+  }
+}
+
+class _PendingPaymentOverlay extends StatelessWidget {
+  const _PendingPaymentOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: ColoredBox(
+          color: colorScheme.surface.withValues(alpha: 0.96),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 22,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: colorScheme.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Đang mở kết quả thanh toán",
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Vui lòng chờ trong giây lát.",
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _SupportChatButtonState extends State<_SupportChatButton>
@@ -310,7 +458,7 @@ class _SupportChatButtonState extends State<_SupportChatButton>
                     color: Theme.of(context).colorScheme.secondary,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),

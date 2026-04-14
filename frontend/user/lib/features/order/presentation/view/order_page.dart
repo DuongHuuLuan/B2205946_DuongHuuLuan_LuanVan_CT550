@@ -36,8 +36,8 @@ class _OrderPageState extends State<OrderPage> {
   @override
   void initState() {
     super.initState();
+    final vm = context.read<OrderViewmodel>();
     Future.microtask(() {
-      final vm = context.read<OrderViewmodel>();
       vm.setCartDetails(widget.cartDetails);
       vm.loadInitialData();
     });
@@ -108,9 +108,44 @@ class _OrderPageState extends State<OrderPage> {
                   AddressForm(
                     nameController: _nameController,
                     phoneController: _phoneController,
+                    addressController: _addressController,
+                  ),
+                if (!vm.useSavedAddress || vm.deliveries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      "Bạn có thể lưu địa chỉ mới trước khi đặt hàng, hoặc hệ thống sẽ tự lưu khi đơn hàng thành công.",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
                 if (!vm.useSavedAddress || vm.deliveries.isEmpty)
                   _LocationSelectors(vm: vm),
+                if (!vm.useSavedAddress || vm.deliveries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: vm.isLoading
+                            ? null
+                            : () => _saveNewAddress(vm),
+                        icon: vm.isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.add_location_alt_outlined),
+                        label: Text(
+                          vm.isLoading ? "Đang lưu địa chỉ" : "Lưu địa chỉ mới",
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 _SectionTitle("Sản phẩm"),
                 ...widget.cartDetails.map((item) {
@@ -129,13 +164,6 @@ class _OrderPageState extends State<OrderPage> {
                   );
                 }),
                 const SizedBox(height: 12),
-                // _SectionTitle("Phương thức vận chuyển (GHN)"),
-                // ShippingSection(
-                //   services: vm.services,
-                //   selected: vm.selectedService,
-                //   fee: vm.feeTotal,
-                //   onSelect: (service) => vm.selectService(service),
-                // ),
                 const SizedBox(height: 12),
                 _SectionTitle("Phương thức thanh toán"),
                 PaymentSection(
@@ -244,6 +272,46 @@ class _OrderPageState extends State<OrderPage> {
 
     context.go("/order-success", extra: {"orderId": vm.lastOrderId ?? 0});
   }
+
+  Future<void> _saveNewAddress(OrderViewmodel vm) async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final address = _addressController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty || address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng nhập đủ thông tin địa chỉ mới")),
+      );
+      return;
+    }
+
+    final delivery = await vm.createDeliveryAddress(
+      name: name,
+      phone: phone,
+      address: address,
+    );
+
+    if (!mounted) return;
+
+    if (delivery == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            vm.errorMessage ?? "Không thể tạo địa chỉ giao hàng mới",
+          ),
+        ),
+      );
+      return;
+    }
+
+    _nameController.clear();
+    _phoneController.clear();
+    _addressController.clear();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Đã lưu địa chỉ giao hàng mới")),
+    );
+  }
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -311,21 +379,8 @@ class _NoteSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // const options = [
-    //   {"value": "KHONGCHOXEMHANG", "label": "Không cho xem hàng"},
-    //   {"value": "CHOXEMHANGKHONGTHU", "label": "Cho xem hàng không thử"},
-    //   {"value": "CHOTHUHANG", "label": "Cho thử hàng"},
-    // ];
     return Column(
       children: [
-        // _Dropdown<String>(
-        //   label: "Yêu cầu giao hàng",
-        //   value: requiredNote,
-        //   items: options.map((e) => e["value"]!).toList(),
-        //   itemLabel: (value) =>
-        //       options.firstWhere((e) => e["value"] == value)["label"]!,
-        //   onChanged: onRequiredNoteChanged,
-        // ),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: TextField(
@@ -362,7 +417,7 @@ class _BottomBar extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               blurRadius: 12,
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               offset: const Offset(0, -2),
             ),
           ],
@@ -377,7 +432,9 @@ class _BottomBar extends StatelessWidget {
                   Text(
                     "Tổng cộng",
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -435,7 +492,7 @@ class _Dropdown<T> extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         items: items
             .map(
               (item) =>

@@ -117,6 +117,10 @@ class OrderViewmodel extends ChangeNotifier {
     try {
       wards = await _repository.getWards(district.districtId);
       services = await _repository.getServices(district.districtId);
+      selectedService = services.isNotEmpty ? services.first : null;
+      if (selectedService == null) {
+        _errorMessage = "Không lấy được dịch vụ GHN cho khu vực này.";
+      }
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -340,6 +344,47 @@ class OrderViewmodel extends ChangeNotifier {
       return value;
     }
     return "KHONGCHOXEMHANG";
+  }
+
+  Future<DeliveryInfo?> createDeliveryAddress({
+    required String name,
+    required String phone,
+    required String address,
+  }) async {
+    if (selectedDistrict == null || selectedWard == null) {
+      _errorMessage =
+          "Vui lòng chọn đầy đủ tỉnh/thành, quận/huyện và phường/xã";
+      notifyListeners();
+      return null;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final delivery = await _repository.createDeliveryInfo(
+        name: name,
+        phone: phone,
+        address: address,
+        districtId: selectedDistrict!.districtId,
+        wardCode: selectedWard!.wardCode,
+      );
+
+      deliveries = [
+        delivery,
+        ...deliveries.where((item) => item.id != delivery.id),
+      ];
+      selectedDelivery = delivery;
+      useSavedAddress = true;
+      await _applyDeliveryShipping(delivery);
+      return delivery;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void _refreshFeeIfReady() {
