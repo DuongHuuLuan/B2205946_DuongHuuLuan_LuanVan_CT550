@@ -15,4 +15,4 @@ alembic/versions/*.pyc
 .DS_Store
 Thumbs.db
 
-backend/app/core/firebase-credentials.json
+app/core/firebase-credentials.json

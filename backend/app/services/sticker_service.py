@@ -104,6 +104,7 @@ class StickerService(BaseService):
 
     @staticmethod
     def _build_ai_prompt(sticker_in: AiStickerGenerateIn) -> str:
+        # Quy định các nguyên tắc chung cho prompt tạo sticker AI để đảm bảo chất lượng và tính nhất quán của hình ảnh được tạo ra. Các nguyên tắc này bao gồm: Hình minh họa rõ ràng với một chủ thể chính ở trung tâm, sử dụng đường viền đậm, hình dạng đơn giản dễ nhận biết và độ tương phản cao. Không bao gồm bất kỳ văn bản, watermark, logo, khung hoặc đối tượng thừa nào trong hình ảnh. Nếu người dùng yêu cầu tách nền, sử dụng nền trong suốt; nếu không, giữ nền tối giản và không gây chú ý. Cho phép người dùng tùy chọn thêm phong cách hình ảnh và bảng màu chủ đạo để cá nhân hóa sticker, nhưng vẫn đảm bảo rằng chủ thể chính là yếu tố nổi bật nhất trong hình ảnh. Cuối cùng, mô tả rõ ràng chủ thể của sticker dựa trên prompt do người dùng cung cấp.
         parts = [
             "Create one clean sticker illustration with a single centered subject.",
             "Use a bold outline, simple readable shapes, and strong contrast.",
@@ -124,27 +125,6 @@ class StickerService(BaseService):
         parts.append(f"Subject: {sticker_in.prompt.strip()}.")
         return " ".join(parts)
 
-    @staticmethod
-    def _enforce_ai_generation_limit(db: Session, user_id: int) -> None:
-        if settings.AI_STICKER_MAX_PER_DAY <= 0:
-            return
-
-        day_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        generated_count = (
-            db.query(func.count(Sticker.id))
-            .filter(
-                Sticker.owner_user_id == user_id,
-                Sticker.is_ai_generated.is_(True),
-                Sticker.created_at >= day_start,
-            )
-            .scalar()
-            or 0
-        )
-        if generated_count >= settings.AI_STICKER_MAX_PER_DAY:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Bạn đã đạt giới hạn tạo sticker AI trong ngày",
-            )
 
     @staticmethod
     def _upload_generated_image(image_bytes: bytes, name: str) -> dict:
@@ -175,8 +155,6 @@ class StickerService(BaseService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Prompt không được để trống",
             )
-
-        StickerService._enforce_ai_generation_limit(db, user_id)
 
         sticker_name = StickerService._normalize_generated_name(sticker_in.name, prompt)
         ai_prompt = StickerService._build_ai_prompt(sticker_in)

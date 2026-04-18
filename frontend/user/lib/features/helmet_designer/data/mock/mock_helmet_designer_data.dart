@@ -123,9 +123,9 @@ class MockHelmetDesignerData {
   static String transcribeAiStickerVoice(String audioPath) {
     final name = audioPath.split(RegExp(r"[\\\\/]")).last.toLowerCase();
     if (name.contains("fire")) {
-      return "rong lua phong cach the thao";
+      return "rồng lửa phong cách thể thao";
     }
-    return "sticker rong lua phong cach the thao";
+    return "sticker rồng lửa phong cách thể thao";
   }
 
   static String removeBackground(String imageUrl) {

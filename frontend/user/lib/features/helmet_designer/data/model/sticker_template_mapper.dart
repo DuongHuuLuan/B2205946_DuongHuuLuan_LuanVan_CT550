@@ -8,14 +8,9 @@ class StickerTemplateMapper {
       imageUrl:
           json["image_url"]?.toString() ?? json["imageUrl"]?.toString() ?? "",
       category: json["category"]?.toString() ?? "",
-      isAiGenerated:
-          json["is_ai_generated"] as bool? ??
-          json["isAiGenerated"] as bool? ??
-          false,
+      isAiGenerated: json["is_ai_generated"] as bool? ?? false,
       hasTransparentBackground:
-          json["has_transparent_background"] as bool? ??
-          json["hasTransparentBackground"] as bool? ??
-          false,
+          json["has_transparent_background"] as bool? ?? false,
     );
   }
 

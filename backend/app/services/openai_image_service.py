@@ -121,19 +121,11 @@ class OpenAIImageService:
             ) from exc
 
         image_items = data.get("data") or []
+        # lấy ảnh đầu tiên trong danh sách image_items
         first_image = image_items[0] if image_items else None
-        if not first_image:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenAI không trả về ảnh nào",
-            )
 
+        # giải mã hình ảnh từ trường b64_json về dạng Binary (Bytes)
         image_base64 = first_image.get("b64_json")
-        if not image_base64:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenAI không trả về dữ liệu hợp lệ",
-            )
 
         try:
             image_bytes = base64.b64decode(image_base64)

@@ -47,17 +47,6 @@ class HelmetDesignerApi {
     }
   }
 
-  Future<Response> removeBackground(String imageUrl) async {
-    try {
-      return await DioClient.instance.post(
-        ApiEndpoints.helmetStickerRemoveBg,
-        data: {"image_url": imageUrl},
-      );
-    } on DioException catch (e) {
-      throw ErrorHandler.handle(e);
-    }
-  }
-
   Future<Response> saveDesign(Map<String, dynamic> body) async {
     try {
       final designId = (body["id"] as num?)?.toInt() ?? 0;

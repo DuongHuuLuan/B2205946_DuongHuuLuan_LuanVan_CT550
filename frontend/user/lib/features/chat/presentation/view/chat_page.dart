@@ -94,7 +94,7 @@ class _ChatPageState extends State<ChatPage> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text("Thu hồi tin nhắn?"),
-          content: const Text("Bạn có chắc chắn muốn thu hồi tin nhăn?"),
+          content: const Text("Bạn có chắc chắn muốn thu hồi tin nhắn?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),

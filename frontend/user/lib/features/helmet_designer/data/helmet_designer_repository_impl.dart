@@ -1,5 +1,4 @@
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/helmet_designer_api.dart';
-import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/mock/mock_helmet_designer_data.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/model/ai_sticker_request_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/model/helmet_design_mapper.dart';
 import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/data/model/sticker_template_mapper.dart';
@@ -10,16 +9,11 @@ import 'package:b2205946_duonghuuluan_luanvan/features/helmet_designer/domain/st
 
 class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
   final HelmetDesignerApi _api;
-  final bool useMockData;
 
-  HelmetDesignerRepositoryImpl(this._api, {this.useMockData = false});
+  HelmetDesignerRepositoryImpl(this._api);
 
   @override
   Future<List<StickerTemplate>> getStickerCatalog() async {
-    if (useMockData) {
-      return MockHelmetDesignerData.getStickerCatalog();
-    }
-
     final response = await _api.getStickerCatalog();
     final items = _extractList(response.data);
     return items.map(StickerTemplateMapper.fromJson).toList();
@@ -27,10 +21,6 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
 
   @override
   Future<StickerTemplate> generateAiSticker(AiStickerRequest request) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.generateAiSticker(request);
-    }
-
     final response = await _api.generateAiSticker(
       AiStickerRequestMapper.toJson(request),
     );
@@ -39,10 +29,6 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
 
   @override
   Future<String> transcribeAiStickerVoice(String audioPath) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.transcribeAiStickerVoice(audioPath);
-    }
-
     final response = await _api.transcribeAiStickerVoice(audioPath);
     final data = _extractMap(response.data);
     final prompt =
@@ -56,42 +42,19 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
   }
 
   @override
-  Future<String> removeBackground(String imageUrl) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.removeBackground(imageUrl);
-    }
-
-    final response = await _api.removeBackground(imageUrl);
-    final data = _extractMap(response.data);
-    return data["image_url"]?.toString() ?? data["url"]?.toString() ?? imageUrl;
-  }
-
-  @override
   Future<HelmetDesign> saveDesign(HelmetDesign design) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.saveDesign(design);
-    }
-
     final response = await _api.saveDesign(HelmetDesignMapper.toJson(design));
     return HelmetDesignMapper.fromJson(_extractMap(response.data));
   }
 
   @override
   Future<HelmetDesign> getDesignDetail(int designId) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.getDesignDetail(designId);
-    }
-
     final response = await _api.getDesignDetail(designId);
     return HelmetDesignMapper.fromJson(_extractMap(response.data));
   }
 
   @override
   Future<String> createShareLink(int designId) async {
-    if (useMockData) {
-      return MockHelmetDesignerData.createShareLink(designId);
-    }
-
     final response = await _api.createShareLink(designId);
     final data = _extractMap(response.data);
     final shareUrl = data["share_url"]?.toString() ?? data["url"]?.toString();
@@ -107,15 +70,6 @@ class HelmetDesignerRepositoryImpl extends HelmetDesignerRepository {
     required int productDetailId,
     int quantity = 1,
   }) async {
-    if (useMockData) {
-      MockHelmetDesignerData.orderDesign(
-        designId,
-        productDetailId: productDetailId,
-        quantity: quantity,
-      );
-      return;
-    }
-
     await _api.orderDesign(
       designId,
       productDetailId: productDetailId,

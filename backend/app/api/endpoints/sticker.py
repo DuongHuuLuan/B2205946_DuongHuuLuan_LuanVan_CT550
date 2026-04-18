@@ -132,13 +132,13 @@ async def transcribe_ai_sticker_voice(
     return {"prompt": prompt}
 
 
-@router.post("/remove-background", response_model=RemoveBackgroundOut, status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def remove_sticker_background(
-    payload: RemoveBackgroundIn,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_user),
-):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Chức năng tách nền sticker sẽ được triển khai ở bước background removal service",
-    )
+# @router.post("/remove-background", response_model=RemoveBackgroundOut, status_code=status.HTTP_501_NOT_IMPLEMENTED)
+# def remove_sticker_background(
+#     payload: RemoveBackgroundIn,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(require_user),
+# ):
+#     raise HTTPException(
+#         status_code=status.HTTP_501_NOT_IMPLEMENTED,
+#         detail="Chức năng tách nền sticker sẽ được triển khai ở bước background removal service",
+#     )

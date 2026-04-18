@@ -10,24 +10,10 @@ class HelmetDesignMapper {
 
     return HelmetDesign(
       id: (json["id"] as num?)?.toInt() ?? 0,
-      helmetProductId:
-          (json["product_id"] as num?)?.toInt() ??
-          (json["helmet_product_id"] as num?)?.toInt() ??
-          (json["helmetProductId"] as num?)?.toInt() ??
-          0,
-      productDetailId:
-          (json["product_detail_id"] as num?)?.toInt() ??
-          (json["productDetailId"] as num?)?.toInt(),
-      helmetName:
-          json["name"]?.toString() ??
-          json["helmet_name"]?.toString() ??
-          json["helmetName"]?.toString() ??
-          "",
-      helmetBaseImageUrl:
-          json["base_image_url"]?.toString() ??
-          json["helmet_base_image_url"]?.toString() ??
-          json["helmetBaseImageUrl"]?.toString() ??
-          "",
+      helmetProductId: (json["product_id"] as num?)?.toInt() ?? 0,
+      productDetailId: (json["product_detail_id"] as num?)?.toInt(),
+      helmetName: json["name"]?.toString() ?? "",
+      helmetBaseImageUrl: json["base_image_url"]?.toString() ?? "",
       stickers: rawStickers
           .whereType<Map>()
           .map(_mapDynamic)

@@ -210,11 +210,11 @@ class PushNotificationService {
     final title =
         notification?.title ??
         message.data["title"]?.toString() ??
-        "Tin nhan moi";
+        "Tin nhắn mới";
     final body =
         notification?.body ??
         message.data["body"]?.toString() ??
-        "Ban co tin nhan moi";
+        "Bạn có tin nhắn mới";
 
     await _localNotifications.show(
       message.hashCode,

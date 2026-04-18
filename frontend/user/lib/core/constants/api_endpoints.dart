@@ -94,5 +94,4 @@ class ApiEndpoints {
   static const helmetStickerCatalog = "/stickers/";
   static const helmetStickerGenerate = "/stickers/generate";
   static const helmetStickerTranscribeVoice = "/stickers/transcribe-voice";
-  static const helmetStickerRemoveBg = "/stickers/remove-background";
 }

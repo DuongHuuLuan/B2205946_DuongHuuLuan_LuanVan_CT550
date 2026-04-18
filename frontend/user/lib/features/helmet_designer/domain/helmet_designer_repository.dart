@@ -9,8 +9,6 @@ abstract class HelmetDesignerRepository {
 
   Future<StickerTemplate> generateAiSticker(AiStickerRequest request);
 
-  Future<String> removeBackground(String imageUrl);
-
   Future<HelmetDesign> saveDesign(HelmetDesign design);
 
   Future<HelmetDesign> getDesignDetail(int designId);

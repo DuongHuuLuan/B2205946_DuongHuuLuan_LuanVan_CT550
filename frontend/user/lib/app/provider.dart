@@ -109,10 +109,8 @@ final List<SingleChildWidget> Providers = [
   // helmet designer
   Provider(create: (context) => HelmetDesignerApi()),
   Provider<HelmetDesignerRepository>(
-    create: (context) => HelmetDesignerRepositoryImpl(
-      context.read<HelmetDesignerApi>(),
-      useMockData: false,
-    ),
+    create: (context) =>
+        HelmetDesignerRepositoryImpl(context.read<HelmetDesignerApi>()),
   ),
 
   ///-------------------------------------------------------------------------

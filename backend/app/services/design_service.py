@@ -60,37 +60,6 @@ class DesignService(BaseService):
         return design
 
     @staticmethod
-    def _ensure_product_exists(db: Session, product_id: int) -> Product:
-        return DesignService.get_or_404(
-            db,
-            Product,
-            product_id,
-            "Không tìm thấy sản phẩm",
-        )
-
-    @staticmethod
-    def _resolve_product_detail_id(
-        db: Session,
-        product_id: int,
-        product_detail_id: Optional[int],
-    ) -> Optional[int]:
-        if not product_detail_id or product_detail_id <= 0:
-            return None
-
-        product_detail = DesignService.get_or_404(
-            db,
-            ProductDetail,
-            product_detail_id,
-            "Không tìm thấy biến thể sản phẩm",
-        )
-        if product_detail.product_id != product_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Biến thể sản phẩm không thuộc mẫu nón của thiết kế này",
-            )
-        return product_detail.id
-
-    @staticmethod
     def _normalize_layers(layers: Iterable[DesignLayerIn]) -> list[tuple[int, DesignLayerIn]]:
         indexed_layers = list(enumerate(layers))
         indexed_layers.sort(key=lambda item: (item[1].z_index, item[0]))
@@ -141,17 +110,11 @@ class DesignService(BaseService):
 
     @staticmethod
     def create_design(db: Session, user_id: int, design_in: DesignCreate) -> Design:
-        DesignService._ensure_product_exists(db, design_in.product_id)
-        product_detail_id = DesignService._resolve_product_detail_id(
-            db,
-            design_in.product_id,
-            design_in.product_detail_id,
-        )
 
         design = Design(
             user_id=user_id,
             product_id=design_in.product_id,
-            product_detail_id=product_detail_id,
+            product_detail_id=design_in.product_detail_id,
             name=design_in.name,
             base_image_url=design_in.base_image_url,
             is_shared=False,
@@ -177,16 +140,10 @@ class DesignService(BaseService):
                 detail="ID trong path không khớp với ID trong body",
             )
 
-        DesignService._ensure_product_exists(db, design_in.product_id)
-        product_detail_id = DesignService._resolve_product_detail_id(
-            db,
-            design_in.product_id,
-            design_in.product_detail_id,
-        )
         design = DesignService._get_owned_design(db, design_id, user_id)
 
         design.product_id = design_in.product_id
-        design.product_detail_id = product_detail_id
+        design.product_detail_id = design_in.product_detail_id
         design.name = design_in.name
         design.base_image_url = design_in.base_image_url
 
@@ -235,11 +192,8 @@ class DesignService(BaseService):
     @staticmethod
     def order_design(db: Session, design_id: int, user_id: int, order_in: DesignOrderIn) -> dict:
         design = DesignService._get_owned_design(db, design_id, user_id)
-        product_detail_id = DesignService._resolve_product_detail_id(
-            db,
-            design.product_id,
-            order_in.product_detail_id,
-        )
+        product_detail_id = order_in.product_detail_id
+
         if product_detail_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

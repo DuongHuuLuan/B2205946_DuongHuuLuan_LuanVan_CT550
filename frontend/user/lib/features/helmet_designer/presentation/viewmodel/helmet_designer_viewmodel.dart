@@ -174,8 +174,7 @@ class HelmetDesignerViewModel extends ChangeNotifier {
     try {
       final design = await _repository.getDesignDetail(designId);
       _currentDesign = await _restoreDesignContext(design);
-      _selectedProductDetailId =
-          (_currentDesign.productDetailId ?? 0) > 0
+      _selectedProductDetailId = (_currentDesign.productDetailId ?? 0) > 0
           ? _currentDesign.productDetailId
           : null;
       _stickerLayers
